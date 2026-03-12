@@ -1,50 +1,133 @@
-# Welcome to your Expo app 👋
+# Salud De Una Mobile
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Aplicacion movil de Salud De Una orientada exclusivamente al flujo de pacientes. Este repositorio usa Expo Router sobre Expo SDK 54, React 19 y React Native 0.81.
 
-## Get started
+## Objetivo del repositorio
 
-1. Install dependencies
+- Construir la experiencia movil para pacientes.
+- Mantener una base clara para crecimiento sin mezclar concerns de doctor o admin.
+- Alinear arquitectura y contratos con el backend actual y con el frontend web cuando aplique.
 
-   ```bash
-   npm install
-   ```
+## Alcance funcional
 
-2. Start the app
+Este frontend movil cubre solo capacidades de paciente:
 
-   ```bash
-   npx expo start
-   ```
+- autenticacion y sesion
+- perfil de paciente
+- notificaciones del paciente
+- crecimiento futuro sobre features de paciente
 
-In the output, you'll find options to open the app in a
+Las experiencias de doctor y admin viven en otros frontends.
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+## Stack actual
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+- Expo SDK 54
+- Expo Router con file-based routing
+- React 19
+- React Native 0.81
+- TypeScript estricto
+- New Architecture habilitada
+- React Compiler habilitado
 
-## Get a fresh project
+## Direccion arquitectonica
 
-When you're ready, run:
+La estructura objetivo del repositorio es:
 
-```bash
-npm run reset-project
-```
+- `app/` para rutas, layouts y puntos de entrada de Expo Router
+- `src/` para codigo de aplicacion reutilizable
+- `docs/` para documentacion y playbooks locales
+- `.github/workflows/` para automatizaciones de calidad y CI
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+La base compartida del proyecto vive en `src/`. Las carpetas legacy del template ya no forman parte de la arquitectura activa.
 
-## Learn more
+## Estructura principal
 
-To learn more about developing your project with Expo, look at the following resources:
+- `app/`: screens, layouts, grupos de rutas y navegacion
+- `src/`: arquitectura principal para features, servicios, tipos y capas compartidas
+- `assets/`: imagenes, iconos y recursos estaticos
+- `docs/agent-skills/`: fuente de verdad para guias locales del repo
+- `scripts/`: utilidades de mantenimiento del proyecto
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+## Convenciones del proyecto
 
-## Join the community
+- Usa `app/` solo para routing y composicion de pantallas.
+- Evita barrel exports por defecto para no degradar tree shaking.
+- Prefiere imports directos y limites claros entre capas.
+- Mantiene nombres de modelos y contratos en ingles.
+- Escribe documentacion en espanol.
+- Haz cambios pequenos y revisables.
 
-Join our community of developers creating universal apps.
+## Stack base del proyecto
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+Para alineacion con el frontend web y con el backend actual, la base recomendada es:
+
+- Axios para networking
+- TanStack Query para server state
+- Zod para validacion y contratos
+- React Hook Form para formularios
+
+Estas librerias forman parte de la base tecnica actual del proyecto.
+
+## Flujo de trabajo
+
+1. Instala dependencias con `npm install`.
+2. Crea tu archivo `.env` a partir de `.env.example`.
+3. Ejecuta desarrollo con `npm run start` o la variante de plataforma.
+4. Consulta `docs/agent-skills/` antes de cambios relevantes.
+5. Mantiene la documentacion de carpeta actualizada cuando cambie su responsabilidad.
+
+## Variables de entorno
+
+- `EXPO_PUBLIC_API_URL`: URL base del backend incluyendo el prefijo `/v1`, por ejemplo `http://localhost:3000/v1`
+- `EXPO_PUBLIC_APP_ENV`: `development`, `preview` o `production`
+
+## Scripts disponibles
+
+- `npm run start`
+- `npm run android`
+- `npm run ios`
+- `npm run web`
+- `npm run lint`
+- `npm run reset-project`
+
+## Relacion con el backend
+
+El backend actual expone rutas relevantes para mobile de paciente sobre `/v1`:
+
+- auth de paciente
+- perfil de paciente
+- notificaciones del paciente
+
+La estructura objetivo de `src/` ya separa networking, contratos, estado y features para reflejar esos flujos.
+
+## Skills del repositorio
+
+Antes de proponer cambios importantes, consulta:
+
+- `docs/agent-skills/react-native-best-practices/`
+- `docs/agent-skills/github-actions/`
+- `docs/agent-skills/upgrading-react-native/`
+
+El protocolo general esta en `docs/agent-skills/CODING_ASSISTANT_INSTRUCTIONS.md`.
+
+## Checklist para contributors
+
+- Verifica si el cambio pertenece a `app/` o a `src/`.
+- Documenta nuevas carpetas con su propio `README.md`.
+- No mezcles logica de doctor o admin en este repo.
+- Mantiene contratos y tipos compartidos consistentes con backend.
+- Ejecuta al menos lint antes de cerrar el cambio.
+
+## Do and don't
+
+### Do
+
+- Usa nombres explicitos por feature.
+- Mueve logica reutilizable a `src/`.
+- Conserva `app/` delgado y orientado a rutas.
+
+### Don't
+
+- No agregues helpers genericos sin ubicar bien su capa.
+- No reintroduzcas carpetas legacy fuera de `src/` para codigo compartido.
+- No dupliques contratos entre formularios, schemas y tipos.

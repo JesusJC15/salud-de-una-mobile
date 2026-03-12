@@ -1,0 +1,51 @@
+import { loginSchema, registerSchema, type LoginInput, type RegisterInput } from '@/src/schemas/auth';
+import { apiClient } from '@/src/services/api/client';
+import { UserProfile } from '@/src/types/user';
+import { AuthSession, RefreshSessionResponse } from '@/src/types/session';
+
+type AuthMeResponse = {
+  user: {
+    id: string;
+    email: string;
+    role: AuthSession['user']['role'];
+    isActive: boolean;
+  };
+};
+
+export const authService = {
+  async registerPatient(input: RegisterInput) {
+    const payload = registerSchema.parse(input);
+    const response = await apiClient.post<UserProfile>('/auth/patient/register', payload);
+
+    return response.data;
+  },
+
+  async loginPatient(input: LoginInput) {
+    const payload = loginSchema.parse(input);
+    const response = await apiClient.post<AuthSession>('/auth/patient/login', payload);
+
+    return response.data;
+  },
+
+  async refreshSession(refreshToken: string) {
+    const response = await apiClient.post<RefreshSessionResponse>('/auth/refresh', { refreshToken });
+
+    return response.data;
+  },
+
+  async logout(refreshToken: string) {
+    await apiClient.post('/auth/logout', { refreshToken });
+  },
+
+  async getCurrentPatient() {
+    const response = await apiClient.get<UserProfile>('/patients/me');
+
+    return response.data;
+  },
+
+  async getCurrentAuthUser() {
+    const response = await apiClient.get<AuthMeResponse>('/auth/me');
+
+    return response.data;
+  },
+};
