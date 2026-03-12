@@ -1,5 +1,7 @@
+import { useState } from 'react';
 import { TextInput, type TextInputProps, StyleSheet } from 'react-native';
 
+import { Radius } from '@/src/constants/theme';
 import { useThemeColor } from '@/src/hooks/use-theme-color';
 import { ThemedText } from '@/src/ui/themed-text';
 import { ThemedView } from '@/src/ui/themed-view';
@@ -10,23 +12,34 @@ type AppTextFieldProps = TextInputProps & {
 };
 
 export function AppTextField({ label, errorMessage, style, ...props }: AppTextFieldProps) {
-  const backgroundColor = useThemeColor({ light: '#FFFFFF', dark: '#0F172A' }, 'background');
-  const borderColor = useThemeColor({ light: '#D7E3EA', dark: '#334155' }, 'icon');
+  const [isFocused, setIsFocused] = useState(false);
+  const backgroundColor = useThemeColor({}, 'surface');
+  const borderColor = useThemeColor({}, 'border');
   const textColor = useThemeColor({}, 'text');
-  const placeholderColor = useThemeColor({ light: '#6B7280', dark: '#94A3B8' }, 'icon');
-  const errorColor = '#D14343';
+  const placeholderColor = useThemeColor({}, 'textMuted');
+  const focusColor = useThemeColor({}, 'info');
+  const errorColor = useThemeColor({}, 'destructive');
 
   return (
     <ThemedView style={styles.container}>
       <ThemedText type="defaultSemiBold">{label}</ThemedText>
       <TextInput
         autoCapitalize="none"
+        onBlur={(event) => {
+          setIsFocused(false);
+          props.onBlur?.(event);
+        }}
+        onFocus={(event) => {
+          setIsFocused(true);
+          props.onFocus?.(event);
+        }}
         placeholderTextColor={placeholderColor}
+        selectionColor={focusColor}
         style={[
           styles.input,
           {
             backgroundColor,
-            borderColor: errorMessage ? errorColor : borderColor,
+            borderColor: errorMessage ? errorColor : isFocused ? focusColor : borderColor,
             color: textColor,
           },
           style,
@@ -43,8 +56,9 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   input: {
-    borderRadius: 14,
+    borderRadius: Radius.lg,
     borderWidth: 1,
+    fontSize: 16,
     paddingHorizontal: 14,
     paddingVertical: 12,
   },

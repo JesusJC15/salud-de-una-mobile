@@ -1,7 +1,59 @@
+import Constants from 'expo-constants';
+import { Platform } from 'react-native';
 import { z } from 'zod';
 
 function normalizeApiBaseUrl(value: string) {
   return value.replace(/\/+$/, '');
+}
+
+function readExpoHostUri() {
+  const expoConfig = Constants.expoConfig as { hostUri?: string } | null;
+  const expoGoConfig = Constants as typeof Constants & {
+    expoGoConfig?: { debuggerHost?: string | null };
+  };
+
+  return expoConfig?.hostUri ?? expoGoConfig.expoGoConfig?.debuggerHost ?? null;
+}
+
+function extractHost(value: string | null) {
+  if (!value) {
+    return null;
+  }
+
+  const [hostWithPort] = value.split('/');
+  const [host] = hostWithPort.split(':');
+
+  return host || null;
+}
+
+function resolveApiBaseUrl(value: string | undefined, appEnv: 'development' | 'preview' | 'production') {
+  if (!value) {
+    return undefined;
+  }
+
+  const normalizedValue = normalizeApiBaseUrl(value);
+
+  if (Platform.OS === 'web' || appEnv !== 'development') {
+    return normalizedValue;
+  }
+
+  const url = new URL(normalizedValue);
+  const isLoopbackHost = ['127.0.0.1', 'localhost'].includes(url.hostname);
+
+  if (!isLoopbackHost) {
+    return normalizedValue;
+  }
+
+  const expoHost = extractHost(readExpoHostUri());
+  const fallbackHost = Platform.OS === 'android' ? '10.0.2.2' : null;
+  const resolvedHost = expoHost ?? fallbackHost;
+
+  if (!resolvedHost) {
+    return normalizedValue;
+  }
+
+  url.hostname = resolvedHost;
+  return url.toString();
 }
 
 function emptyStringToUndefined(value: unknown) {
@@ -33,7 +85,7 @@ const runtimeConfig = runtimeConfigSchema.parse({
 });
 
 export const appConfig = {
-  apiBaseUrl: runtimeConfig.apiUrl ?? null,
+  apiBaseUrl: resolveApiBaseUrl(runtimeConfig.apiUrl, runtimeConfig.appEnv) ?? null,
   appEnv: runtimeConfig.appEnv,
 };
 

@@ -1,6 +1,7 @@
 import { StyleSheet } from 'react-native';
 
 import ParallaxScrollView from '@/src/components/parallax-scroll-view';
+import { Radius } from '@/src/constants/theme';
 import { appConfig } from '@/src/config/env';
 import { useSessionStore } from '@/src/store/session-store';
 import { AppButton } from '@/src/ui/button';
@@ -19,17 +20,18 @@ export function PatientHomeScreen({ onLoginPress, onRegisterPress }: PatientHome
 
   return (
     <ParallaxScrollView
-      headerBackgroundColor={{ light: '#E6F4FE', dark: '#102A43' }}
-      headerImage={<ThemedView lightColor="#D4EEF8" darkColor="#173B57" style={styles.heroGlow} />}>
+      headerBackgroundColor={{ light: '#F7FEFF', dark: '#0B3A3F' }}
+      headerImage={<ThemedView lightColor="#D7F3F5" darkColor="#0F4952" style={styles.heroGlow} />}>
       <ThemedView style={styles.heroContent}>
+        <ThemedText type="eyebrow">Salud De Una</ThemedText>
         <ThemedText type="title">Salud De Una</ThemedText>
-        <ThemedText>
-          Aplicacion movil del paciente construida sobre Expo Router, Query Client y una capa de
-          servicios conectada al backend actual.
+        <ThemedText type="muted">
+          Portal movil del paciente, alineado con la identidad del frontend web y preparado para
+          autenticacion persistente, perfil y futuras notificaciones.
         </ThemedText>
       </ThemedView>
 
-      <ThemedView lightColor="#F5FBFF" darkColor="#16212B" style={styles.card}>
+      <ThemedView lightColor="#FCFFFF" darkColor="#0D3E43" style={styles.card}>
         <ThemedText type="subtitle">Sesion actual</ThemedText>
         <ThemedText>
           Estado: <ThemedText type="defaultSemiBold">{sessionStatus}</ThemedText>
@@ -50,7 +52,7 @@ export function PatientHomeScreen({ onLoginPress, onRegisterPress }: PatientHome
         ) : null}
       </ThemedView>
 
-      <ThemedView lightColor="#F5FBFF" darkColor="#16212B" style={styles.card}>
+      <ThemedView lightColor="#FCFFFF" darkColor="#0D3E43" style={styles.card}>
         <ThemedText type="subtitle">Configuracion</ThemedText>
         <ThemedText>
           API base:{' '}
@@ -61,7 +63,7 @@ export function PatientHomeScreen({ onLoginPress, onRegisterPress }: PatientHome
         </ThemedText>
       </ThemedView>
 
-      <ThemedView lightColor="#F5FBFF" darkColor="#16212B" style={styles.card}>
+      <ThemedView lightColor="#FCFFFF" darkColor="#0D3E43" style={styles.card}>
         <ThemedText type="subtitle">Capacidades del modulo paciente</ThemedText>
         <ThemedText>- autenticacion y persistencia de sesion</ThemedText>
         <ThemedText>- perfil de paciente con estado local sincronizado</ThemedText>
@@ -86,7 +88,7 @@ const styles = StyleSheet.create({
   },
   card: {
     gap: 8,
-    borderRadius: 20,
+    borderRadius: Radius.xl,
     padding: 20,
   },
   actions: {

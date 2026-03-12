@@ -1,7 +1,7 @@
 import { loginSchema, registerSchema, type LoginInput, type RegisterInput } from '@/src/schemas/auth';
 import { apiClient } from '@/src/services/api/client';
 import { UserProfile } from '@/src/types/user';
-import { AuthSession, RefreshSessionResponse } from '@/src/types/session';
+import { AuthSession, LogoutResponse, RefreshSessionResponse } from '@/src/types/session';
 
 type AuthMeResponse = {
   user: {
@@ -28,13 +28,23 @@ export const authService = {
   },
 
   async refreshSession(refreshToken: string) {
-    const response = await apiClient.post<RefreshSessionResponse>('/auth/refresh', { refreshToken });
+    const response = await apiClient.post<RefreshSessionResponse>(
+      '/auth/refresh',
+      { refreshToken },
+      { skipAuthRefresh: true }
+    );
 
     return response.data;
   },
 
-  async logout(refreshToken: string) {
-    await apiClient.post('/auth/logout', { refreshToken });
+  async logout(refreshToken?: string | null) {
+    const response = await apiClient.post<LogoutResponse>(
+      '/auth/logout',
+      { refreshToken },
+      { skipAuthRefresh: true }
+    );
+
+    return response.data;
   },
 
   async getCurrentPatient() {

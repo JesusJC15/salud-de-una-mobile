@@ -1,15 +1,40 @@
-import axios, { AxiosHeaders } from 'axios';
+import axios, { AxiosHeaders, isAxiosError } from 'axios';
 
 import { appConfig } from '@/src/config/env';
 import { ApiError } from '@/src/services/api/api-error';
 import { createCorrelationId } from '@/src/services/api/request-context';
 
 type AccessTokenResolver = () => Promise<string | null> | string | null;
+type UnauthorizedRecoveryHandler = (error: ApiError) => Promise<string | null> | string | null;
+type UnauthorizedSessionHandler = () => Promise<void> | void;
 
 let accessTokenResolver: AccessTokenResolver | null = null;
+let unauthorizedRecoveryHandler: UnauthorizedRecoveryHandler | null = null;
+let unauthorizedSessionHandler: UnauthorizedSessionHandler | null = null;
+let refreshInFlight: Promise<string | null> | null = null;
+
+declare module 'axios' {
+  export interface AxiosRequestConfig {
+    _retry?: boolean;
+    skipAuthRefresh?: boolean;
+  }
+
+  export interface InternalAxiosRequestConfig {
+    _retry?: boolean;
+    skipAuthRefresh?: boolean;
+  }
+}
 
 export function setApiAccessTokenResolver(resolver: AccessTokenResolver | null) {
   accessTokenResolver = resolver;
+}
+
+export function setApiUnauthorizedRecoveryHandler(handler: UnauthorizedRecoveryHandler | null) {
+  unauthorizedRecoveryHandler = handler;
+}
+
+export function setApiUnauthorizedSessionHandler(handler: UnauthorizedSessionHandler | null) {
+  unauthorizedSessionHandler = handler;
 }
 
 export const apiClient = axios.create({
@@ -30,7 +55,7 @@ apiClient.interceptors.request.use(async (config) => {
 
   headers.set('x-correlation-id', createCorrelationId());
 
-  if (accessTokenResolver) {
+  if (accessTokenResolver && !config.skipAuthRefresh) {
     const accessToken = await accessTokenResolver();
 
     if (accessToken) {
@@ -45,5 +70,47 @@ apiClient.interceptors.request.use(async (config) => {
 
 apiClient.interceptors.response.use(
   (response) => response,
-  (error: unknown) => Promise.reject(ApiError.fromUnknown(error))
+  async (error: unknown) => {
+    const apiError = ApiError.fromUnknown(error);
+
+    if (!isAxiosError(error) || !error.config) {
+      return Promise.reject(apiError);
+    }
+
+    const statusCode = error.response?.status ?? apiError.statusCode;
+    const originalRequest = error.config;
+
+    if (
+      statusCode !== 401
+      || originalRequest._retry
+      || originalRequest.skipAuthRefresh
+      || !unauthorizedRecoveryHandler
+    ) {
+      return Promise.reject(apiError);
+    }
+
+    originalRequest._retry = true;
+
+    try {
+      refreshInFlight ??= Promise.resolve(unauthorizedRecoveryHandler(apiError)).finally(() => {
+        refreshInFlight = null;
+      });
+
+      const nextAccessToken = await refreshInFlight;
+
+      if (!nextAccessToken) {
+        await unauthorizedSessionHandler?.();
+        return Promise.reject(apiError);
+      }
+
+      const headers = AxiosHeaders.from(originalRequest.headers ?? {});
+      headers.set('Authorization', `Bearer ${nextAccessToken}`);
+      originalRequest.headers = headers;
+
+      return apiClient(originalRequest);
+    } catch (recoveryError) {
+      await unauthorizedSessionHandler?.();
+      return Promise.reject(ApiError.fromUnknown(recoveryError));
+    }
+  }
 );

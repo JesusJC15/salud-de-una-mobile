@@ -18,6 +18,7 @@ type SessionState = {
   hydrate: () => Promise<void>;
   setSession: (session: AuthSession, profile: UserProfile | null) => Promise<void>;
   setProfile: (profile: UserProfile | null) => void;
+  markHydrated: () => void;
   clearSession: () => Promise<void>;
 };
 
@@ -44,9 +45,20 @@ export const useSessionStore = create<SessionState>((set) => ({
     });
   },
   setProfile: (profile) => {
+    void persistSession({
+      profile,
+      session: useSessionStore.getState().session,
+    });
+
     set((state) => ({
       ...state,
       profile,
+    }));
+  },
+  markHydrated: () => {
+    set((state) => ({
+      ...state,
+      status: state.session ? 'authenticated' : 'anonymous',
     }));
   },
   clearSession: async () => {

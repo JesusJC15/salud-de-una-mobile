@@ -1,11 +1,12 @@
 import { StyleSheet, Text, type TextProps } from 'react-native';
 
+import { Fonts } from '@/src/constants/theme';
 import { useThemeColor } from '@/src/hooks/use-theme-color';
 
 export type ThemedTextProps = TextProps & {
   lightColor?: string;
   darkColor?: string;
-  type?: 'default' | 'title' | 'defaultSemiBold' | 'subtitle' | 'link';
+  type?: 'default' | 'title' | 'defaultSemiBold' | 'subtitle' | 'link' | 'muted' | 'eyebrow';
 };
 
 export function ThemedText({
@@ -15,7 +16,8 @@ export function ThemedText({
   type = 'default',
   ...rest
 }: ThemedTextProps) {
-  const color = useThemeColor({ light: lightColor, dark: darkColor }, 'text');
+  const colorKey = type === 'muted' ? 'textMuted' : type === 'link' ? 'link' : 'text';
+  const color = useThemeColor({ light: lightColor, dark: darkColor }, colorKey);
 
   return (
     <Text
@@ -26,6 +28,8 @@ export function ThemedText({
         type === 'defaultSemiBold' ? styles.defaultSemiBold : undefined,
         type === 'subtitle' ? styles.subtitle : undefined,
         type === 'link' ? styles.link : undefined,
+        type === 'muted' ? styles.muted : undefined,
+        type === 'eyebrow' ? styles.eyebrow : undefined,
         style,
       ]}
       {...rest}
@@ -35,26 +39,40 @@ export function ThemedText({
 
 const styles = StyleSheet.create({
   default: {
+    fontFamily: Fonts.regular,
     fontSize: 16,
     lineHeight: 24,
   },
   defaultSemiBold: {
+    fontFamily: Fonts.semibold,
     fontSize: 16,
     lineHeight: 24,
-    fontWeight: '600',
   },
   title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    lineHeight: 32,
+    fontFamily: Fonts.bold,
+    fontSize: 34,
+    lineHeight: 40,
   },
   subtitle: {
+    fontFamily: Fonts.semibold,
     fontSize: 20,
-    fontWeight: 'bold',
+    lineHeight: 28,
   },
   link: {
-    lineHeight: 30,
+    fontFamily: Fonts.semibold,
     fontSize: 16,
-    color: '#0a7ea4',
+    lineHeight: 24,
+  },
+  muted: {
+    fontFamily: Fonts.regular,
+    fontSize: 15,
+    lineHeight: 22,
+  },
+  eyebrow: {
+    fontFamily: Fonts.semibold,
+    fontSize: 13,
+    letterSpacing: 0.8,
+    lineHeight: 18,
+    textTransform: 'uppercase',
   },
 });

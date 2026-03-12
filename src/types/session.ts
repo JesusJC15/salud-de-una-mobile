@@ -1,7 +1,10 @@
-export type UserRole = 'PATIENT';
+import type { EntityId, IsoDateString } from '@/src/types/common';
+import type { UserRole } from '@/src/types/enums';
+
+export type { UserRole } from '@/src/types/enums';
 
 export interface AuthenticatedUser {
-  id: string;
+  id: EntityId;
   email: string;
   role: UserRole;
   isActive?: boolean;
@@ -10,11 +13,26 @@ export interface AuthenticatedUser {
 export interface AuthSession {
   accessToken: string;
   refreshToken: string;
+  refreshSessionId?: string;
   user: AuthenticatedUser;
 }
 
-export interface RefreshSessionResponse {
-  accessToken: string;
-  refreshToken: string;
-  user: AuthenticatedUser;
+export type RefreshSessionResponse = AuthSession;
+
+export interface LogoutResponse {
+  message: string;
+}
+
+export interface RefreshSession {
+  id?: EntityId;
+  sessionId: string;
+  userId: EntityId;
+  email: string;
+  role: UserRole;
+  tokenHash: string;
+  expiresAt: IsoDateString;
+  revokedAt?: IsoDateString;
+  revokedReason?: string;
+  createdAt?: IsoDateString | null;
+  updatedAt?: IsoDateString | null;
 }

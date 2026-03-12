@@ -3,6 +3,7 @@ import { Link, useRouter } from 'expo-router';
 import { Controller, useForm } from 'react-hook-form';
 import { ScrollView, StyleSheet } from 'react-native';
 
+import { Radius } from '@/src/constants/theme';
 import { registerSchema, type RegisterInput } from '@/src/schemas/auth';
 import { usePatientAuth } from '@/src/features/patient-auth/use-patient-auth';
 import { AppButton } from '@/src/ui/button';
@@ -31,13 +32,14 @@ export function PatientRegisterScreen() {
   return (
     <ScrollView contentContainerStyle={styles.content}>
       <ThemedView style={styles.header}>
+        <ThemedText type="eyebrow">Nuevo paciente</ThemedText>
         <ThemedText type="title">Crear cuenta</ThemedText>
-        <ThemedText>
-          Registro base para paciente alineado con las reglas de validacion del backend.
+        <ThemedText type="muted">
+          Registro inicial alineado con las validaciones del backend y el dominio del portal web.
         </ThemedText>
       </ThemedView>
 
-      <ThemedView style={styles.form}>
+      <ThemedView lightColor="#FCFFFF" darkColor="#0D3E43" style={styles.formCard}>
         <Controller
           control={form.control}
           name="firstName"
@@ -106,11 +108,11 @@ export function PatientRegisterScreen() {
           )}
         />
 
-        <ThemedText>
+        <ThemedText type="muted">
           La contrasena debe incluir al menos 8 caracteres, una mayuscula, un numero y un caracter
           especial.
         </ThemedText>
-        <ThemedText>
+        <ThemedText type="muted">
           Si el registro es exitoso, la app iniciara sesion automaticamente con el mismo correo y
           contrasena.
         </ThemedText>
@@ -139,13 +141,16 @@ export function PatientRegisterScreen() {
 const styles = StyleSheet.create({
   content: {
     gap: 24,
+    minHeight: '100%',
     padding: 24,
   },
   header: {
     gap: 8,
   },
-  form: {
+  formCard: {
+    borderRadius: Radius.xl,
     gap: 16,
+    padding: 20,
   },
   footer: {
     alignItems: 'center',

@@ -1,16 +1,25 @@
-import { UserRole } from '@/src/types/session';
+import type { EntityId, IsoDateString } from '@/src/types/common';
+import type { UserGender, UserRole } from '@/src/types/enums';
 
-export type UserGender = 'MALE' | 'FEMALE' | 'OTHER';
+export type { UserGender } from '@/src/types/enums';
 
 export interface UserProfile {
-  id: string;
-  email: string;
+  id: EntityId;
   firstName: string;
   lastName: string;
+  email: string;
   role: UserRole;
-  birthDate?: string;
+  birthDate?: IsoDateString | null;
   gender?: UserGender;
-  phone?: string;
-  createdAt?: string;
-  updatedAt?: string;
+  phone?: string | null;
+  isActive?: boolean;
+  createdAt?: IsoDateString | null;
+  updatedAt?: IsoDateString | null;
+}
+
+export interface UpdatePatientProfileInput {
+  firstName?: string;
+  lastName?: string;
+  birthDate?: IsoDateString;
+  gender?: UserGender;
 }

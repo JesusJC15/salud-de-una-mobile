@@ -1,5 +1,6 @@
-import { Pressable, StyleSheet } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet } from 'react-native';
 
+import { Radius } from '@/src/constants/theme';
 import { useThemeColor } from '@/src/hooks/use-theme-color';
 import { ThemedText } from '@/src/ui/themed-text';
 
@@ -18,11 +19,11 @@ export function AppButton({
   disabled = false,
   loading = false,
 }: AppButtonProps) {
-  const primaryBackground = useThemeColor({ light: '#0A7EA4', dark: '#53B4D3' }, 'tint');
-  const secondaryBackground = useThemeColor({ light: '#E6F4FE', dark: '#173B57' }, 'background');
-  const secondaryBorder = useThemeColor({ light: '#C1E4F0', dark: '#24577C' }, 'icon');
-  const primaryText = '#FFFFFF';
-  const secondaryText = useThemeColor({ light: '#0A7EA4', dark: '#D8F1FF' }, 'text');
+  const primaryBackground = useThemeColor({}, 'primary');
+  const secondaryBackground = useThemeColor({}, 'surface');
+  const secondaryBorder = useThemeColor({}, 'border');
+  const primaryText = useThemeColor({}, 'primaryForeground');
+  const secondaryText = useThemeColor({}, 'secondaryForeground');
 
   const isPrimary = variant === 'primary';
 
@@ -36,22 +37,30 @@ export function AppButton({
         {
           backgroundColor: isPrimary ? primaryBackground : secondaryBackground,
           borderColor: isPrimary ? primaryBackground : secondaryBorder,
-          opacity: pressed || disabled || loading ? 0.85 : 1,
+          opacity: disabled || loading ? 0.55 : 1,
+          transform: [{ scale: pressed ? 0.985 : 1 }],
         },
       ]}>
-      <ThemedText
-        style={{ color: isPrimary ? primaryText : secondaryText, textAlign: 'center' }}
-        type="defaultSemiBold">
-        {loading ? 'Procesando...' : label}
-      </ThemedText>
+      {loading ? (
+        <ActivityIndicator color={isPrimary ? primaryText : secondaryText} />
+      ) : (
+        <ThemedText
+          style={{ color: isPrimary ? primaryText : secondaryText, textAlign: 'center' }}
+          type="defaultSemiBold">
+          {label}
+        </ThemedText>
+      )}
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
   base: {
-    borderRadius: 14,
+    alignItems: 'center',
     borderWidth: 1,
+    borderRadius: Radius.lg,
+    justifyContent: 'center',
+    minHeight: 52,
     paddingHorizontal: 16,
     paddingVertical: 14,
   },

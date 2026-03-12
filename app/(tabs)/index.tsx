@@ -7,8 +7,8 @@ export default function HomeScreen() {
 
   return (
     <PatientHomeScreen
-      onLoginPress={() => router.push('../login')}
-      onRegisterPress={() => router.push('../register')}
+      onLoginPress={() => router.push('/(auth)/login')}
+      onRegisterPress={() => router.push('/(auth)/register')}
     />
   );
 }
