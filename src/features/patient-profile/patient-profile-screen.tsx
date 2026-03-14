@@ -1,7 +1,9 @@
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
+import { Controller, useForm } from 'react-hook-form';
 import { ScrollView, StyleSheet } from 'react-native';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { Radius } from '@/src/constants/theme';
 import {
@@ -10,9 +12,14 @@ import {
   translateUserGender,
   translateUserRole,
 } from '@/src/lib/identity';
+import {
+  UpdatePatientProfileFormInput,
+  updatePatientProfileSchema,
+} from '@/src/schemas/patient-profile';
 import { authService } from '@/src/services/auth/auth-service';
 import { useSessionStore } from '@/src/store/session-store';
 import { AppButton } from '@/src/ui/button';
+import { AppTextField } from '@/src/ui/text-field';
 import { ThemedText } from '@/src/ui/themed-text';
 import { ThemedView } from '@/src/ui/themed-view';
 
@@ -25,6 +32,15 @@ export function PatientProfileScreen() {
   const setProfile = useSessionStore((state) => state.setProfile);
   const patient = useSessionStore((state) => state.profile);
   const sessionStatus = useSessionStore((state) => state.status);
+  const form = useForm<UpdatePatientProfileFormInput>({
+    defaultValues: {
+      birthDate: '',
+      firstName: '',
+      gender: '',
+      lastName: '',
+    },
+    resolver: zodResolver(updatePatientProfileSchema),
+  });
 
   const profileQuery = useQuery({
     enabled: Boolean(sessionUser),
@@ -33,17 +49,55 @@ export function PatientProfileScreen() {
     staleTime: 60_000,
   });
 
+  const updateProfileMutation = useMutation({
+    mutationFn: (values: UpdatePatientProfileFormInput) =>
+      authService.updateCurrentPatient({
+        birthDate: values.birthDate,
+        firstName: values.firstName,
+        gender: values.gender,
+        lastName: values.lastName,
+      }),
+    onSuccess: async (nextProfile) => {
+      setProfile(nextProfile);
+      await queryClient.invalidateQueries({ queryKey: ['patient-profile', sessionUser?.id] });
+    },
+  });
+
   useEffect(() => {
     if (profileQuery.data) {
       setProfile(profileQuery.data);
     }
   }, [profileQuery.data, setProfile]);
 
+  useEffect(() => {
+    if (!patient && !profileQuery.data) {
+      return;
+    }
+
+    const source = profileQuery.data ?? patient;
+
+    if (!source) {
+      return;
+    }
+
+    form.reset({
+      birthDate: source.birthDate?.slice(0, 10) ?? '',
+      firstName: source.firstName ?? '',
+      gender: source.gender ?? '',
+      lastName: source.lastName ?? '',
+    });
+  }, [form, patient, profileQuery.data]);
+
   const profile = profileQuery.data ?? patient;
   const displayName = getProfileDisplayName(profile);
   const initials = getInitials(profile?.firstName, profile?.lastName);
   const roleLabel = translateUserRole(profile?.role ?? sessionUser?.role ?? null);
   const genderLabel = translateUserGender(profile?.gender);
+  const isFormDirty = form.formState.isDirty;
+
+  const onSubmitProfile = form.handleSubmit(async (values) => {
+    await updateProfileMutation.mutateAsync(values);
+  });
 
   async function handleLogout() {
     const refreshToken = useSessionStore.getState().session?.refreshToken ?? null;
@@ -101,22 +155,96 @@ export function PatientProfileScreen() {
         {profileQuery.error instanceof Error ? (
           <ThemedText style={styles.errorMessage}>{profileQuery.error.message}</ThemedText>
         ) : null}
+        {updateProfileMutation.error instanceof Error ? (
+          <ThemedText style={styles.errorMessage}>{updateProfileMutation.error.message}</ThemedText>
+        ) : null}
+        {updateProfileMutation.isSuccess ? (
+          <ThemedText style={styles.successMessage}>Perfil actualizado correctamente.</ThemedText>
+        ) : null}
+
+        <ThemedView style={styles.formSection}>
+          <ThemedText type="subtitle">Editar perfil</ThemedText>
+
+          <Controller
+            control={form.control}
+            name="firstName"
+            render={({ field: { onBlur, onChange, value }, fieldState: { error } }) => (
+              <AppTextField
+                autoCapitalize="words"
+                errorMessage={error?.message}
+                label="Nombre"
+                onBlur={onBlur}
+                onChangeText={onChange}
+                value={value ?? ''}
+              />
+            )}
+          />
+
+          <Controller
+            control={form.control}
+            name="lastName"
+            render={({ field: { onBlur, onChange, value }, fieldState: { error } }) => (
+              <AppTextField
+                autoCapitalize="words"
+                errorMessage={error?.message}
+                label="Apellido"
+                onBlur={onBlur}
+                onChangeText={onChange}
+                value={value ?? ''}
+              />
+            )}
+          />
+
+          <Controller
+            control={form.control}
+            name="birthDate"
+            render={({ field: { onBlur, onChange, value }, fieldState: { error } }) => (
+              <AppTextField
+                autoCapitalize="none"
+                errorMessage={error?.message}
+                label="Fecha de nacimiento"
+                onBlur={onBlur}
+                onChangeText={onChange}
+                placeholder="YYYY-MM-DD"
+                value={value ?? ''}
+              />
+            )}
+          />
+
+          <Controller
+            control={form.control}
+            name="gender"
+            render={({ field: { onBlur, onChange, value }, fieldState: { error } }) => (
+              <AppTextField
+                autoCapitalize="characters"
+                errorMessage={error?.message}
+                label="Genero"
+                onBlur={onBlur}
+                onChangeText={onChange}
+                placeholder="MALE, FEMALE u OTHER"
+                value={value ?? ''}
+              />
+            )}
+          />
+
+          <ThemedText type="muted">Valores permitidos en genero: MALE, FEMALE, OTHER.</ThemedText>
+
+          <AppButton
+            disabled={!isFormDirty}
+            label="Guardar cambios"
+            loading={updateProfileMutation.isPending}
+            onPress={() => void onSubmitProfile()}
+          />
+        </ThemedView>
+
         <AppButton
-          label="Actualizar perfil"
+          label="Recargar perfil"
           loading={profileQuery.isFetching}
           onPress={() => void profileQuery.refetch()}
           variant="secondary"
         />
         <AppButton label="Cerrar sesion" loading={isLoggingOut} onPress={() => void handleLogout()} variant="secondary" />
       </ThemedView>
-
-      <ThemedView lightColor="#FCFFFF" darkColor="#0D3E43" style={styles.card}>
-        <ThemedText type="subtitle">Siguiente iteracion</ThemedText>
-        <ThemedText>- formulario de edicion con React Hook Form y Zod</ThemedText>
-        <ThemedText>- manejo de carga, error y actualizacion optimista</ThemedText>
-        <ThemedText>- centro de notificaciones conectado a la API</ThemedText>
-      </ThemedView>
-
       </ThemedView>
     </ScrollView>
   );
@@ -146,7 +274,14 @@ const styles = StyleSheet.create({
     borderRadius: Radius.xl,
     padding: 20,
   },
+  formSection: {
+    gap: 12,
+    marginTop: 8,
+  },
   errorMessage: {
     color: '#DC2626',
+  },
+  successMessage: {
+    color: '#0F9F8F',
   },
 });

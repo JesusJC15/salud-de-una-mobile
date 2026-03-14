@@ -6,6 +6,7 @@ import {
   setApiUnauthorizedRecoveryHandler,
   setApiUnauthorizedSessionHandler,
 } from '@/src/services/api/client';
+import { ApiError } from '@/src/services/api/api-error';
 import { authService } from '@/src/services/auth/auth-service';
 import { useSessionStore } from '@/src/store/session-store';
 
@@ -57,8 +58,48 @@ export function AppProviders({ children }: PropsWithChildren) {
   }, [queryClient]);
 
   useEffect(() => {
-    void hydrate();
-  }, [hydrate]);
+    let isMounted = true;
+
+    void (async () => {
+      await hydrate();
+
+      const initialState = useSessionStore.getState();
+
+      if (!initialState.session || !isMounted) {
+        return;
+      }
+
+      try {
+        const authMe = await authService.getCurrentAuthUser();
+        const nextState = useSessionStore.getState();
+
+        if (!nextState.session || !isMounted) {
+          return;
+        }
+
+        const nextSession = {
+          ...nextState.session,
+          user: {
+            ...nextState.session.user,
+            ...authMe.user,
+          },
+        };
+
+        await nextState.setSession(nextSession, nextState.profile);
+      } catch (error) {
+        const apiError = ApiError.fromUnknown(error);
+
+        if (apiError.statusCode === 401 || apiError.statusCode === 403) {
+          queryClient.clear();
+          await useSessionStore.getState().clearSession();
+        }
+      }
+    })();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [hydrate, queryClient]);
 
   return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
 }
