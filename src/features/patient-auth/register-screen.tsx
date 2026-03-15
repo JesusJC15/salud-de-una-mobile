@@ -79,9 +79,12 @@ export function PatientRegisterScreen() {
 
     setTermsError(null);
 
-    await registerMutation.mutateAsync(normalizeRegisterInput(values));
-
-    router.replace('/');
+    try {
+      await registerMutation.mutateAsync(normalizeRegisterInput(values));
+      router.replace('/');
+    } catch {
+      // Error is handled via registerMutation.error; avoid unhandled promise rejection
+    }
   });
 
   return (
