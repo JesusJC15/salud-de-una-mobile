@@ -29,7 +29,7 @@ describe('normalizeRegisterInput', () => {
     expect(result.birthDate).toBe('1990-08-20');
   });
 
-  it('preserves other fields unchanged', () => {
+  it('defaults birthDate to null when omitted', () => {
     const result = normalizeRegisterInput({
       email: 'patient@example.com',
       firstName: 'Ana',
