@@ -88,6 +88,8 @@ export function PatientRegisterScreen() {
           <ThemedView style={styles.topBar}>
             <Pressable
               accessibilityRole="button"
+              accessibilityLabel="Volver"
+              accessibilityHint="Volver a la pantalla anterior"
               hitSlop={12}
               onPress={() => {
                 if (router.canGoBack()) {
