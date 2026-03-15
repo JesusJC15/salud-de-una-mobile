@@ -317,6 +317,9 @@ export function PatientRegisterScreen() {
                   rightAccessory={
                     <Pressable
                       accessibilityRole="button"
+                      accessibilityLabel={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                      accessibilityHint="Activa este botón para alternar la visibilidad de la contraseña."
+                      accessibilityState={{ selected: showPassword }}
                       hitSlop={10}
                       onPress={() => setShowPassword((prev) => !prev)}>
                       <MaterialIcons color={subtitleColor} name={showPassword ? 'visibility-off' : 'visibility'} size={20} />
