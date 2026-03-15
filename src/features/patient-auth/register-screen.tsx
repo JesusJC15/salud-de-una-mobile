@@ -193,7 +193,11 @@ export function PatientRegisterScreen() {
                   inputBackgroundColor={inputBackground}
                   inputBorderColor={inputBorderColor}
                   inputTextColor={inputTextColor}
-                  keyboardType="numbers-and-punctuation"
+                  keyboardType={Platform.select({
+                    ios: 'numbers-and-punctuation',
+                    android: 'numeric',
+                    default: 'numeric',
+                  })}
                   label="Fecha de nacimiento"
                   labelColor={sectionSubtle}
                   onBlur={onBlur}
