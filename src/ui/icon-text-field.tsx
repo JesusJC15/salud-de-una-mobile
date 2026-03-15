@@ -55,6 +55,11 @@ export function AppIconTextField({
     resolvedBorderColor = errorColor;
   }
 
+  const inputProps: TextInputProps = {
+    ...props,
+    ...(value !== undefined ? { value: value ?? '' } : {}),
+  };
+
   return (
     <View style={styles.fieldBlock}>
       <ThemedText style={[styles.fieldLabel, { color: labelColor }]}>{label}</ThemedText>
@@ -82,8 +87,7 @@ export function AppIconTextField({
           placeholderTextColor={placeholderColor}
           selectionColor={selectionColor ?? focusColor}
           style={[styles.input, { color: inputTextColor }, style]}
-          value={value ?? ''}
-          {...props}
+          {...inputProps}
         />
 
         {rightAccessory ? <View style={styles.rightAccessory}>{rightAccessory}</View> : null}
