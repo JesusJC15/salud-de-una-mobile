@@ -22,7 +22,7 @@ export const registerSchema = z.object({
     .transform((value) => (value === '' ? undefined : value))
     .refine(
       (value) => value === undefined || birthDateRule.test(value),
-      { message: 'La fecha de nacimiento debe tener el formato AAAA-MM-DD.' },
+      { message: 'La fecha de nacimiento debe tener el formato YYYY-MM-DD.' },
     )
     .nullish(),
   gender: z.enum(['MALE', 'FEMALE', 'OTHER']).optional(),
