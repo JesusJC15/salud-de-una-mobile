@@ -24,8 +24,8 @@ export const registerSchema = z.object({
       (value) => value === undefined || birthDateRule.test(value),
       { message: 'La fecha de nacimiento debe tener el formato AAAA-MM-DD.' },
     )
-    .optional()
-    .nullable(),
+    .nullish(),
+  gender: z.enum(['MALE', 'FEMALE', 'OTHER']).optional(),
   gender: z.enum(['MALE', 'FEMALE', 'OTHER']).optional(),
 });
 
