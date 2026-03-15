@@ -12,6 +12,7 @@ import {
   ScrollView,
   StyleSheet,
   View,
+  useColorScheme,
 } from 'react-native';
 
 import { Radius } from '@/src/constants/theme';
@@ -31,6 +32,8 @@ export function PatientRegisterScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [termsError, setTermsError] = useState<string | null>(null);
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
 
   const form = useForm<RegisterInput>({
     defaultValues: {
@@ -44,25 +47,29 @@ export function PatientRegisterScreen() {
     resolver: zodResolver(registerSchema),
   });
 
-  const gradientColors = ['#F0F9FA', '#E0F2F1'] as const;
-  const topBarColor = '#0F172A';
-  const titleColor = '#0F172A';
-  const subtitleColor = '#475569';
-  const sectionTitleColor = '#0F172A';
-  const sectionSubtle = '#334155';
-  const cardBackground = '#FFFFFF';
-  const cardBorderColor = 'rgba(20, 184, 166, 0.18)';
-  const inputBackground = '#FFFFFF';
-  const inputBorderColor = '#D7E3EC';
+  const gradientColors = (isDark
+    ? ['#020617', '#0F172A']
+    : ['#F0F9FA', '#E0F2F1']) as const;
+  const topBarColor = isDark ? '#E5F4FF' : '#0F172A';
+  const titleColor = isDark ? '#F9FAFB' : '#0F172A';
+  const subtitleColor = isDark ? '#CBD5F5' : '#475569';
+  const sectionTitleColor = isDark ? '#E5E7EB' : '#0F172A';
+  const sectionSubtle = isDark ? '#9CA3AF' : '#334155';
+  const cardBackground = isDark ? '#020617' : '#FFFFFF';
+  const cardBorderColor = isDark
+    ? 'rgba(20, 184, 166, 0.35)'
+    : 'rgba(20, 184, 166, 0.18)';
+  const inputBackground = isDark ? '#020617' : '#FFFFFF';
+  const inputBorderColor = isDark ? '#1F2933' : '#D7E3EC';
   const iconTint = '#14B8A6';
-  const inputTextColor = '#0F172A';
-  const placeholderColor = '#94A3B8';
+  const inputTextColor = isDark ? '#F9FAFB' : '#0F172A';
+  const placeholderColor = isDark ? '#64748B' : '#94A3B8';
   const errorColor = '#DC2626';
   const primaryColor = '#0891B2';
   const aquamarineColor = '#14B8A6';
-  const orbPrimary = 'rgba(8, 145, 178, 0.1)';
-  const orbSecondary = 'rgba(20, 184, 166, 0.1)';
-  const orbTertiary = 'rgba(20, 184, 166, 0.05)';
+  const orbPrimary = isDark ? 'rgba(8, 145, 178, 0.35)' : 'rgba(8, 145, 178, 0.1)';
+  const orbSecondary = isDark ? 'rgba(20, 184, 166, 0.35)' : 'rgba(20, 184, 166, 0.1)';
+  const orbTertiary = isDark ? 'rgba(20, 184, 166, 0.15)' : 'rgba(20, 184, 166, 0.05)';
 
   const onSubmit = form.handleSubmit(async (values) => {
     if (!acceptedTerms) {
