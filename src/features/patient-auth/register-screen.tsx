@@ -12,9 +12,9 @@ import {
   ScrollView,
   StyleSheet,
   View,
-  useColorScheme,
 } from 'react-native';
 
+import { useColorScheme } from '@/src/hooks/use-color-scheme';
 import { Radius } from '@/src/constants/theme';
 import { registerSchema, type RegisterInput } from '@/src/schemas/auth';
 import { normalizeRegisterInput } from '@/src/features/patient-auth/register-payload';
