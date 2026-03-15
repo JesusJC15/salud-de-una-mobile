@@ -17,7 +17,6 @@ import {
 import { useColorScheme } from '@/src/hooks/use-color-scheme';
 import { Radius } from '@/src/constants/theme';
 import { registerSchema, type RegisterInput } from '@/src/schemas/auth';
-import { normalizeRegisterInput } from '@/src/features/patient-auth/register-payload';
 import { usePatientAuth } from '@/src/features/patient-auth/use-patient-auth';
 import { USER_GENDER_LABELS, type UserGender } from '@/src/types/enums';
 import { AppIconTextField } from '@/src/ui/icon-text-field';
@@ -80,7 +79,7 @@ export function PatientRegisterScreen() {
     setTermsError(null);
 
     try {
-      await registerMutation.mutateAsync(normalizeRegisterInput(values));
+      await registerMutation.mutateAsync(values);
       router.replace('/');
     } catch {
       // Error is handled via registerMutation.error; avoid unhandled promise rejection
