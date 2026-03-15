@@ -26,7 +26,6 @@ export const registerSchema = z.object({
     )
     .nullish(),
   gender: z.enum(['MALE', 'FEMALE', 'OTHER']).optional(),
-  gender: z.enum(['MALE', 'FEMALE', 'OTHER']).optional(),
 });
 
 export type LoginInput = z.infer<typeof loginSchema>;
