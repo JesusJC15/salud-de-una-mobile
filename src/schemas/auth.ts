@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 const passwordRule = /^(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
-const emailSchema = z.string().trim().pipe(z.email());
+const emailSchema = z.string().trim().email();
 
 export const loginSchema = z.object({
   email: emailSchema,
