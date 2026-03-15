@@ -58,6 +58,12 @@ export function AppIconTextField({
   const inputProps: TextInputProps = {
     ...props,
     ...(value !== undefined ? { value: value ?? '' } : {}),
+    accessibilityLabel: props.accessibilityLabel ?? label,
+    accessibilityHint: props.accessibilityHint ?? hint,
+    accessibilityState: {
+      ...(props.accessibilityState ?? {}),
+      invalid: Boolean(errorMessage),
+    },
   };
 
   return (
