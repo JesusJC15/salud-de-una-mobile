@@ -194,7 +194,7 @@ export function PatientRegisterScreen() {
                   errorColor={errorColor}
                   errorMessage={error?.message}
                   focusColor={primaryColor}
-                  hint="Opcional. Usa formato YYYY-MM-DD."
+                  hint="Opcional. Usa formato AAAA-MM-DD."
                   iconColor={iconTint}
                   iconName="calendar-month"
                   inputBackgroundColor={inputBackground}
@@ -209,7 +209,7 @@ export function PatientRegisterScreen() {
                   labelColor={sectionSubtle}
                   onBlur={onBlur}
                   onChangeText={onChange}
-                  placeholder="YYYY-MM-DD"
+                  placeholder="AAAA-MM-DD"
                   placeholderColor={placeholderColor}
                   selectionColor={aquamarineColor}
                   value={value ?? ''}
