@@ -12,7 +12,7 @@ export const loginSchema = z.object({
 export const registerSchema = z.object({
   email: emailSchema,
   password: z.string().regex(passwordRule, {
-    message: 'Password must include an uppercase letter, a number, and a special character.',
+    message: 'La contraseña debe tener al menos una letra mayúscula, un número y un carácter especial.',
   }),
   firstName: z.string().trim().min(2),
   lastName: z.string().trim().min(2),
@@ -22,7 +22,7 @@ export const registerSchema = z.object({
     .transform((value) => (value === '' ? undefined : value))
     .refine(
       (value) => value === undefined || birthDateRule.test(value),
-      { message: 'Birth date must be in YYYY-MM-DD format.' },
+      { message: 'La fecha de nacimiento debe tener el formato AAAA-MM-DD.' },
     )
     .optional()
     .nullable(),
