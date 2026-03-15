@@ -9,6 +9,11 @@ export function usePatientAuth() {
 
   async function buildAuthenticatedState(email: string, password: string) {
     const session = await authService.loginPatient({ email, password });
+
+    // Persist session first so the API interceptor can attach Authorization
+    // when fetching the current patient profile.
+    await setSession(session, null);
+
     const profile = await authService.getCurrentPatient();
 
     await setSession(session, profile);

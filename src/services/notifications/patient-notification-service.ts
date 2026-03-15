@@ -8,7 +8,7 @@ import {
 
 export const patientNotificationService = {
   async list(input: ListNotificationsInput = {}) {
-    const response = await apiClient.get<NotificationsResponse>('/patients/notifications', {
+    const response = await apiClient.get<NotificationsResponse>('/notifications/me', {
       params: input,
     });
 
@@ -17,7 +17,7 @@ export const patientNotificationService = {
 
   async markAsRead(notificationId: string) {
     const response = await apiClient.patch<MarkNotificationAsReadResponse>(
-      `/patients/notifications/${notificationId}/read`
+      `/notifications/${notificationId}/read`
     );
 
     return response.data;
@@ -25,7 +25,7 @@ export const patientNotificationService = {
 
   async markAllAsRead() {
     const response = await apiClient.patch<MarkAllNotificationsAsReadResponse>(
-      '/patients/notifications/read-all'
+      '/notifications/me/read-all'
     );
 
     return response.data;

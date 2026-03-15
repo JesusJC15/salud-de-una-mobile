@@ -1,6 +1,6 @@
 import { loginSchema, registerSchema, type LoginInput, type RegisterInput } from '@/src/schemas/auth';
 import { apiClient } from '@/src/services/api/client';
-import { UserProfile } from '@/src/types/user';
+import { UpdatePatientProfileInput, UserProfile } from '@/src/types/user';
 import { AuthSession, LogoutResponse, RefreshSessionResponse } from '@/src/types/session';
 
 type AuthMeResponse = {
@@ -49,6 +49,16 @@ export const authService = {
 
   async getCurrentPatient() {
     const response = await apiClient.get<UserProfile>('/patients/me');
+
+    return response.data;
+  },
+
+  async updateCurrentPatient(input: UpdatePatientProfileInput) {
+    const payload = Object.fromEntries(
+      Object.entries(input).filter(([, value]) => value !== undefined && value !== null)
+    ) as UpdatePatientProfileInput;
+
+    const response = await apiClient.put<UserProfile>('/patients/me', payload);
 
     return response.data;
   },
