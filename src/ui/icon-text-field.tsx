@@ -1,11 +1,11 @@
 import { MaterialIcons } from '@expo/vector-icons';
-import { useState, type ReactNode } from 'react';
+import { useState, type ComponentProps, type ReactNode } from 'react';
 import { StyleSheet, TextInput, type TextInputProps, View } from 'react-native';
 
 import { Radius } from '@/src/constants/theme';
 import { ThemedText } from '@/src/ui/themed-text';
 
-type MaterialIconName = React.ComponentProps<typeof MaterialIcons>['name'];
+type MaterialIconName = ComponentProps<typeof MaterialIcons>['name'];
 
 type AppIconTextFieldProps = TextInputProps & {
   label: string;
