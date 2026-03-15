@@ -191,13 +191,13 @@ export function PatientRegisterScreen() {
             <Controller
               control={form.control}
               name="birthDate"
-              render={({ field: { onBlur, onChange, value }, fieldState: { error } }) => (
+              render(({ field: { onBlur, onChange, value }, fieldState: { error } }) => (
                 <AppIconTextField
                   autoCapitalize="none"
                   errorColor={errorColor}
                   errorMessage={error?.message}
                   focusColor={primaryColor}
-                  hint="Opcional. Usa formato AAAA-MM-DD."
+                  hint="Opcional. Usa formato YYYY-MM-DD."
                   iconColor={iconTint}
                   iconName="calendar-month"
                   inputBackgroundColor={inputBackground}
@@ -212,7 +212,7 @@ export function PatientRegisterScreen() {
                   labelColor={sectionSubtle}
                   onBlur={onBlur}
                   onChangeText={onChange}
-                  placeholder="AAAA-MM-DD"
+                  placeholder="YYYY-MM-DD"
                   placeholderColor={placeholderColor}
                   selectionColor={aquamarineColor}
                   value={value ?? ''}
