@@ -29,14 +29,14 @@ export function AppIconTextField({
   errorMessage,
   hint,
   rightAccessory,
-  labelColor = '#334155',
-  iconColor = '#14B8A6',
-  inputBackgroundColor = '#FFFFFF',
-  inputBorderColor = '#D7E3EC',
-  inputTextColor = '#0F172A',
-  placeholderColor = '#94A3B8',
-  focusColor = '#0891B2',
-  errorColor = '#DC2626',
+  labelColor,
+  iconColor,
+  inputBackgroundColor,
+  inputBorderColor,
+  inputTextColor,
+  placeholderColor,
+  focusColor,
+  errorColor,
   selectionColor,
   onBlur,
   onFocus,
@@ -48,7 +48,7 @@ export function AppIconTextField({
   let resolvedBorderColor = inputBorderColor;
 
   if (isFocused) {
-    resolvedBorderColor = focusColor;
+    resolvedBorderColor = focusColor ?? inputBorderColor;
   }
 
   if (errorMessage) {
@@ -137,7 +137,6 @@ const styles = StyleSheet.create({
     minWidth: 32,
   },
   hintText: {
-    color: '#475569',
     fontSize: 12,
     lineHeight: 17,
   },
