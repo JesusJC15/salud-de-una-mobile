@@ -52,7 +52,7 @@ export function AppIconTextField({
   }
 
   if (errorMessage) {
-    resolvedBorderColor = errorColor;
+    resolvedBorderColor = errorColor ?? resolvedBorderColor;
   }
 
   const inputProps: TextInputProps = {
