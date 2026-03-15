@@ -4,8 +4,8 @@ import { registerSchema } from '@/src/schemas/auth';
 export function normalizeRegisterInput(input: RegisterInput): RegisterInput {
   const normalizedBirthDate = input.birthDate?.trim();
 
-  return registerSchema.parse({
+  return {
     ...input,
     birthDate: normalizedBirthDate || null,
-  });
+  };
 }
