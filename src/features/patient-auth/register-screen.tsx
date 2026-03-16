@@ -232,7 +232,11 @@ export function PatientRegisterScreen() {
                       accessibilityLabel="Seleccionar fecha de nacimiento"
                       accessibilityRole="button"
                       onBlur={onBlur}
-                      onPress={() => setShowBirthDatePicker(true)}
+                      onPress={() => {
+                        if (Platform.OS !== 'web') {
+                          setShowBirthDatePicker(true);
+                        }
+                      }}
                       style={[
                         styles.datePickerButton,
                         {
@@ -250,7 +254,7 @@ export function PatientRegisterScreen() {
 
                     <ThemedText style={styles.hintText}>Opcional. Elige la fecha desde el selector.</ThemedText>
 
-                    {showBirthDatePicker ? (
+                    {showBirthDatePicker && Platform.OS !== 'web' ? (
                       <DateTimePicker
                         display={Platform.OS === 'ios' ? 'spinner' : 'default'}
                         maximumDate={new Date()}
