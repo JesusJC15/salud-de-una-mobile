@@ -16,6 +16,7 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
+  TextInput,
   type PressableStateCallbackType,
   View,
 } from 'react-native';
@@ -238,66 +239,91 @@ export function PatientRegisterScreen() {
                 const { onBlur, onChange, value } = renderProps.field;
                 const { error } = renderProps.fieldState;
                 const pickerValue = parseDateFromInput(value) ?? new Date(2000, 0, 1);
+                const isWeb = Platform.OS === 'web';
 
                 return (
                   <ThemedView style={styles.fieldBlock}>
                     <ThemedText style={[styles.fieldLabel, { color: sectionSubtle }]}>Fecha de nacimiento</ThemedText>
 
-                    <Pressable
-                      accessibilityLabel="Seleccionar fecha de nacimiento"
-                      accessibilityRole="button"
-                      onBlur={onBlur}
-                      onPress={() => {
-                        if (Platform.OS !== 'web') {
-                          setShowBirthDatePicker(true);
-                        }
-                      }}
-                      style={[
-                        styles.datePickerButton,
-                        {
-                          backgroundColor: inputBackground,
-                          borderColor: error?.message ? errorColor : inputBorderColor,
-                        },
-                      ]}
-                    >
-                      <MaterialIcons color={iconTint} name="calendar-month" size={20} />
-                      <ThemedText style={[styles.datePickerText, { color: value ? inputTextColor : placeholderColor }]}>
-                        {value ?? 'Selecciona tu fecha'}
-                      </ThemedText>
-                      <MaterialIcons color={placeholderColor} name="arrow-drop-down" size={24} />
-                    </Pressable>
+                    {isWeb ? (
+                      <>
+                        <TextInput
+                          accessibilityLabel="Ingresar fecha de nacimiento"
+                          keyboardType="numeric"
+                          onBlur={onBlur}
+                          onChangeText={onChange}
+                          placeholder="YYYY-MM-DD"
+                          placeholderTextColor={placeholderColor}
+                          value={value ?? ''}
+                          style={[
+                            styles.datePickerButton,
+                            {
+                              backgroundColor: inputBackground,
+                              borderColor: error?.message ? errorColor : inputBorderColor,
+                              color: inputTextColor,
+                            },
+                          ]}
+                        />
 
-                    <ThemedText style={styles.hintText}>Opcional. Elige la fecha desde el selector.</ThemedText>
+                        <ThemedText style={styles.hintText}>Opcional. Ingresa la fecha en formato AAAA-MM-DD.</ThemedText>
+                      </>
+                    ) : (
+                      <>
+                        <Pressable
+                          accessibilityLabel="Seleccionar fecha de nacimiento"
+                          accessibilityRole="button"
+                          onBlur={onBlur}
+                          onPress={() => {
+                            setShowBirthDatePicker(true);
+                          }}
+                          style={[
+                            styles.datePickerButton,
+                            {
+                              backgroundColor: inputBackground,
+                              borderColor: error?.message ? errorColor : inputBorderColor,
+                            },
+                          ]}
+                        >
+                          <MaterialIcons color={iconTint} name="calendar-month" size={20} />
+                          <ThemedText style={[styles.datePickerText, { color: value ? inputTextColor : placeholderColor }]}>
+                            {value ?? 'Selecciona tu fecha'}
+                          </ThemedText>
+                          <MaterialIcons color={placeholderColor} name="arrow-drop-down" size={24} />
+                        </Pressable>
 
-                    {showBirthDatePicker && Platform.OS !== 'web' ? (
-                      <DateTimePicker
-                        display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-                        maximumDate={new Date()}
-                        mode="date"
-                        onChange={(event: DateTimePickerEvent, selectedDate?: Date) => {
-                          if (Platform.OS === 'android') {
-                            setShowBirthDatePicker(false);
-                          }
+                        <ThemedText style={styles.hintText}>Opcional. Elige la fecha desde el selector.</ThemedText>
 
-                          if (event.type !== 'set' || !selectedDate) {
-                            return;
-                          }
+                        {showBirthDatePicker ? (
+                          <DateTimePicker
+                            display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                            maximumDate={new Date()}
+                            mode="date"
+                            onChange={(event: DateTimePickerEvent, selectedDate?: Date) => {
+                              if (Platform.OS === 'android') {
+                                setShowBirthDatePicker(false);
+                              }
 
-                          onChange(formatDateForInput(selectedDate));
-                        }}
-                        value={pickerValue}
-                      />
-                    ) : null}
+                              if (event.type !== 'set' || !selectedDate) {
+                                return;
+                              }
 
-                    {showBirthDatePicker && Platform.OS === 'ios' ? (
-                      <Pressable
-                        accessibilityRole="button"
-                        onPress={() => setShowBirthDatePicker(false)}
-                        style={styles.datePickerDoneButton}
-                      >
-                        <ThemedText style={[styles.datePickerDoneText, { color: primaryColor }]}>Listo</ThemedText>
-                      </Pressable>
-                    ) : null}
+                              onChange(formatDateForInput(selectedDate));
+                            }}
+                            value={pickerValue}
+                          />
+                        ) : null}
+
+                        {showBirthDatePicker && Platform.OS === 'ios' ? (
+                          <Pressable
+                            accessibilityRole="button"
+                            onPress={() => setShowBirthDatePicker(false)}
+                            style={styles.datePickerDoneButton}
+                          >
+                            <ThemedText style={[styles.datePickerDoneText, { color: primaryColor }]}>Listo</ThemedText>
+                          </Pressable>
+                        ) : null}
+                      </>
+                    )}
 
                     {value ? (
                       <Pressable
