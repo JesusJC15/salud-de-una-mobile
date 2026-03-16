@@ -1,3 +1,5 @@
+import { describe, expect, it } from '@jest/globals';
+
 import { loginSchema, registerSchema } from '@/src/schemas/auth';
 
 const STRONG_PASSWORD = ['Abc', 'def', '1!'].join('');
@@ -74,5 +76,29 @@ describe('auth schemas', () => {
     });
 
     expect(parsed.birthDate).toBeNull();
+  });
+
+  it('registerSchema accepts birthDate in YYYY-MM-DD format', () => {
+    const parsed = registerSchema.parse({
+      email: 'patient@example.com',
+      firstName: 'Ana',
+      lastName: 'Gomez',
+      password: STRONG_PASSWORD,
+      birthDate: ' 1990-08-20 ',
+    });
+
+    expect(parsed.birthDate).toBe('1990-08-20');
+  });
+
+  it('registerSchema rejects invalid birthDate format', () => {
+    const result = registerSchema.safeParse({
+      email: 'patient@example.com',
+      firstName: 'Ana',
+      lastName: 'Gomez',
+      password: STRONG_PASSWORD,
+      birthDate: '20/08/1990',
+    });
+
+    expect(result.success).toBe(false);
   });
 });

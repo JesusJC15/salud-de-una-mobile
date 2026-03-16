@@ -1,9 +1,14 @@
 import { MaterialIcons } from '@expo/vector-icons';
-import { zodResolver } from '@hookform/resolvers/zod';
+import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Link, useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Controller, useForm } from 'react-hook-form';
+import {
+  Controller,
+  type ControllerFieldState,
+  type ControllerRenderProps,
+  useForm,
+} from 'react-hook-form';
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -11,11 +16,12 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
+  type PressableStateCallbackType,
   View,
 } from 'react-native';
 
 import { Radius } from '@/src/constants/theme';
-import { registerSchema, type RegisterInput } from '@/src/schemas/auth';
+import { type RegisterInput } from '@/src/schemas/auth';
 import { normalizeRegisterInput } from '@/src/features/patient-auth/register-payload';
 import { usePatientAuth } from '@/src/features/patient-auth/use-patient-auth';
 import { USER_GENDER_LABELS, type UserGender } from '@/src/types/enums';
@@ -25,10 +31,33 @@ import { ThemedView } from '@/src/ui/themed-view';
 
 const GENDER_OPTIONS: UserGender[] = ['MALE', 'FEMALE', 'OTHER'];
 
+function formatDateForInput(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+
+  return `${year}-${month}-${day}`;
+}
+
+function parseDateFromInput(value: string | null | undefined): Date | null {
+  if (!value) {
+    return null;
+  }
+
+  const parsedDate = new Date(`${value}T00:00:00`);
+
+  if (Number.isNaN(parsedDate.getTime())) {
+    return null;
+  }
+
+  return parsedDate;
+}
+
 export function PatientRegisterScreen() {
   const router = useRouter();
   const { registerMutation } = usePatientAuth();
   const [showPassword, setShowPassword] = useState(false);
+  const [showBirthDatePicker, setShowBirthDatePicker] = useState(false);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [termsError, setTermsError] = useState<string | null>(null);
 
@@ -38,10 +67,9 @@ export function PatientRegisterScreen() {
       lastName: '',
       email: '',
       password: '',
-      birthDate: '',
+      birthDate: undefined,
       gender: undefined,
     },
-    resolver: zodResolver(registerSchema),
   });
 
   const gradientColors = ['#F0F9FA', '#E0F2F1'] as const;
@@ -127,128 +155,197 @@ export function PatientRegisterScreen() {
             <Controller
               control={form.control}
               name="firstName"
-              render={({ field: { onBlur, onChange, value }, fieldState: { error } }) => (
-                <AppIconTextField
-                  autoCapitalize="words"
-                  errorColor={errorColor}
-                  errorMessage={error?.message}
-                  focusColor={primaryColor}
-                  iconColor={iconTint}
-                  iconName="badge"
-                  inputBackgroundColor={inputBackground}
-                  inputBorderColor={inputBorderColor}
-                  inputTextColor={inputTextColor}
-                  label="Nombre"
-                  labelColor={sectionSubtle}
-                  onBlur={onBlur}
-                  onChangeText={onChange}
-                  placeholder="Ej: Ana"
-                  placeholderColor={placeholderColor}
-                  selectionColor={aquamarineColor}
-                  value={value}
-                />
-              )}
+              render={(renderProps: { field: ControllerRenderProps<RegisterInput, 'firstName'>; fieldState: ControllerFieldState }) => {
+                const { onBlur, onChange, value } = renderProps.field;
+                const { error } = renderProps.fieldState;
+
+                return (
+                  <AppIconTextField
+                    autoCapitalize="words"
+                    errorColor={errorColor}
+                    errorMessage={error?.message}
+                    focusColor={primaryColor}
+                    iconColor={iconTint}
+                    iconName="badge"
+                    inputBackgroundColor={inputBackground}
+                    inputBorderColor={inputBorderColor}
+                    inputTextColor={inputTextColor}
+                    label="Nombre"
+                    labelColor={sectionSubtle}
+                    onBlur={onBlur}
+                    onChangeText={onChange}
+                    placeholder="Ej: Ana"
+                    placeholderColor={placeholderColor}
+                    selectionColor={aquamarineColor}
+                    value={value}
+                  />
+                );
+              }}
             />
 
             <Controller
               control={form.control}
               name="lastName"
-              render={({ field: { onBlur, onChange, value }, fieldState: { error } }) => (
-                <AppIconTextField
-                  autoCapitalize="words"
-                  errorColor={errorColor}
-                  errorMessage={error?.message}
-                  focusColor={primaryColor}
-                  iconColor={iconTint}
-                  iconName="person-outline"
-                  inputBackgroundColor={inputBackground}
-                  inputBorderColor={inputBorderColor}
-                  inputTextColor={inputTextColor}
-                  label="Apellido"
-                  labelColor={sectionSubtle}
-                  onBlur={onBlur}
-                  onChangeText={onChange}
-                  placeholder="Ej: Gómez"
-                  placeholderColor={placeholderColor}
-                  selectionColor={aquamarineColor}
-                  value={value}
-                />
-              )}
+              render={(renderProps: { field: ControllerRenderProps<RegisterInput, 'lastName'>; fieldState: ControllerFieldState }) => {
+                const { onBlur, onChange, value } = renderProps.field;
+                const { error } = renderProps.fieldState;
+
+                return (
+                  <AppIconTextField
+                    autoCapitalize="words"
+                    errorColor={errorColor}
+                    errorMessage={error?.message}
+                    focusColor={primaryColor}
+                    iconColor={iconTint}
+                    iconName="person-outline"
+                    inputBackgroundColor={inputBackground}
+                    inputBorderColor={inputBorderColor}
+                    inputTextColor={inputTextColor}
+                    label="Apellido"
+                    labelColor={sectionSubtle}
+                    onBlur={onBlur}
+                    onChangeText={onChange}
+                    placeholder="Ej: Gómez"
+                    placeholderColor={placeholderColor}
+                    selectionColor={aquamarineColor}
+                    value={value}
+                  />
+                );
+              }}
             />
 
             <Controller
               control={form.control}
               name="birthDate"
-              render={({ field: { onBlur, onChange, value }, fieldState: { error } }) => (
-                <AppIconTextField
-                  autoCapitalize="none"
-                  errorColor={errorColor}
-                  errorMessage={error?.message}
-                  focusColor={primaryColor}
-                  hint="Opcional. Usa formato YYYY-MM-DD."
-                  iconColor={iconTint}
-                  iconName="calendar-month"
-                  inputBackgroundColor={inputBackground}
-                  inputBorderColor={inputBorderColor}
-                  inputTextColor={inputTextColor}
-                  keyboardType="numbers-and-punctuation"
-                  label="Fecha de nacimiento"
-                  labelColor={sectionSubtle}
-                  onBlur={onBlur}
-                  onChangeText={onChange}
-                  placeholder="YYYY-MM-DD"
-                  placeholderColor={placeholderColor}
-                  selectionColor={aquamarineColor}
-                  value={value ?? ''}
-                />
-              )}
+              render={(renderProps: { field: ControllerRenderProps<RegisterInput, 'birthDate'>; fieldState: ControllerFieldState }) => {
+                const { onBlur, onChange, value } = renderProps.field;
+                const { error } = renderProps.fieldState;
+                const pickerValue = parseDateFromInput(value) ?? new Date(2000, 0, 1);
+
+                return (
+                  <ThemedView style={styles.fieldBlock}>
+                    <ThemedText style={[styles.fieldLabel, { color: sectionSubtle }]}>Fecha de nacimiento</ThemedText>
+
+                    <Pressable
+                      accessibilityLabel="Seleccionar fecha de nacimiento"
+                      accessibilityRole="button"
+                      onBlur={onBlur}
+                      onPress={() => setShowBirthDatePicker(true)}
+                      style={[
+                        styles.datePickerButton,
+                        {
+                          backgroundColor: inputBackground,
+                          borderColor: error?.message ? errorColor : inputBorderColor,
+                        },
+                      ]}
+                    >
+                      <MaterialIcons color={iconTint} name="calendar-month" size={20} />
+                      <ThemedText style={[styles.datePickerText, { color: value ? inputTextColor : placeholderColor }]}>
+                        {value ?? 'Selecciona tu fecha'}
+                      </ThemedText>
+                      <MaterialIcons color={placeholderColor} name="arrow-drop-down" size={24} />
+                    </Pressable>
+
+                    <ThemedText style={styles.hintText}>Opcional. Elige la fecha desde el selector.</ThemedText>
+
+                    {showBirthDatePicker ? (
+                      <DateTimePicker
+                        display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                        maximumDate={new Date()}
+                        mode="date"
+                        onChange={(event: DateTimePickerEvent, selectedDate?: Date) => {
+                          if (Platform.OS === 'android') {
+                            setShowBirthDatePicker(false);
+                          }
+
+                          if (event.type !== 'set' || !selectedDate) {
+                            return;
+                          }
+
+                          onChange(formatDateForInput(selectedDate));
+                        }}
+                        value={pickerValue}
+                      />
+                    ) : null}
+
+                    {showBirthDatePicker && Platform.OS === 'ios' ? (
+                      <Pressable
+                        accessibilityRole="button"
+                        onPress={() => setShowBirthDatePicker(false)}
+                        style={styles.datePickerDoneButton}
+                      >
+                        <ThemedText style={[styles.datePickerDoneText, { color: primaryColor }]}>Listo</ThemedText>
+                      </Pressable>
+                    ) : null}
+
+                    {value ? (
+                      <Pressable
+                        accessibilityRole="button"
+                        onPress={() => {
+                          onChange(undefined);
+                          setShowBirthDatePicker(false);
+                        }}
+                      >
+                        <ThemedText style={[styles.clearDateText, { color: primaryColor }]}>Limpiar fecha</ThemedText>
+                      </Pressable>
+                    ) : null}
+
+                    {error?.message ? <ThemedText style={[styles.inlineError, { color: errorColor }]}>{error.message}</ThemedText> : null}
+                  </ThemedView>
+                );
+              }}
             />
 
             <Controller
               control={form.control}
               name="gender"
-              render={({ field: { onChange, value }, fieldState: { error } }) => (
-                <ThemedView style={styles.fieldBlock}>
-                  <ThemedText style={[styles.fieldLabel, { color: sectionSubtle }]}>Género</ThemedText>
-                  <ThemedView style={styles.genderGroup}>
-                    {GENDER_OPTIONS.map((option) => {
-                      const selected = value === option;
+              render={(renderProps: { field: ControllerRenderProps<RegisterInput, 'gender'>; fieldState: ControllerFieldState }) => {
+                const { onChange, value } = renderProps.field;
+                const { error } = renderProps.fieldState;
 
-                      return (
-                        <Pressable
-                          key={option}
-                          accessibilityRole="button"
-                          onPress={() => onChange(option)}
-                          style={[
-                            styles.genderChip,
-                            {
-                              backgroundColor: selected ? primaryColor : inputBackground,
-                              borderColor: selected ? primaryColor : inputBorderColor,
-                            },
-                          ]}
-                        >
-                          <ThemedText style={[styles.genderChipText, { color: selected ? '#FFFFFF' : sectionSubtle }]}>{USER_GENDER_LABELS[option]}</ThemedText>
-                        </Pressable>
-                      );
-                    })}
+                return (
+                  <ThemedView style={styles.fieldBlock}>
+                    <ThemedText style={[styles.fieldLabel, { color: sectionSubtle }]}>Género</ThemedText>
+                    <ThemedView style={styles.genderGroup}>
+                      {GENDER_OPTIONS.map((option) => {
+                        const selected = value === option;
 
-                    <Pressable
-                      accessibilityRole="button"
-                      onPress={() => onChange(undefined)}
-                      style={[
-                        styles.genderChip,
-                        {
-                          backgroundColor: value ? inputBackground : aquamarineColor,
-                          borderColor: value ? inputBorderColor : aquamarineColor,
-                        },
-                      ]}
-                    >
-                      <ThemedText style={[styles.genderChipText, { color: value ? sectionSubtle : '#FFFFFF' }]}>Prefiero no decir</ThemedText>
-                    </Pressable>
+                        return (
+                          <Pressable
+                            key={option}
+                            accessibilityRole="button"
+                            onPress={() => onChange(option)}
+                            style={[
+                              styles.genderChip,
+                              {
+                                backgroundColor: selected ? primaryColor : inputBackground,
+                                borderColor: selected ? primaryColor : inputBorderColor,
+                              },
+                            ]}
+                          >
+                            <ThemedText style={[styles.genderChipText, { color: selected ? '#FFFFFF' : sectionSubtle }]}>{USER_GENDER_LABELS[option]}</ThemedText>
+                          </Pressable>
+                        );
+                      })}
+
+                      <Pressable
+                        accessibilityRole="button"
+                        onPress={() => onChange(undefined)}
+                        style={[
+                          styles.genderChip,
+                          {
+                            backgroundColor: value ? inputBackground : aquamarineColor,
+                            borderColor: value ? inputBorderColor : aquamarineColor,
+                          },
+                        ]}
+                      >
+                        <ThemedText style={[styles.genderChipText, { color: value ? sectionSubtle : '#FFFFFF' }]}>Prefiero no decir</ThemedText>
+                      </Pressable>
+                    </ThemedView>
+                    {error?.message ? <ThemedText style={[styles.inlineError, { color: errorColor }]}>{error.message}</ThemedText> : null}
                   </ThemedView>
-                  {error?.message ? <ThemedText style={[styles.inlineError, { color: errorColor }]}>{error.message}</ThemedText> : null}
-                </ThemedView>
-              )}
+                );
+              }}
             />
           </ThemedView>
 
@@ -263,66 +360,76 @@ export function PatientRegisterScreen() {
             <Controller
               control={form.control}
               name="email"
-              render={({ field: { onBlur, onChange, value }, fieldState: { error } }) => (
-                <AppIconTextField
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  errorColor={errorColor}
-                  errorMessage={error?.message}
-                  focusColor={primaryColor}
-                  iconColor={iconTint}
-                  iconName="mail-outline"
-                  inputBackgroundColor={inputBackground}
-                  inputBorderColor={inputBorderColor}
-                  inputTextColor={inputTextColor}
-                  keyboardType="email-address"
-                  label="Correo electrónico"
-                  labelColor={sectionSubtle}
-                  onBlur={onBlur}
-                  onChangeText={onChange}
-                  placeholder="paciente@saluddeuna.com"
-                  placeholderColor={placeholderColor}
-                  selectionColor={aquamarineColor}
-                  value={value}
-                />
-              )}
+              render={(renderProps: { field: ControllerRenderProps<RegisterInput, 'email'>; fieldState: ControllerFieldState }) => {
+                const { onBlur, onChange, value } = renderProps.field;
+                const { error } = renderProps.fieldState;
+
+                return (
+                  <AppIconTextField
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    errorColor={errorColor}
+                    errorMessage={error?.message}
+                    focusColor={primaryColor}
+                    iconColor={iconTint}
+                    iconName="mail-outline"
+                    inputBackgroundColor={inputBackground}
+                    inputBorderColor={inputBorderColor}
+                    inputTextColor={inputTextColor}
+                    keyboardType="email-address"
+                    label="Correo electrónico"
+                    labelColor={sectionSubtle}
+                    onBlur={onBlur}
+                    onChangeText={onChange}
+                    placeholder="paciente@saluddeuna.com"
+                    placeholderColor={placeholderColor}
+                    selectionColor={aquamarineColor}
+                    value={value}
+                  />
+                );
+              }}
             />
 
             <Controller
               control={form.control}
               name="password"
-              render={({ field: { onBlur, onChange, value }, fieldState: { error } }) => (
-                <AppIconTextField
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  errorColor={errorColor}
-                  errorMessage={error?.message}
-                  focusColor={primaryColor}
-                  hint="Debe tener 8+ caracteres, mayúscula, número y carácter especial."
-                  iconColor={iconTint}
-                  iconName="lock-outline"
-                  inputBackgroundColor={inputBackground}
-                  inputBorderColor={inputBorderColor}
-                  inputTextColor={inputTextColor}
-                  label="Contraseña"
-                  labelColor={sectionSubtle}
-                  onBlur={onBlur}
-                  onChangeText={onChange}
-                  placeholder="********"
-                  placeholderColor={placeholderColor}
-                  rightAccessory={
-                    <Pressable
-                      accessibilityRole="button"
-                      hitSlop={10}
-                      onPress={() => setShowPassword((prev) => !prev)}>
-                      <MaterialIcons color={subtitleColor} name={showPassword ? 'visibility-off' : 'visibility'} size={20} />
-                    </Pressable>
-                  }
-                  secureTextEntry={!showPassword}
-                  selectionColor={aquamarineColor}
-                  value={value}
-                />
-              )}
+              render={(renderProps: { field: ControllerRenderProps<RegisterInput, 'password'>; fieldState: ControllerFieldState }) => {
+                const { onBlur, onChange, value } = renderProps.field;
+                const { error } = renderProps.fieldState;
+
+                return (
+                  <AppIconTextField
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    errorColor={errorColor}
+                    errorMessage={error?.message}
+                    focusColor={primaryColor}
+                    hint="Debe tener 8+ caracteres, mayúscula, número y carácter especial."
+                    iconColor={iconTint}
+                    iconName="lock-outline"
+                    inputBackgroundColor={inputBackground}
+                    inputBorderColor={inputBorderColor}
+                    inputTextColor={inputTextColor}
+                    label="Contraseña"
+                    labelColor={sectionSubtle}
+                    onBlur={onBlur}
+                    onChangeText={onChange}
+                    placeholder="********"
+                    placeholderColor={placeholderColor}
+                    rightAccessory={
+                      <Pressable
+                        accessibilityRole="button"
+                        hitSlop={10}
+                        onPress={() => setShowPassword((prev) => !prev)}>
+                        <MaterialIcons color={subtitleColor} name={showPassword ? 'visibility-off' : 'visibility'} size={20} />
+                      </Pressable>
+                    }
+                    secureTextEntry={!showPassword}
+                    selectionColor={aquamarineColor}
+                    value={value}
+                  />
+                );
+              }}
             />
 
             <Pressable
@@ -359,7 +466,7 @@ export function PatientRegisterScreen() {
               accessibilityRole="button"
               disabled={registerMutation.isPending}
               onPress={() => void onSubmit()}
-              style={({ pressed }) => [styles.registerButton, { opacity: registerMutation.isPending ? 0.74 : 1, transform: [{ scale: pressed ? 0.99 : 1 }] }]}
+              style={({ pressed }: PressableStateCallbackType) => [styles.registerButton, { opacity: registerMutation.isPending ? 0.74 : 1, transform: [{ scale: pressed ? 0.99 : 1 }] }]}
             >
               <LinearGradient colors={[aquamarineColor, primaryColor]} end={{ x: 1, y: 0.5 }} start={{ x: 0, y: 0.5 }} style={styles.registerButtonGradient}>
                 {registerMutation.isPending ? (
@@ -512,6 +619,40 @@ const styles = StyleSheet.create({
   fieldBlock: {
     backgroundColor: 'transparent',
     gap: 6,
+  },
+  datePickerButton: {
+    alignItems: 'center',
+    borderRadius: Radius.lg,
+    borderWidth: 1,
+    flexDirection: 'row',
+    gap: 10,
+    minHeight: 54,
+    paddingHorizontal: 12,
+  },
+  datePickerText: {
+    flex: 1,
+    fontSize: 15,
+    lineHeight: 22,
+  },
+  datePickerDoneButton: {
+    alignSelf: 'flex-end',
+    paddingHorizontal: 2,
+    paddingVertical: 4,
+  },
+  datePickerDoneText: {
+    fontSize: 14,
+    fontWeight: '700',
+    lineHeight: 20,
+  },
+  clearDateText: {
+    fontSize: 13,
+    fontWeight: '700',
+    lineHeight: 18,
+  },
+  hintText: {
+    color: '#475569',
+    fontSize: 12,
+    lineHeight: 17,
   },
   fieldLabel: {
     fontSize: 14,
