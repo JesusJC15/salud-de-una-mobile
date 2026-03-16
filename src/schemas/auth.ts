@@ -12,7 +12,7 @@ export const loginSchema = z.object({
 export const registerSchema = z.object({
   email: emailSchema,
   password: z.string().regex(passwordRule, {
-    message: 'La contraseña debe incluir una mayúscula, un número y un carácter especial.',
+    message: 'La contraseña debe tener al menos 8 caracteres e incluir una mayúscula, un número y un carácter especial.',
   }),
   firstName: z.string().trim().min(2, 'El nombre debe tener al menos 2 caracteres.'),
   lastName: z.string().trim().min(2, 'El apellido debe tener al menos 2 caracteres.'),
