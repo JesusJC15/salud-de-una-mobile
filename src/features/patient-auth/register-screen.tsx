@@ -252,7 +252,7 @@ export function PatientRegisterScreen() {
                           onBlur={onBlur}
                           onChangeText={(text) => {
                             const trimmed = text.trim();
-                            onChange(trimmed === '' ? undefined : text);
+                            onChange(trimmed === '' ? undefined : trimmed);
                           }}
                           placeholder="YYYY-MM-DD"
                           placeholderTextColor={placeholderColor}
