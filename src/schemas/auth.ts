@@ -16,12 +16,20 @@ export const registerSchema = z.object({
   }),
   firstName: z.string().trim().min(2, 'El nombre debe tener al menos 2 caracteres.'),
   lastName: z.string().trim().min(2, 'El apellido debe tener al menos 2 caracteres.'),
-  birthDate: z
-    .string()
-    .trim()
-    .regex(isoDateRule, { message: 'La fecha de nacimiento debe usar el formato YYYY-MM-DD.' })
-    .nullable()
-    .optional(),
+  birthDate: z.preprocess(
+    (value) => {
+      if (typeof value === 'string') {
+        const trimmed = value.trim();
+        return trimmed === '' ? undefined : trimmed;
+      }
+      return value;
+    },
+    z
+      .string()
+      .regex(isoDateRule, { message: 'La fecha de nacimiento debe usar el formato YYYY-MM-DD.' })
+      .nullable()
+      .optional(),
+  ),
   gender: z.enum(['MALE', 'FEMALE', 'OTHER']).optional(),
 });
 
