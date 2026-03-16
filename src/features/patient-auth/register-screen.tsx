@@ -22,6 +22,7 @@ import {
 import { zodResolver } from '@hookform/resolvers/zod';
 
 import { Radius } from '@/src/constants/theme';
+import { useColorScheme } from '@/src/hooks/use-color-scheme';
 import { type RegisterInput, registerSchema } from '@/src/schemas/auth';
 import { normalizeRegisterInput } from '@/src/features/patient-auth/register-payload';
 import { usePatientAuth } from '@/src/features/patient-auth/use-patient-auth';
@@ -74,22 +75,27 @@ export function PatientRegisterScreen() {
     },
   });
 
-  const gradientColors = ['#F0F9FA', '#E0F2F1'] as const;
-  const topBarColor = '#0F172A';
-  const titleColor = '#0F172A';
-  const subtitleColor = '#475569';
-  const sectionTitleColor = '#0F172A';
-  const sectionSubtle = '#334155';
-  const cardBackground = '#FFFFFF';
-  const cardBorderColor = 'rgba(20, 184, 166, 0.18)';
-  const inputBackground = '#FFFFFF';
-  const inputBorderColor = '#D7E3EC';
-  const iconTint = '#14B8A6';
-  const inputTextColor = '#0F172A';
-  const placeholderColor = '#94A3B8';
+  const colorScheme = useColorScheme();
+  const isDarkMode = colorScheme === 'dark';
+
+  const gradientColors = (isDarkMode
+    ? ['#020617', '#0F172A']
+    : ['#F0F9FA', '#E0F2F1']) as const;
+  const topBarColor = isDarkMode ? '#E5F3FF' : '#0F172A';
+  const titleColor = isDarkMode ? '#E5F3FF' : '#0F172A';
+  const subtitleColor = isDarkMode ? '#CBD5F5' : '#475569';
+  const sectionTitleColor = isDarkMode ? '#E5F3FF' : '#0F172A';
+  const sectionSubtle = isDarkMode ? '#94A3B8' : '#334155';
+  const cardBackground = isDarkMode ? '#020617' : '#FFFFFF';
+  const cardBorderColor = isDarkMode ? 'rgba(148, 163, 184, 0.6)' : 'rgba(20, 184, 166, 0.18)';
+  const inputBackground = isDarkMode ? '#020617' : '#FFFFFF';
+  const inputBorderColor = isDarkMode ? '#1F2937' : '#D7E3EC';
+  const iconTint = isDarkMode ? '#22D3EE' : '#14B8A6';
+  const inputTextColor = isDarkMode ? '#E5F3FF' : '#0F172A';
+  const placeholderColor = isDarkMode ? '#64748B' : '#94A3B8';
   const errorColor = '#DC2626';
-  const primaryColor = '#0891B2';
-  const aquamarineColor = '#14B8A6';
+  const primaryColor = isDarkMode ? '#06B6D4' : '#0891B2';
+  const aquamarineColor = isDarkMode ? '#22D3EE' : '#14B8A6';
   const orbPrimary = 'rgba(8, 145, 178, 0.1)';
   const orbSecondary = 'rgba(20, 184, 166, 0.1)';
   const orbTertiary = 'rgba(20, 184, 166, 0.05)';
