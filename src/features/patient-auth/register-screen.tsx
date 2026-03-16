@@ -19,9 +19,10 @@ import {
   type PressableStateCallbackType,
   View,
 } from 'react-native';
+import { zodResolver } from '@hookform/resolvers/zod';
 
 import { Radius } from '@/src/constants/theme';
-import { type RegisterInput } from '@/src/schemas/auth';
+import { type RegisterInput, registerSchema } from '@/src/schemas/auth';
 import { normalizeRegisterInput } from '@/src/features/patient-auth/register-payload';
 import { usePatientAuth } from '@/src/features/patient-auth/use-patient-auth';
 import { USER_GENDER_LABELS, type UserGender } from '@/src/types/enums';
@@ -62,6 +63,7 @@ export function PatientRegisterScreen() {
   const [termsError, setTermsError] = useState<string | null>(null);
 
   const form = useForm<RegisterInput>({
+    resolver: zodResolver(registerSchema),
     defaultValues: {
       firstName: '',
       lastName: '',
