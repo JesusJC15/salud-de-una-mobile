@@ -140,7 +140,6 @@ const styles = StyleSheet.create({
     minWidth: 32,
   },
   hintText: {
-    color: '#475569',
     fontSize: 12,
     lineHeight: 17,
   },
