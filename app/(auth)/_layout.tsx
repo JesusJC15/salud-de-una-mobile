@@ -15,10 +15,11 @@ export default function AuthLayout() {
         contentStyle: {
           backgroundColor: 'transparent',
         },
+        headerShown: false,
         headerShadowVisible: false,
       }}>
-      <Stack.Screen name="login" options={{ title: 'SaludDeUna' }} />
-      <Stack.Screen name="register" options={{ title: 'Crear cuenta' }} />
+      <Stack.Screen name="login" />
+      <Stack.Screen name="register" />
     </Stack>
   );
 }
