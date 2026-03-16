@@ -249,7 +249,6 @@ export function PatientRegisterScreen() {
                       <>
                         <TextInput
                           accessibilityLabel="Ingresar fecha de nacimiento"
-                          keyboardType="numeric"
                           onBlur={onBlur}
                           onChangeText={onChange}
                           placeholder="YYYY-MM-DD"
