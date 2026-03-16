@@ -82,7 +82,7 @@ export function AppIconTextField({
           placeholderTextColor={placeholderColor}
           selectionColor={selectionColor ?? focusColor}
           style={[styles.input, { color: inputTextColor }, style]}
-          value={value ?? ''}
+          value={value}
           {...props}
         />
 
