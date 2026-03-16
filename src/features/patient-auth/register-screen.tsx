@@ -250,7 +250,10 @@ export function PatientRegisterScreen() {
                         <TextInput
                           accessibilityLabel="Ingresar fecha de nacimiento"
                           onBlur={onBlur}
-                          onChangeText={onChange}
+                          onChangeText={(text) => {
+                            const trimmed = text.trim();
+                            onChange(trimmed === '' ? undefined : text);
+                          }}
                           placeholder="YYYY-MM-DD"
                           placeholderTextColor={placeholderColor}
                           value={value ?? ''}
