@@ -1,5 +1,5 @@
 import { MaterialIcons } from '@expo/vector-icons';
-import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker';
+import type { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Link, useRouter } from 'expo-router';
 import { useState } from 'react';
@@ -30,6 +30,15 @@ import { USER_GENDER_LABELS, type UserGender } from '@/src/types/enums';
 import { AppIconTextField } from '@/src/ui/icon-text-field';
 import { ThemedText } from '@/src/ui/themed-text';
 import { ThemedView } from '@/src/ui/themed-view';
+
+// Dynamically load the native DateTimePicker only on non-web platforms to avoid
+// bundling/runtime issues when building for web.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let DateTimePicker: any;
+if (Platform.OS !== 'web') {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires, global-require
+  DateTimePicker = require('@react-native-community/datetimepicker').default;
+}
 
 const GENDER_OPTIONS: UserGender[] = ['MALE', 'FEMALE', 'OTHER'];
 
