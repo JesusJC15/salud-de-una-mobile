@@ -308,14 +308,15 @@ export function PatientRegisterScreen() {
                 return (
                   <ThemedView style={styles.fieldBlock}>
                     <ThemedText style={[styles.fieldLabel, { color: sectionSubtle }]}>Género</ThemedText>
-                    <ThemedView style={styles.genderGroup}>
+                    <ThemedView style={styles.genderGroup} accessibilityRole="radiogroup">
                       {GENDER_OPTIONS.map((option) => {
                         const selected = value === option;
 
                         return (
                           <Pressable
                             key={option}
-                            accessibilityRole="button"
+                            accessibilityRole="radio"
+                            accessibilityState={{ selected }}
                             onPress={() => onChange(option)}
                             style={[
                               styles.genderChip,
@@ -331,7 +332,8 @@ export function PatientRegisterScreen() {
                       })}
 
                       <Pressable
-                        accessibilityRole="button"
+                        accessibilityRole="radio"
+                        accessibilityState={{ selected: !value }}
                         onPress={() => onChange(undefined)}
                         style={[
                           styles.genderChip,
