@@ -42,6 +42,9 @@ export function AppIconTextField({
   onFocus,
   style,
   value,
+  accessibilityLabel,
+  accessibilityHint,
+  accessibilityState,
   ...props
 }: AppIconTextFieldProps) {
   const [isFocused, setIsFocused] = useState(false);
@@ -54,6 +57,13 @@ export function AppIconTextField({
   if (errorMessage) {
     resolvedBorderColor = errorColor;
   }
+
+  const resolvedAccessibilityLabel = accessibilityLabel ?? label;
+  const resolvedAccessibilityHint = accessibilityHint ?? errorMessage ?? hint;
+  const resolvedAccessibilityState = {
+    ...(accessibilityState ?? {}),
+    invalid: accessibilityState?.invalid ?? !!errorMessage,
+  };
 
   return (
     <View style={styles.fieldBlock}>
@@ -79,6 +89,9 @@ export function AppIconTextField({
             setIsFocused(true);
             onFocus?.(event);
           }}
+          accessibilityLabel={resolvedAccessibilityLabel}
+          accessibilityHint={resolvedAccessibilityHint}
+          accessibilityState={resolvedAccessibilityState}
           placeholderTextColor={placeholderColor}
           selectionColor={selectionColor ?? focusColor}
           style={[styles.input, { color: inputTextColor }, style]}
