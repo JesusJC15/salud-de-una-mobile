@@ -66,6 +66,18 @@ describe('auth schemas', () => {
     expect(parsed.gender).toBeUndefined();
   });
 
+  it('registerSchema normalizes empty or whitespace birthDate to undefined', () => {
+    const parsed = registerSchema.parse({
+      email: 'patient@example.com',
+      firstName: 'Ana',
+      lastName: 'Gomez',
+      password: STRONG_PASSWORD,
+      birthDate: '   ',
+    });
+
+    expect(parsed.birthDate).toBeUndefined();
+  });
+
   it('registerSchema accepts birthDate as null', () => {
     const parsed = registerSchema.parse({
       email: 'patient@example.com',
