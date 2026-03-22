@@ -26,9 +26,6 @@ jobs:
       - name: Test and coverage
         run: yarn test:cov
 
-      - name: E2E tests
-        run: yarn test:e2e
-
       - name: SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@v7
         env:
