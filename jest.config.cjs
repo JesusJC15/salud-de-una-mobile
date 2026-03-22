@@ -6,4 +6,29 @@ module.exports = {
     '^@/(.*)$': '<rootDir>/$1',
   },
   clearMocks: true,
+  collectCoverageFrom: [
+    'src/features/**/*.ts',
+    'src/lib/**/*.ts',
+    'src/schemas/**/*.ts',
+    'src/services/**/*.ts',
+    '!src/features/**/use-*.ts',
+    '!src/services/api/**',
+    '!src/services/auth/token-storage.ts',
+    '!src/**/*.d.ts',
+    '!src/**/README.md',
+  ],
+  coverageDirectory: '<rootDir>/coverage',
+  coveragePathIgnorePatterns: [
+    '/node_modules/',
+    '<rootDir>/src/tests/',
+  ],
+  coverageReporters: ['text', 'lcov', 'html'],
+  coverageThreshold: {
+    global: {
+      branches: 80,
+      functions: 80,
+      lines: 80,
+      statements: 80,
+    },
+  },
 };

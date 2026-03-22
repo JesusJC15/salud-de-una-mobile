@@ -18,10 +18,11 @@ describe('authService', () => {
     (apiClient.post as jest.Mock).mockResolvedValue({ data: { id: '1' } });
 
     await authService.registerPatient({
-      email: 'patient@example.com',
+      email: '  patient@example.com  ',
       firstName: 'Ana',
       lastName: 'Gomez',
       password: 'Abcdef1!',
+      birthDate: null,
     });
 
     expect(apiClient.post).toHaveBeenCalledWith('/auth/patient/register', {
@@ -29,6 +30,7 @@ describe('authService', () => {
       firstName: 'Ana',
       lastName: 'Gomez',
       password: 'Abcdef1!',
+      birthDate: null,
     });
   });
 
