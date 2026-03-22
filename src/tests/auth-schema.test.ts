@@ -138,6 +138,50 @@ describe('auth schemas', () => {
     expect(result.success).toBe(false);
   });
 
+  it('registerFormSchema treats whitespace-only confirmPassword as missing (required error)', () => {
+    const result = registerFormSchema.safeParse({
+      email: 'patient@example.com',
+      firstName: 'Ana',
+      lastName: 'Gomez',
+      password: STRONG_PASSWORD,
+      confirmPassword: '   ',
+    });
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      const confirmPasswordErrors = result.error.issues.filter(
+        (issue) => issue.path[0] === 'confirmPassword',
+      );
+      expect(confirmPasswordErrors[0].message).toBe('Confirma tu contraseña.');
+    }
+  });
+
+  it('registerSchema trims password before validating complexity', () => {
+    const result = registerSchema.safeParse({
+      email: 'patient@example.com',
+      firstName: 'Ana',
+      lastName: 'Gomez',
+      password: `  ${STRONG_PASSWORD}  `,
+    });
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.password).toBe(STRONG_PASSWORD);
+    }
+  });
+
+  it('registerFormSchema accepts matching passwords with surrounding whitespace', () => {
+    const result = registerFormSchema.safeParse({
+      email: 'patient@example.com',
+      firstName: 'Ana',
+      lastName: 'Gomez',
+      password: `  ${STRONG_PASSWORD}  `,
+      confirmPassword: `  ${STRONG_PASSWORD}  `,
+    });
+
+    expect(result.success).toBe(true);
+  });
+
   it('registerFormSchema accepts matching confirmPassword', () => {
     const result = registerFormSchema.safeParse({
       email: 'patient@example.com',
