@@ -10,6 +10,7 @@
     "web": "expo start --web",
     "lint": "expo lint",
     "test": "jest",
+    "test:cov": "jest --coverage",
     "test:watch": "jest --watch"
   },
   "dependencies": {

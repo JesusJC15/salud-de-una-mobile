@@ -23,6 +23,16 @@ describe('patientNotificationService', () => {
     });
   });
 
+  it('list uses an empty params object when no filters are provided', async () => {
+    (apiClient.get as jest.Mock).mockResolvedValue({ data: { items: [], unreadCount: 0 } });
+
+    await patientNotificationService.list();
+
+    expect(apiClient.get).toHaveBeenCalledWith('/notifications/me', {
+      params: {},
+    });
+  });
+
   it('markAsRead calls PATCH /notifications/:notificationId/read', async () => {
     (apiClient.patch as jest.Mock).mockResolvedValue({ data: { id: 'n1', read: true } });
 
