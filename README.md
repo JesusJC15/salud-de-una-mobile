@@ -89,20 +89,20 @@ Estas librerias forman parte de la base tecnica actual del proyecto.
 - `npm run web`
 - `npm run lint`
 - `npm run test`
-- `npm run test:ci`
+- `npm run test:cov`
 - `npm run reset-project`
 
 ## Calidad en CI
 
-El workflow `/.github/workflows/ci.yml` ejecuta lint, pruebas con cobertura y analisis de SonarCloud.
+El workflow `/.github/workflows/build.yml` ejecuta lint, pruebas con cobertura y analisis de SonarCloud.
 
 Requiere:
 
-- secret `SONAR_TOKEN`
+- secret `SONARCLOUD_TOKEN`
 - variable `SONAR_ORGANIZATION` si tu organizacion en SonarCloud no coincide con el owner de GitHub
 - variable `SONAR_PROJECT_KEY` si el project key en SonarCloud no sigue el patron `owner_repo`
 
-La cobertura para Sonar se publica desde `coverage/lcov.info`, generado por `npm run test:ci`.
+La cobertura para Sonar se publica desde `coverage/lcov.info`, generado por `npm run test:cov`.
 
 ## Relacion con el backend
 
