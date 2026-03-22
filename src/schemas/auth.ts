@@ -16,22 +16,32 @@ export const registerSchema = z.object({
   }),
   firstName: z.string().trim().min(2, 'El nombre debe tener al menos 2 caracteres.'),
   lastName: z.string().trim().min(2, 'El apellido debe tener al menos 2 caracteres.'),
-  birthDate: z.preprocess(
-    (value) => {
-      if (typeof value === 'string') {
-        const trimmed = value.trim();
-        return trimmed === '' ? undefined : trimmed;
+  birthDate: z
+    .union([z.string(), z.null()])
+    .optional()
+    .transform((value) => {
+      if (typeof value !== 'string') {
+        return value;
       }
-      return value;
-    },
-    z
-      .string()
-      .regex(isoDateRule, { message: 'La fecha de nacimiento debe usar el formato YYYY-MM-DD.' })
-      .nullable()
-      .optional(),
-  ),
+
+      const trimmed = value.trim();
+      return trimmed === '' ? undefined : trimmed;
+    })
+    .refine((value) => value == null || isoDateRule.test(value), {
+      message: 'La fecha de nacimiento debe usar el formato YYYY-MM-DD.',
+    }),
   gender: z.enum(['MALE', 'FEMALE', 'OTHER']).optional(),
 });
 
+export const registerFormSchema = registerSchema
+  .extend({
+    confirmPassword: z.string().min(1, 'Confirma tu contraseña.'),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: 'Las contraseñas no coinciden.',
+    path: ['confirmPassword'],
+  });
+
 export type LoginInput = z.infer<typeof loginSchema>;
 export type RegisterInput = z.infer<typeof registerSchema>;
+export type RegisterFormInput = z.infer<typeof registerFormSchema>;

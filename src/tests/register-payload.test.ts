@@ -9,6 +9,7 @@ describe('normalizeRegisterInput', () => {
       firstName: 'Ana',
       lastName: 'Gomez',
       password: STRONG_PASSWORD,
+      confirmPassword: STRONG_PASSWORD,
       birthDate: '   ',
       gender: 'FEMALE',
     });
@@ -22,6 +23,7 @@ describe('normalizeRegisterInput', () => {
       firstName: 'Ana',
       lastName: 'Gomez',
       password: STRONG_PASSWORD,
+      confirmPassword: STRONG_PASSWORD,
       birthDate: ' 1990-08-20 ',
       gender: 'FEMALE',
     });
@@ -35,6 +37,7 @@ describe('normalizeRegisterInput', () => {
       firstName: 'Ana',
       lastName: 'Gomez',
       password: STRONG_PASSWORD,
+      confirmPassword: STRONG_PASSWORD,
       birthDate: undefined,
       gender: 'OTHER',
     });
@@ -47,5 +50,6 @@ describe('normalizeRegisterInput', () => {
       birthDate: null,
       gender: 'OTHER',
     });
+    expect(result).not.toHaveProperty('confirmPassword');
   });
 });
