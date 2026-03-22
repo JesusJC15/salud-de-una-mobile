@@ -1,12 +1,14 @@
 import { MaterialIcons } from '@expo/vector-icons';
-import type { DateTimePickerEvent } from '@react-native-community/datetimepicker';
+import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Link, useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useState, type ComponentProps, type Dispatch, type SetStateAction } from 'react';
 import {
   Controller,
+  type Control,
   type ControllerFieldState,
   type ControllerRenderProps,
+  useController,
   useForm,
 } from 'react-hook-form';
 import {
@@ -21,10 +23,11 @@ import {
   View,
 } from 'react-native';
 import { zodResolver } from '@hookform/resolvers/zod';
+import type { z } from 'zod';
 
 import { Radius } from '@/src/constants/theme';
 import { useColorScheme } from '@/src/hooks/use-color-scheme';
-import { type RegisterInput, registerSchema } from '@/src/schemas/auth';
+import { type RegisterFormInput, registerFormSchema } from '@/src/schemas/auth';
 import { normalizeRegisterInput } from '@/src/features/patient-auth/register-payload';
 import { usePatientAuth } from '@/src/features/patient-auth/use-patient-auth';
 import { USER_GENDER_LABELS, type UserGender } from '@/src/types/enums';
@@ -32,16 +35,48 @@ import { AppIconTextField } from '@/src/ui/icon-text-field';
 import { ThemedText } from '@/src/ui/themed-text';
 import { ThemedView } from '@/src/ui/themed-view';
 
-// Dynamically load the native DateTimePicker only on non-web platforms to avoid
-// bundling/runtime issues when building for web.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let DateTimePicker: any;
-if (Platform.OS !== 'web') {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires, global-require
-  DateTimePicker = require('@react-native-community/datetimepicker').default;
-}
-
 const GENDER_OPTIONS: UserGender[] = ['MALE', 'FEMALE', 'OTHER'];
+type RegisterFormValues = z.input<typeof registerFormSchema>;
+
+const DARK_MODE_PALETTE = {
+  aquamarineColor: '#22D3EE',
+  cardBackground: '#020617',
+  cardBorderColor: 'rgba(148, 163, 184, 0.6)',
+  gradientColors: ['#020617', '#0F172A'] as const,
+  iconTint: '#22D3EE',
+  inputBackground: '#020617',
+  inputBorderColor: '#1F2937',
+  inputTextColor: '#E5F3FF',
+  placeholderColor: '#64748B',
+  primaryColor: '#06B6D4',
+  sectionSubtle: '#94A3B8',
+  sectionTitleColor: '#E5F3FF',
+  subtitleColor: '#CBD5F5',
+  titleColor: '#E5F3FF',
+  topBarColor: '#E5F3FF',
+};
+
+const LIGHT_MODE_PALETTE = {
+  aquamarineColor: '#14B8A6',
+  cardBackground: '#FFFFFF',
+  cardBorderColor: 'rgba(20, 184, 166, 0.18)',
+  gradientColors: ['#F0F9FA', '#E0F2F1'] as const,
+  iconTint: '#14B8A6',
+  inputBackground: '#FFFFFF',
+  inputBorderColor: '#D7E3EC',
+  inputTextColor: '#0F172A',
+  placeholderColor: '#94A3B8',
+  primaryColor: '#0891B2',
+  sectionSubtle: '#334155',
+  sectionTitleColor: '#0F172A',
+  subtitleColor: '#475569',
+  titleColor: '#0F172A',
+  topBarColor: '#0F172A',
+};
+
+const ORB_PRIMARY = 'rgba(8, 145, 178, 0.1)';
+const ORB_SECONDARY = 'rgba(20, 184, 166, 0.1)';
+const ORB_TERTIARY = 'rgba(20, 184, 166, 0.05)';
 
 function formatDateForInput(date: Date): string {
   const year = date.getFullYear();
@@ -65,21 +100,263 @@ function parseDateFromInput(value: string | null | undefined): Date | null {
   return parsedDate;
 }
 
+type BirthDateFieldProps = {
+  control: Control<RegisterFormValues>;
+  errorColor: string;
+  iconTint: string;
+  inputBackground: string;
+  inputBorderColor: string;
+  inputTextColor: string;
+  placeholderColor: string;
+  primaryColor: string;
+  sectionSubtle: string;
+  setShowBirthDatePicker: Dispatch<SetStateAction<boolean>>;
+  showBirthDatePicker: boolean;
+};
+
+type PasswordFieldName = 'password' | 'confirmPassword';
+type PasswordFieldIconName = Extract<ComponentProps<typeof MaterialIcons>['name'], 'lock-outline' | 'lock-reset'>;
+
+type PasswordFieldProps = {
+  accessibilityHint: string;
+  control: Control<RegisterFormValues>;
+  errorColor: string;
+  hideLabel: string;
+  hint?: string;
+  iconColor: string;
+  iconName: PasswordFieldIconName;
+  inputBackgroundColor: string;
+  inputBorderColor: string;
+  inputTextColor: string;
+  label: string;
+  labelColor: string;
+  name: PasswordFieldName;
+  placeholderColor: string;
+  primaryColor: string;
+  selectionColor: string;
+  showLabel: string;
+  subtitleColor: string;
+  visible: boolean;
+  setVisible: Dispatch<SetStateAction<boolean>>;
+};
+
+type BirthDateInputProps = {
+  errorMessage: string | undefined;
+  errorColor: string;
+  iconTint: string;
+  inputBackground: string;
+  inputBorderColor: string;
+  inputTextColor: string;
+  onBlur: () => void;
+  onChange: (value: string | undefined) => void;
+  placeholderColor: string;
+  pickerValue: Date;
+  primaryColor: string;
+  setShowBirthDatePicker: Dispatch<SetStateAction<boolean>>;
+  showBirthDatePicker: boolean;
+  value: string | null | undefined;
+};
+
+function BirthDateWebInput(props: Readonly<BirthDateInputProps>) {
+  return (
+    <>
+      <TextInput
+        accessibilityLabel="Ingresar fecha de nacimiento"
+        onBlur={props.onBlur}
+        onChangeText={(text) => {
+          const trimmed = text.trim();
+          props.onChange(trimmed === '' ? undefined : trimmed);
+        }}
+        placeholder="YYYY-MM-DD"
+        placeholderTextColor={props.placeholderColor}
+        value={props.value ?? ''}
+        style={[
+          styles.datePickerButton,
+          {
+            backgroundColor: props.inputBackground,
+            borderColor: props.errorMessage ? props.errorColor : props.inputBorderColor,
+            color: props.inputTextColor,
+          },
+        ]}
+      />
+
+      <ThemedText style={styles.hintText}>Opcional. Ingresa la fecha en formato AAAA-MM-DD.</ThemedText>
+    </>
+  );
+}
+
+function BirthDateNativeInput(props: Readonly<BirthDateInputProps>) {
+  return (
+    <>
+      <Pressable
+        accessibilityLabel="Seleccionar fecha de nacimiento"
+        accessibilityRole="button"
+        onBlur={props.onBlur}
+        onPress={() => {
+          props.setShowBirthDatePicker(true);
+        }}
+        style={[
+          styles.datePickerButton,
+          {
+            backgroundColor: props.inputBackground,
+            borderColor: props.errorMessage ? props.errorColor : props.inputBorderColor,
+          },
+        ]}
+      >
+        <MaterialIcons color={props.iconTint} name="calendar-month" size={20} />
+        <ThemedText style={[styles.datePickerText, { color: props.value ? props.inputTextColor : props.placeholderColor }]}>
+          {props.value ?? 'Selecciona tu fecha'}
+        </ThemedText>
+        <MaterialIcons color={props.placeholderColor} name="arrow-drop-down" size={24} />
+      </Pressable>
+
+      <ThemedText style={styles.hintText}>Opcional. Elige la fecha desde el selector.</ThemedText>
+
+      {props.showBirthDatePicker ? (
+        <DateTimePicker
+          display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+          maximumDate={new Date()}
+          mode="date"
+          onChange={(event: DateTimePickerEvent, selectedDate?: Date) => {
+            if (Platform.OS === 'android') {
+              props.setShowBirthDatePicker(false);
+            }
+
+            if (event.type !== 'set' || !selectedDate) {
+              return;
+            }
+
+            props.onChange(formatDateForInput(selectedDate));
+          }}
+          value={props.pickerValue}
+        />
+      ) : null}
+
+      {props.showBirthDatePicker && Platform.OS === 'ios' ? (
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => props.setShowBirthDatePicker(false)}
+          style={styles.datePickerDoneButton}
+        >
+          <ThemedText style={[styles.datePickerDoneText, { color: props.primaryColor }]}>Listo</ThemedText>
+        </Pressable>
+      ) : null}
+    </>
+  );
+}
+
+function BirthDateField(props: Readonly<BirthDateFieldProps>) {
+  const { field, fieldState } = useController({
+    control: props.control,
+    name: 'birthDate',
+  });
+
+  const { onBlur, onChange, value } = field;
+  const { error } = fieldState;
+  const pickerValue = parseDateFromInput(value) ?? new Date(2000, 0, 1);
+  const dateInputProps: BirthDateInputProps = {
+    errorColor: props.errorColor,
+    errorMessage: error?.message,
+    iconTint: props.iconTint,
+    inputBackground: props.inputBackground,
+    inputBorderColor: props.inputBorderColor,
+    inputTextColor: props.inputTextColor,
+    onBlur,
+    onChange,
+    pickerValue,
+    placeholderColor: props.placeholderColor,
+    primaryColor: props.primaryColor,
+    setShowBirthDatePicker: props.setShowBirthDatePicker,
+    showBirthDatePicker: props.showBirthDatePicker,
+    value,
+  };
+
+  return (
+    <ThemedView style={styles.fieldBlock}>
+      <ThemedText style={[styles.fieldLabel, { color: props.sectionSubtle }]}>Fecha de nacimiento</ThemedText>
+
+      {Platform.OS === 'web' ? <BirthDateWebInput {...dateInputProps} /> : <BirthDateNativeInput {...dateInputProps} />}
+
+      {value ? (
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => {
+            onChange(undefined);
+            props.setShowBirthDatePicker(false);
+          }}
+        >
+          <ThemedText style={[styles.clearDateText, { color: props.primaryColor }]}>Limpiar fecha</ThemedText>
+        </Pressable>
+      ) : null}
+
+      {error?.message ? <ThemedText style={[styles.inlineError, { color: props.errorColor }]}>{error.message}</ThemedText> : null}
+    </ThemedView>
+  );
+}
+
+function PasswordField(props: Readonly<PasswordFieldProps>) {
+  const { field, fieldState } = useController({
+    control: props.control,
+    name: props.name,
+  });
+
+  const { onBlur, onChange, value } = field;
+  const { error } = fieldState;
+
+  return (
+    <AppIconTextField
+      autoCapitalize="none"
+      autoCorrect={false}
+      errorColor={props.errorColor}
+      errorMessage={error?.message}
+      focusColor={props.primaryColor}
+      hint={props.hint}
+      iconColor={props.iconColor}
+      iconName={props.iconName}
+      inputBackgroundColor={props.inputBackgroundColor}
+      inputBorderColor={props.inputBorderColor}
+      inputTextColor={props.inputTextColor}
+      label={props.label}
+      labelColor={props.labelColor}
+      onBlur={onBlur}
+      onChangeText={onChange}
+      placeholder="********"
+      placeholderColor={props.placeholderColor}
+      rightAccessory={
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={props.visible ? props.hideLabel : props.showLabel}
+          accessibilityHint={props.accessibilityHint}
+          accessibilityState={{ selected: props.visible }}
+          hitSlop={10}
+          onPress={() => props.setVisible((prev) => !prev)}>
+          <MaterialIcons color={props.subtitleColor} name={props.visible ? 'visibility-off' : 'visibility'} size={20} />
+        </Pressable>
+      }
+      secureTextEntry={!props.visible}
+      selectionColor={props.selectionColor}
+      value={value}
+    />
+  );
+}
+
 export function PatientRegisterScreen() {
   const router = useRouter();
   const { registerMutation } = usePatientAuth();
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [showBirthDatePicker, setShowBirthDatePicker] = useState(false);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [termsError, setTermsError] = useState<string | null>(null);
 
-  const form = useForm<RegisterInput>({
-    resolver: zodResolver(registerSchema),
+  const form = useForm<RegisterFormValues, undefined, RegisterFormInput>({
+    resolver: zodResolver(registerFormSchema),
     defaultValues: {
       firstName: '',
       lastName: '',
       email: '',
       password: '',
+      confirmPassword: '',
       birthDate: undefined,
       gender: undefined,
     },
@@ -88,27 +365,25 @@ export function PatientRegisterScreen() {
   const colorScheme = useColorScheme();
   const isDarkMode = colorScheme === 'dark';
 
-  const gradientColors = (isDarkMode
-    ? ['#020617', '#0F172A']
-    : ['#F0F9FA', '#E0F2F1']) as const;
-  const topBarColor = isDarkMode ? '#E5F3FF' : '#0F172A';
-  const titleColor = isDarkMode ? '#E5F3FF' : '#0F172A';
-  const subtitleColor = isDarkMode ? '#CBD5F5' : '#475569';
-  const sectionTitleColor = isDarkMode ? '#E5F3FF' : '#0F172A';
-  const sectionSubtle = isDarkMode ? '#94A3B8' : '#334155';
-  const cardBackground = isDarkMode ? '#020617' : '#FFFFFF';
-  const cardBorderColor = isDarkMode ? 'rgba(148, 163, 184, 0.6)' : 'rgba(20, 184, 166, 0.18)';
-  const inputBackground = isDarkMode ? '#020617' : '#FFFFFF';
-  const inputBorderColor = isDarkMode ? '#1F2937' : '#D7E3EC';
-  const iconTint = isDarkMode ? '#22D3EE' : '#14B8A6';
-  const inputTextColor = isDarkMode ? '#E5F3FF' : '#0F172A';
-  const placeholderColor = isDarkMode ? '#64748B' : '#94A3B8';
+  const palette = isDarkMode ? DARK_MODE_PALETTE : LIGHT_MODE_PALETTE;
+  const {
+    aquamarineColor,
+    cardBackground,
+    cardBorderColor,
+    gradientColors,
+    iconTint,
+    inputBackground,
+    inputBorderColor,
+    inputTextColor,
+    placeholderColor,
+    primaryColor,
+    sectionSubtle,
+    sectionTitleColor,
+    subtitleColor,
+    titleColor,
+    topBarColor,
+  } = palette;
   const errorColor = '#DC2626';
-  const primaryColor = isDarkMode ? '#06B6D4' : '#0891B2';
-  const aquamarineColor = isDarkMode ? '#22D3EE' : '#14B8A6';
-  const orbPrimary = 'rgba(8, 145, 178, 0.1)';
-  const orbSecondary = 'rgba(20, 184, 166, 0.1)';
-  const orbTertiary = 'rgba(20, 184, 166, 0.05)';
 
   const onSubmit = form.handleSubmit(async (values) => {
     if (!acceptedTerms) {
@@ -125,9 +400,9 @@ export function PatientRegisterScreen() {
 
   return (
     <LinearGradient colors={gradientColors} end={{ x: 1, y: 1 }} start={{ x: 0.1, y: 0 }} style={styles.container}>
-      <View pointerEvents="none" style={[styles.orbTopLeft, { backgroundColor: orbSecondary }]} />
-      <View pointerEvents="none" style={[styles.orbBottomRight, { backgroundColor: orbPrimary }]} />
-      <View pointerEvents="none" style={[styles.orbBottomCenter, { backgroundColor: orbTertiary }]} />
+      <View pointerEvents="none" style={[styles.orbTopLeft, { backgroundColor: ORB_SECONDARY }]} />
+      <View pointerEvents="none" style={[styles.orbBottomRight, { backgroundColor: ORB_PRIMARY }]} />
+      <View pointerEvents="none" style={[styles.orbBottomCenter, { backgroundColor: ORB_TERTIARY }]} />
 
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.flex}>
         <ScrollView bounces={false} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
@@ -173,7 +448,7 @@ export function PatientRegisterScreen() {
             <Controller
               control={form.control}
               name="firstName"
-              render={(renderProps: { field: ControllerRenderProps<RegisterInput, 'firstName'>; fieldState: ControllerFieldState }) => {
+              render={(renderProps: { field: ControllerRenderProps<RegisterFormValues, 'firstName'>; fieldState: ControllerFieldState }) => {
                 const { onBlur, onChange, value } = renderProps.field;
                 const { error } = renderProps.fieldState;
 
@@ -188,7 +463,7 @@ export function PatientRegisterScreen() {
                     inputBackgroundColor={inputBackground}
                     inputBorderColor={inputBorderColor}
                     inputTextColor={inputTextColor}
-                    label="Nombre"
+                    label="Nombre *"
                     labelColor={sectionSubtle}
                     onBlur={onBlur}
                     onChangeText={onChange}
@@ -204,7 +479,7 @@ export function PatientRegisterScreen() {
             <Controller
               control={form.control}
               name="lastName"
-              render={(renderProps: { field: ControllerRenderProps<RegisterInput, 'lastName'>; fieldState: ControllerFieldState }) => {
+              render={(renderProps: { field: ControllerRenderProps<RegisterFormValues, 'lastName'>; fieldState: ControllerFieldState }) => {
                 const { onBlur, onChange, value } = renderProps.field;
                 const { error } = renderProps.fieldState;
 
@@ -219,7 +494,7 @@ export function PatientRegisterScreen() {
                     inputBackgroundColor={inputBackground}
                     inputBorderColor={inputBorderColor}
                     inputTextColor={inputTextColor}
-                    label="Apellido"
+                    label="Apellido *"
                     labelColor={sectionSubtle}
                     onBlur={onBlur}
                     onChangeText={onChange}
@@ -232,123 +507,24 @@ export function PatientRegisterScreen() {
               }}
             />
 
-            <Controller
+            <BirthDateField
               control={form.control}
-              name="birthDate"
-              render={(renderProps: { field: ControllerRenderProps<RegisterInput, 'birthDate'>; fieldState: ControllerFieldState }) => {
-                const { onBlur, onChange, value } = renderProps.field;
-                const { error } = renderProps.fieldState;
-                const pickerValue = parseDateFromInput(value) ?? new Date(2000, 0, 1);
-                const isWeb = Platform.OS === 'web';
-
-                return (
-                  <ThemedView style={styles.fieldBlock}>
-                    <ThemedText style={[styles.fieldLabel, { color: sectionSubtle }]}>Fecha de nacimiento</ThemedText>
-
-                    {isWeb ? (
-                      <>
-                        <TextInput
-                          accessibilityLabel="Ingresar fecha de nacimiento"
-                          onBlur={onBlur}
-                          onChangeText={(text) => {
-                            const trimmed = text.trim();
-                            onChange(trimmed === '' ? undefined : trimmed);
-                          }}
-                          placeholder="YYYY-MM-DD"
-                          placeholderTextColor={placeholderColor}
-                          value={value ?? ''}
-                          style={[
-                            styles.datePickerButton,
-                            {
-                              backgroundColor: inputBackground,
-                              borderColor: error?.message ? errorColor : inputBorderColor,
-                              color: inputTextColor,
-                            },
-                          ]}
-                        />
-
-                        <ThemedText style={styles.hintText}>Opcional. Ingresa la fecha en formato AAAA-MM-DD.</ThemedText>
-                      </>
-                    ) : (
-                      <>
-                        <Pressable
-                          accessibilityLabel="Seleccionar fecha de nacimiento"
-                          accessibilityRole="button"
-                          onBlur={onBlur}
-                          onPress={() => {
-                            setShowBirthDatePicker(true);
-                          }}
-                          style={[
-                            styles.datePickerButton,
-                            {
-                              backgroundColor: inputBackground,
-                              borderColor: error?.message ? errorColor : inputBorderColor,
-                            },
-                          ]}
-                        >
-                          <MaterialIcons color={iconTint} name="calendar-month" size={20} />
-                          <ThemedText style={[styles.datePickerText, { color: value ? inputTextColor : placeholderColor }]}>
-                            {value ?? 'Selecciona tu fecha'}
-                          </ThemedText>
-                          <MaterialIcons color={placeholderColor} name="arrow-drop-down" size={24} />
-                        </Pressable>
-
-                        <ThemedText style={styles.hintText}>Opcional. Elige la fecha desde el selector.</ThemedText>
-
-                        {showBirthDatePicker ? (
-                          <DateTimePicker
-                            display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-                            maximumDate={new Date()}
-                            mode="date"
-                            onChange={(event: DateTimePickerEvent, selectedDate?: Date) => {
-                              if (Platform.OS === 'android') {
-                                setShowBirthDatePicker(false);
-                              }
-
-                              if (event.type !== 'set' || !selectedDate) {
-                                return;
-                              }
-
-                              onChange(formatDateForInput(selectedDate));
-                            }}
-                            value={pickerValue}
-                          />
-                        ) : null}
-
-                        {showBirthDatePicker && Platform.OS === 'ios' ? (
-                          <Pressable
-                            accessibilityRole="button"
-                            onPress={() => setShowBirthDatePicker(false)}
-                            style={styles.datePickerDoneButton}
-                          >
-                            <ThemedText style={[styles.datePickerDoneText, { color: primaryColor }]}>Listo</ThemedText>
-                          </Pressable>
-                        ) : null}
-                      </>
-                    )}
-
-                    {value ? (
-                      <Pressable
-                        accessibilityRole="button"
-                        onPress={() => {
-                          onChange(undefined);
-                          setShowBirthDatePicker(false);
-                        }}
-                      >
-                        <ThemedText style={[styles.clearDateText, { color: primaryColor }]}>Limpiar fecha</ThemedText>
-                      </Pressable>
-                    ) : null}
-
-                    {error?.message ? <ThemedText style={[styles.inlineError, { color: errorColor }]}>{error.message}</ThemedText> : null}
-                  </ThemedView>
-                );
-              }}
+              errorColor={errorColor}
+              iconTint={iconTint}
+              inputBackground={inputBackground}
+              inputBorderColor={inputBorderColor}
+              inputTextColor={inputTextColor}
+              placeholderColor={placeholderColor}
+              primaryColor={primaryColor}
+              sectionSubtle={sectionSubtle}
+              setShowBirthDatePicker={setShowBirthDatePicker}
+              showBirthDatePicker={showBirthDatePicker}
             />
 
             <Controller
               control={form.control}
               name="gender"
-              render={(renderProps: { field: ControllerRenderProps<RegisterInput, 'gender'>; fieldState: ControllerFieldState }) => {
+              render={(renderProps: { field: ControllerRenderProps<RegisterFormValues, 'gender'>; fieldState: ControllerFieldState }) => {
                 const { onChange, value } = renderProps.field;
                 const { error } = renderProps.fieldState;
 
@@ -411,7 +587,7 @@ export function PatientRegisterScreen() {
             <Controller
               control={form.control}
               name="email"
-              render={(renderProps: { field: ControllerRenderProps<RegisterInput, 'email'>; fieldState: ControllerFieldState }) => {
+              render={(renderProps: { field: ControllerRenderProps<RegisterFormValues, 'email'>; fieldState: ControllerFieldState }) => {
                 const { onBlur, onChange, value } = renderProps.field;
                 const { error } = renderProps.fieldState;
 
@@ -428,7 +604,7 @@ export function PatientRegisterScreen() {
                     inputBorderColor={inputBorderColor}
                     inputTextColor={inputTextColor}
                     keyboardType="email-address"
-                    label="Correo electrónico"
+                    label="Correo electrónico *"
                     labelColor={sectionSubtle}
                     onBlur={onBlur}
                     onChangeText={onChange}
@@ -441,49 +617,49 @@ export function PatientRegisterScreen() {
               }}
             />
 
-            <Controller
+            <PasswordField
+              accessibilityHint="Alterna la visibilidad de la contraseña"
               control={form.control}
+              errorColor={errorColor}
+              hideLabel="Ocultar contraseña"
+              hint="Debe tener 8+ caracteres, mayúscula, número y carácter especial."
+              iconColor={iconTint}
+              iconName="lock-outline"
+              inputBackgroundColor={inputBackground}
+              inputBorderColor={inputBorderColor}
+              inputTextColor={inputTextColor}
+              label="Contraseña *"
+              labelColor={sectionSubtle}
               name="password"
-              render={(renderProps: { field: ControllerRenderProps<RegisterInput, 'password'>; fieldState: ControllerFieldState }) => {
-                const { onBlur, onChange, value } = renderProps.field;
-                const { error } = renderProps.fieldState;
+              placeholderColor={placeholderColor}
+              primaryColor={primaryColor}
+              selectionColor={aquamarineColor}
+              setVisible={setShowPassword}
+              showLabel="Mostrar contraseña"
+              subtitleColor={subtitleColor}
+              visible={showPassword}
+            />
 
-                return (
-                  <AppIconTextField
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                    errorColor={errorColor}
-                    errorMessage={error?.message}
-                    focusColor={primaryColor}
-                    hint="Debe tener 8+ caracteres, mayúscula, número y carácter especial."
-                    iconColor={iconTint}
-                    iconName="lock-outline"
-                    inputBackgroundColor={inputBackground}
-                    inputBorderColor={inputBorderColor}
-                    inputTextColor={inputTextColor}
-                    label="Contraseña"
-                    labelColor={sectionSubtle}
-                    onBlur={onBlur}
-                    onChangeText={onChange}
-                    placeholder="********"
-                    placeholderColor={placeholderColor}
-                    rightAccessory={
-                      <Pressable
-                        accessibilityRole="button"
-                        accessibilityLabel={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
-                        accessibilityHint="Alterna la visibilidad de la contraseña"
-                        accessibilityState={{ selected: showPassword }}
-                        hitSlop={10}
-                        onPress={() => setShowPassword((prev) => !prev)}>
-                        <MaterialIcons color={subtitleColor} name={showPassword ? 'visibility-off' : 'visibility'} size={20} />
-                      </Pressable>
-                    }
-                    secureTextEntry={!showPassword}
-                    selectionColor={aquamarineColor}
-                    value={value}
-                  />
-                );
-              }}
+            <PasswordField
+              accessibilityHint="Alterna la visibilidad de la confirmación de contraseña"
+              control={form.control}
+              errorColor={errorColor}
+              hideLabel="Ocultar confirmación de contraseña"
+              iconColor={iconTint}
+              iconName="lock-reset"
+              inputBackgroundColor={inputBackground}
+              inputBorderColor={inputBorderColor}
+              inputTextColor={inputTextColor}
+              label="Confirmar contraseña *"
+              labelColor={sectionSubtle}
+              name="confirmPassword"
+              placeholderColor={placeholderColor}
+              primaryColor={primaryColor}
+              selectionColor={aquamarineColor}
+              setVisible={setShowConfirmPassword}
+              showLabel="Mostrar confirmación de contraseña"
+              subtitleColor={subtitleColor}
+              visible={showConfirmPassword}
             />
 
             <Pressable
@@ -539,7 +715,7 @@ export function PatientRegisterScreen() {
             </Link>
           </ThemedView>
 
-          <MaterialIcons color={orbSecondary} name="medical-services" size={112} style={styles.bottomDecoration} />
+          <MaterialIcons color={ORB_SECONDARY} name="medical-services" size={112} style={styles.bottomDecoration} />
         </ScrollView>
       </KeyboardAvoidingView>
     </LinearGradient>
