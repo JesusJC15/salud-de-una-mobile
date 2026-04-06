@@ -23,4 +23,5 @@ export const updatePatientProfileSchema = z.object({
     .transform((value) => value as (typeof patientGenderValues)[number] | undefined),
 });
 
-export type UpdatePatientProfileFormInput = z.infer<typeof updatePatientProfileSchema>;
+  export type UpdatePatientProfileFormValues = z.input<typeof updatePatientProfileSchema>;
+  export type UpdatePatientProfileFormInput = z.output<typeof updatePatientProfileSchema>;

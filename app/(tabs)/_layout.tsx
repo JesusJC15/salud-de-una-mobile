@@ -31,6 +31,9 @@ export default function TabLayout() {
         name="index"
         options={{
           title: 'Inicio',
+          tabBarStyle: {
+            display: 'none',
+          },
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
         }}
       />

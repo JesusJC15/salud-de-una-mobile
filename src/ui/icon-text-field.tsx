@@ -60,10 +60,7 @@ export function AppIconTextField({
 
   const resolvedAccessibilityLabel = accessibilityLabel ?? label;
   const resolvedAccessibilityHint = accessibilityHint ?? errorMessage ?? hint;
-  const resolvedAccessibilityState = {
-    ...(accessibilityState ?? {}),
-    invalid: accessibilityState?.invalid ?? !!errorMessage,
-  };
+  const resolvedAccessibilityState = accessibilityState;
 
   return (
     <View style={styles.fieldBlock}>

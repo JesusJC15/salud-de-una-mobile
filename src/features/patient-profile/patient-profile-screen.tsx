@@ -14,6 +14,7 @@ import {
 } from '@/src/lib/identity';
 import {
   UpdatePatientProfileFormInput,
+  UpdatePatientProfileFormValues,
   updatePatientProfileSchema,
 } from '@/src/schemas/patient-profile';
 import { authService } from '@/src/services/auth/auth-service';
@@ -32,7 +33,7 @@ export function PatientProfileScreen() {
   const setProfile = useSessionStore((state) => state.setProfile);
   const patient = useSessionStore((state) => state.profile);
   const sessionStatus = useSessionStore((state) => state.status);
-  const form = useForm<UpdatePatientProfileFormInput>({
+  const form = useForm<UpdatePatientProfileFormValues, unknown, UpdatePatientProfileFormInput>({
     defaultValues: {
       birthDate: '',
       firstName: '',

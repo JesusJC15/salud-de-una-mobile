@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "name": "frontend-components",
+  "owner": "eis-its",
+  "repo": "vss-cli",
+  "path": ".claude/skills/frontend-components",
+  "branch": "main",
+  "sha": "e25a140b0a3c62898c0771c73f316c67284e9ca8",
+  "source": "manual"
+}

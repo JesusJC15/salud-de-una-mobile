@@ -4,11 +4,16 @@ import { PatientHomeScreen } from '@/src/features/patient-home/patient-home-scre
 
 export default function HomeScreen() {
   const router = useRouter();
+  const openCases = () => router.push('/(tabs)/notifications');
+  const openProfile = () => router.push('/(tabs)/profile');
 
   return (
     <PatientHomeScreen
-      onLoginPress={() => router.push('/(auth)/login')}
-      onRegisterPress={() => router.push('/(auth)/register')}
+      onCasesPress={openCases}
+      onPrimaryActionPress={openCases}
+      onProfilePress={openProfile}
+      onSettingsPress={openProfile}
+      onViewAllPress={openCases}
     />
   );
 }

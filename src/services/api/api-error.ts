@@ -1,4 +1,5 @@
 import axios, { isAxiosError } from 'axios';
+import { Platform } from 'react-native';
 
 type ApiErrorPayload = {
   statusCode?: number;
@@ -44,6 +45,10 @@ export class ApiError extends Error {
       return 'No fue posible conectar con la API. Verifica que el backend este levantado y que la URL configurada sea accesible desde la app.';
     }
 
+    if (Platform.OS === 'web') {
+      return `No fue posible conectar con la API en ${requestUrl}. En web esto suele ser un problema de CORS/preflight (OPTIONS). Si ves en backend "Cannot OPTIONS ...", habilita CORS para tu origen del frontend.`;
+    }
+
     const usesLoopback = requestUrl.includes('localhost') || requestUrl.includes('127.0.0.1');
 
     if (usesLoopback) {
@@ -66,6 +71,8 @@ export class ApiError extends Error {
         return new ApiError(this.buildNetworkErrorMessage(requestUrl), {
           details: {
             code: error.code,
+            method: error.config?.method,
+            platform: Platform.OS,
             requestUrl,
           },
         });
