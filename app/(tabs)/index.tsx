@@ -6,6 +6,7 @@ export default function HomeScreen() {
   const router = useRouter();
   const openCases = () => router.push('/(tabs)/notifications');
   const openProfile = () => router.push('/(tabs)/profile');
+  const openTriage = () => router.push('../(patient)/triage');
 
   return (
     <PatientHomeScreen
@@ -13,6 +14,7 @@ export default function HomeScreen() {
       onPrimaryActionPress={openCases}
       onProfilePress={openProfile}
       onSettingsPress={openProfile}
+      onTriagePress={openTriage}
       onViewAllPress={openCases}
     />
   );

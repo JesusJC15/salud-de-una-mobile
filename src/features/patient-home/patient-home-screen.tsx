@@ -21,6 +21,7 @@ type PatientHomeScreenProps = {
   onPrimaryActionPress?: () => void;
   onProfilePress?: () => void;
   onSettingsPress?: () => void;
+  onTriagePress?: () => void;
   onViewAllPress?: () => void;
 };
 
@@ -31,6 +32,7 @@ export function PatientHomeScreen({
   onPrimaryActionPress,
   onProfilePress,
   onSettingsPress,
+  onTriagePress,
   onViewAllPress,
 }: PatientHomeScreenProps) {
   const sessionUser = useSessionStore((state) => state.session?.user ?? null);
@@ -131,7 +133,7 @@ export function PatientHomeScreen({
                   iconName="fact-check"
                   label="New Triage"
                   layout="stacked"
-                  onPress={openCases}
+                  onPress={onTriagePress ?? openCases}
                   style={styles.quickActionItem}
                   variant="secondary"
                 />
