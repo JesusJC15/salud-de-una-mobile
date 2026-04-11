@@ -81,13 +81,6 @@ Estas librerias forman parte de la base tecnica actual del proyecto.
 - `EXPO_PUBLIC_API_URL`: URL base del backend incluyendo el prefijo `/v1`, por ejemplo `http://localhost:3000/v1`
 - `EXPO_PUBLIC_APP_ENV`: `development`, `preview` o `production`
 
-### Conectividad local backend
-
-- En web (navegador en el mismo equipo): usa `http://localhost:3000/v1`.
-- En Android emulator: usa `http://10.0.2.2:3000/v1`.
-- En dispositivo fisico: usa `http://<IP_DE_TU_PC>:3000/v1`.
-- Si en backend aparece `Cannot OPTIONS /...` al llamar desde web, falta configurar CORS en el backend para el origen del frontend.
-
 ## Scripts disponibles
 
 - `npm run start`

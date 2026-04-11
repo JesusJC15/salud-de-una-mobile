@@ -1,14 +1,20 @@
 import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Radius } from '@/src/constants/theme';
-import { useCreateTriageSessionMutation } from '@/src/features/triage/use-triage-flow';
+import { TriageActiveSessionCard } from '@/src/features/patient-triage/components/triage-active-session-card';
 import { getHumanReadableApiError } from '@/src/lib/get-human-readable-api-error';
 import { TriageProgress } from '@/src/features/patient-triage/components/triage-progress';
 import { TriageSpecialtyOptionCard } from '@/src/features/patient-triage/components/triage-specialty-option-card';
+import {
+  useActiveTriageSessionsQuery,
+  useCancelTriageSessionMutation,
+  useCreateTriageSessionMutation,
+} from '@/src/features/triage/use-triage-flow';
+import { getExistingTriageSessionIdFromError } from '@/src/services/triage/triage-api';
 import { TriageSpecialty } from '@/src/types/triage';
 import { AppButton } from '@/src/ui/button';
 import { ThemedText } from '@/src/ui/themed-text';
@@ -17,18 +23,121 @@ import { ThemedView } from '@/src/ui/themed-view';
 export function TriageSelectionScreen() {
   const router = useRouter();
   const createSessionMutation = useCreateTriageSessionMutation();
+  const activeSessionsQuery = useActiveTriageSessionsQuery();
+  const cancelSessionMutation = useCancelTriageSessionMutation();
   const [selectedSpecialty, setSelectedSpecialty] = React.useState<TriageSpecialty>('GENERAL_MEDICINE');
+  const [feedbackMessage, setFeedbackMessage] = React.useState<string | null>(null);
 
-  const errorMessage = createSessionMutation.error
-    ? getHumanReadableApiError(createSessionMutation.error)
-    : null;
+  const activeSessions = activeSessionsQuery.data?.items ?? [];
+  const activeSessionForSelected = activeSessions.find(
+    (session) => session.specialty === selectedSpecialty && session.status === 'IN_PROGRESS'
+  );
+
+  const errorMessage = React.useMemo(() => {
+    if (createSessionMutation.error) {
+      return getHumanReadableApiError(createSessionMutation.error);
+    }
+
+    if (cancelSessionMutation.error) {
+      return getHumanReadableApiError(cancelSessionMutation.error);
+    }
+
+    if (activeSessionsQuery.error) {
+      return getHumanReadableApiError(activeSessionsQuery.error);
+    }
+
+    return null;
+  }, [activeSessionsQuery.error, cancelSessionMutation.error, createSessionMutation.error]);
+
+  let activeSessionsContent = (
+    <View style={styles.activeSessionsList}>
+      {activeSessions.map((session) => (
+        <TriageActiveSessionCard
+          key={session.id}
+          isCanceling={cancelSessionMutation.isPending && cancelSessionMutation.variables === session.id}
+          session={session}
+          onCancel={(targetSession) => cancelActiveSession(targetSession.id)}
+          onResume={(targetSession) => openSession(targetSession.id)}
+        />
+      ))}
+    </View>
+  );
+
+  if (activeSessionsQuery.isPending) {
+    activeSessionsContent = <ThemedText type="muted">Cargando sesiones activas...</ThemedText>;
+  } else if (activeSessions.length === 0) {
+    activeSessionsContent = (
+      <ThemedText type="muted">
+        Aun no tienes procesos activos. Cuando inicies uno, podras retomarlo desde aqui.
+      </ThemedText>
+    );
+  }
+
+  const openSession = (sessionId: string) => {
+    router.push(`/(patient)/triage/session/${sessionId}`);
+  };
+
+  const executeCancelSession = async (sessionId: string) => {
+    setFeedbackMessage(null);
+
+    try {
+      await cancelSessionMutation.mutateAsync(sessionId);
+      await activeSessionsQuery.refetch();
+      setFeedbackMessage('Sesion cancelada. Ya puedes iniciar un nuevo triaje.');
+    } catch {
+      // El estado de error ya queda en la mutacion.
+    }
+  };
+
+  const cancelActiveSession = (sessionId: string) => {
+    const title = 'Cancelar triage en curso';
+    const message = 'Esta accion cerrara la sesion activa y tendras que iniciar una nueva evaluacion.';
+
+    if (Platform.OS === 'web') {
+      const shouldCancel = typeof globalThis.confirm === 'function' ? globalThis.confirm(message) : true;
+
+      if (!shouldCancel) {
+        return;
+      }
+
+      void executeCancelSession(sessionId);
+      return;
+    }
+
+    Alert.alert(
+      title,
+      message,
+      [
+        { text: 'Mantener', style: 'cancel' },
+        {
+          text: 'Cancelar sesion',
+          style: 'destructive',
+          onPress: () => void executeCancelSession(sessionId),
+        },
+      ]
+    );
+  };
 
   const startTriage = async () => {
+    setFeedbackMessage(null);
+
+    if (activeSessionForSelected) {
+      openSession(activeSessionForSelected.id);
+      return;
+    }
+
     try {
       const session = await createSessionMutation.mutateAsync({ specialty: selectedSpecialty });
 
-      router.push(`./session/${session.id}`);
-    } catch {
+      openSession(session.id);
+    } catch (error) {
+      const existingSessionId = getExistingTriageSessionIdFromError(error);
+
+      if (existingSessionId) {
+        setFeedbackMessage('Encontramos un triaje en progreso para esta especialidad. Lo reanudaremos.');
+        openSession(existingSessionId);
+      }
+
       // El estado de error ya se refleja en la mutacion.
     }
   };
@@ -73,13 +182,30 @@ export function TriageSelectionScreen() {
               onPress={setSelectedSpecialty}
             />
             <TriageSpecialtyOptionCard
-              selected={selectedSpecialty === 'DENTISTRY'}
-              specialty="DENTISTRY"
+              selected={selectedSpecialty === 'ODONTOLOGY'}
+              specialty="ODONTOLOGY"
               subtitle="Dolor dental, molestias de encia y urgencias odontologicas."
               title="Odontologia"
               onPress={setSelectedSpecialty}
             />
           </View>
+
+          <ThemedView darkColor="#0D3E43" lightColor="#F7FCFC" style={styles.activeSessionsSection}>
+            <View style={styles.activeSessionsHeader}>
+              <ThemedText type="defaultSemiBold">Tus triajes en progreso</ThemedText>
+              {activeSessions.length > 0 ? (
+                <ThemedText type="muted">{activeSessions.length} activos</ThemedText>
+              ) : null}
+            </View>
+
+            {activeSessionsContent}
+          </ThemedView>
+
+          {feedbackMessage ? (
+            <ThemedView darkColor="#0D4A48" lightColor="#ECFDF5" style={styles.successCard}>
+              <ThemedText style={styles.successText}>{feedbackMessage}</ThemedText>
+            </ThemedView>
+          ) : null}
 
           {errorMessage ? (
             <ThemedView darkColor="#4A0F17" lightColor="#FEF2F2" style={styles.errorCard}>
@@ -89,7 +215,7 @@ export function TriageSelectionScreen() {
 
           <AppButton
             disabled={createSessionMutation.isPending}
-            label="Iniciar triaje"
+            label={activeSessionForSelected ? 'Reanudar triaje' : 'Iniciar triaje'}
             loading={createSessionMutation.isPending}
             onPress={() => void startTriage()}
           />
@@ -100,6 +226,21 @@ export function TriageSelectionScreen() {
 }
 
 const styles = StyleSheet.create({
+  activeSessionsHeader: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  activeSessionsList: {
+    gap: 10,
+  },
+  activeSessionsSection: {
+    borderColor: '#CFEAEB',
+    borderRadius: Radius.xl,
+    borderWidth: 1,
+    gap: 12,
+    padding: 14,
+  },
   backButton: {
     alignItems: 'center',
     height: 30,
@@ -142,6 +283,16 @@ const styles = StyleSheet.create({
   },
   safeArea: {
     flex: 1,
+  },
+  successCard: {
+    borderColor: '#A7F3D0',
+    borderRadius: Radius.lg,
+    borderWidth: 1,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+  },
+  successText: {
+    color: '#047857',
   },
   title: {
     fontSize: 35,

@@ -12,7 +12,7 @@ export const triageQuestionOptionRawSchema = z
     text: z.string().trim().optional(),
     title: z.string().trim().optional(),
   })
-  .passthrough();
+  .catchall(z.unknown());
 
 export const triageQuestionOptionSchema = triageQuestionOptionRawSchema.transform<TriageQuestionOption>((value) => ({
   description: value.description ?? null,
@@ -24,33 +24,40 @@ export const triageQuestionRawSchema = z
   .object({
     currentValue: z.coerce.number().int().optional(),
     description: z.string().trim().nullish(),
-    id: z.string().trim().min(1),
+    id: z.string().trim().optional(),
     max: z.coerce.number().int().optional(),
     maxValue: z.coerce.number().int().optional(),
     min: z.coerce.number().int().optional(),
     minValue: z.coerce.number().int().optional(),
     options: z.array(triageQuestionOptionRawSchema).default([]),
     question: z.string().trim().optional(),
+    questionId: z.string().trim().optional(),
+    questionText: z.string().trim().optional(),
     step: z.coerce.number().int().optional(),
     text: z.string().trim().optional(),
     title: z.string().trim().optional(),
     type: triageQuestionTypeSchema,
   })
-  .passthrough();
+  .refine((value) => Boolean(value.id ?? value.questionId), {
+    message: 'Question id is required.',
+    path: ['id'],
+  })
+  .catchall(z.unknown());
 
 export const triageQuestionSchema = triageQuestionRawSchema.transform<TriageQuestion>((value) => {
   const minValue = value.minValue ?? value.min ?? 1;
   const maxValue = value.maxValue ?? value.max ?? 10;
   const step = value.step ?? 1;
+  const id = (value.id ?? value.questionId ?? '').trim();
 
   return {
     description: value.description ?? null,
-    id: value.id,
-    maxValue: maxValue >= minValue ? maxValue : minValue,
+    id,
+    maxValue: Math.max(maxValue, minValue),
     minValue,
     options: value.options.map((option) => triageQuestionOptionSchema.parse(option)),
     step: step > 0 ? step : 1,
-    title: value.title ?? value.question ?? value.text ?? 'Pregunta sin titulo',
+    title: value.title ?? value.questionText ?? value.question ?? value.text ?? 'Pregunta sin titulo',
     type: value.type,
   };
 });

@@ -11,9 +11,9 @@ import { AppButton } from '@/src/ui/button';
 import { ThemedText } from '@/src/ui/themed-text';
 import { ThemedView } from '@/src/ui/themed-view';
 
-type TriageResultScreenProps = {
+type TriageResultScreenProps = Readonly<{
   sessionId: string;
-};
+}>;
 
 const PRIORITY_COPY = {
   HIGH: 'Se detectaron senales de alerta. Recomendamos atencion presencial inmediata.',
@@ -80,6 +80,19 @@ export function TriageResultScreen({ sessionId }: TriageResultScreenProps) {
   }
 
   const isHighPriority = result.priority === 'HIGH';
+  const isRuleBasedAnalysis = result.analysisMode === 'RULE_BASED';
+
+  const analysisNotice = (() => {
+    if (result.noticeCode === 'IA_NOT_IMPLEMENTED_RULE_BASED_FALLBACK') {
+      return 'Modo de analisis actual: reglas clinicas (IA no disponible en este entorno).';
+    }
+
+    if (result.noticeCode === 'IA_TEMPORARILY_UNAVAILABLE_RULE_BASED_FALLBACK') {
+      return 'IA temporalmente no disponible. Se aplico analisis por reglas clinicas.';
+    }
+
+    return 'Tu analisis fue realizado con reglas clinicas. Puede variar cuando la IA este disponible.';
+  })();
 
   return (
     <SafeAreaView edges={['top', 'bottom']} style={styles.safeArea}>
@@ -107,6 +120,20 @@ export function TriageResultScreen({ sessionId }: TriageResultScreenProps) {
               {PRIORITY_COPY[result.priority]}
             </ThemedText>
           </ThemedView>
+
+          {isRuleBasedAnalysis ? (
+            <ThemedView darkColor="#0B3B41" lightColor="#ECFEFF" style={styles.analysisNoticeCard}>
+              <View style={styles.analysisNoticeHeader}>
+                <MaterialIcons color="#0891B2" name="info-outline" size={16} />
+                <ThemedText darkColor="#A5F3FC" lightColor="#0C4A6E" style={styles.analysisNoticeTitle} type="defaultSemiBold">
+                  Analisis con reglas clinicas
+                </ThemedText>
+              </View>
+              <ThemedText darkColor="#CFFAFE" lightColor="#155E75" style={styles.analysisNoticeText}>
+                {analysisNotice}
+              </ThemedText>
+            </ThemedView>
+          ) : null}
 
           {isHighPriority ? (
             <ThemedView darkColor="#4A0F17" lightColor="#FEF2F2" style={styles.warningBanner}>
@@ -169,6 +196,27 @@ export function TriageResultScreen({ sessionId }: TriageResultScreenProps) {
 }
 
 const styles = StyleSheet.create({
+  analysisNoticeCard: {
+    borderColor: '#BAE6FD',
+    borderRadius: Radius.lg,
+    borderWidth: 1,
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  analysisNoticeHeader: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 6,
+  },
+  analysisNoticeText: {
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  analysisNoticeTitle: {
+    fontSize: 14,
+    lineHeight: 20,
+  },
   backButton: {
     alignItems: 'center',
     height: 30,

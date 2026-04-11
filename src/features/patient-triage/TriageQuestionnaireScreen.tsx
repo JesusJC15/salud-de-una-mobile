@@ -18,9 +18,9 @@ import { AppButton } from '@/src/ui/button';
 import { ThemedText } from '@/src/ui/themed-text';
 import { ThemedView } from '@/src/ui/themed-view';
 
-type TriageQuestionnaireScreenProps = {
+type TriageQuestionnaireScreenProps = Readonly<{
   sessionId: string;
-};
+}>;
 
 export function TriageQuestionnaireScreen({ sessionId }: TriageQuestionnaireScreenProps) {
   const router = useRouter();
@@ -62,6 +62,16 @@ export function TriageQuestionnaireScreen({ sessionId }: TriageQuestionnaireScre
 
     return null;
   }, [analyzeMutation.error, sessionQuery.error, submitMutation.error, validationMessage]);
+
+  const hasMissingSessionEndpointError = useMemo(() => {
+    if (!sessionQuery.error) {
+      return false;
+    }
+
+    const errorText = getHumanReadableApiError(sessionQuery.error);
+
+    return errorText.includes('Cannot GET') && errorText.includes('/v1/triage/sessions/');
+  }, [sessionQuery.error]);
 
   const buildSubmissionPayload = (): TriageAnswerSubmissionInput | null => {
     if (!currentQuestion) {
@@ -132,7 +142,7 @@ export function TriageQuestionnaireScreen({ sessionId }: TriageQuestionnaireScre
   const finishAndAnalyze = async () => {
     try {
       await analyzeMutation.mutateAsync();
-      router.replace('./result');
+      router.replace(`/(patient)/triage/session/${sessionId}/result`);
     } catch {
       // La mutacion expone el error para renderizarlo.
     }
@@ -154,6 +164,35 @@ export function TriageQuestionnaireScreen({ sessionId }: TriageQuestionnaireScre
       <SafeAreaView edges={['top', 'bottom']} style={styles.safeArea}>
         <ThemedView style={styles.centeredPage}>
           <ThemedText type="subtitle">Cargando cuestionario de triage...</ThemedText>
+        </ThemedView>
+      </SafeAreaView>
+    );
+  }
+
+  if (sessionQuery.error && !triageSession) {
+    return (
+      <SafeAreaView edges={['top', 'bottom']} style={styles.safeArea}>
+        <ThemedView style={styles.centeredPage}>
+          <ThemedText style={styles.errorText}>
+            {hasMissingSessionEndpointError
+              ? 'No fue posible abrir el cuestionario porque el backend no expone el detalle de la sesion de triage.'
+              : getHumanReadableApiError(sessionQuery.error)}
+          </ThemedText>
+
+          {hasMissingSessionEndpointError ? (
+            <ThemedText type="muted">
+              Solicita al backend el endpoint GET /v1/triage/sessions/:sessionId con preguntas completas
+              (tipo y opciones) para continuar el flujo desde movil.
+            </ThemedText>
+          ) : null}
+
+          <AppButton label="Volver a triage" onPress={() => router.replace('/(patient)/triage')} variant="secondary" />
+          <AppButton
+            label="Reintentar"
+            loading={sessionQuery.isFetching}
+            onPress={() => void sessionQuery.refetch()}
+            variant="primary"
+          />
         </ThemedView>
       </SafeAreaView>
     );

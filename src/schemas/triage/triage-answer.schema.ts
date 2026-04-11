@@ -39,36 +39,56 @@ export const createTriageSessionInputSchema = z.object({
 export const submitTriageAnswerPayloadSchema = triageAnswerSubmissionSchema.transform<SubmitTriageAnswerPayload>((value) => {
   if (value.type === 'SINGLE_CHOICE') {
     return {
-      questionId: value.questionId,
-      selectedOptionId: value.selectedOptionId,
+      answers: [
+        {
+          answerValue: value.selectedOptionId,
+          questionId: value.questionId,
+        },
+      ],
     };
   }
 
   if (value.type === 'MULTI_CHOICE') {
     return {
-      questionId: value.questionId,
-      selectedOptionIds: value.selectedOptionIds,
+      answers: [
+        {
+          answerValue: value.selectedOptionIds,
+          questionId: value.questionId,
+        },
+      ],
     };
   }
 
   return {
-    numericValue: value.value,
-    questionId: value.questionId,
+    answers: [
+      {
+        answerValue: value.value,
+        questionId: value.questionId,
+      },
+    ],
   };
 });
 
 const submitTriageAnswerResponseRawSchema = z
   .object({
+    answeredCount: z.coerce.number().int().optional(),
     currentQuestionId: z.string().trim().nullish(),
     isComplete: z.boolean().optional(),
     nextQuestionId: z.string().trim().nullish(),
+    progressPercent: z.coerce.number().optional(),
+    remainingQuestions: z.coerce.number().int().optional(),
+    totalQuestions: z.coerce.number().int().optional(),
   })
-  .passthrough();
+  .catchall(z.unknown());
 
 export const submitTriageAnswerResponseSchema = submitTriageAnswerResponseRawSchema.transform<SubmitTriageAnswerResponse>((value) => ({
+  answeredCount: value.answeredCount ?? 0,
   currentQuestionId: value.currentQuestionId ?? null,
   isComplete: value.isComplete ?? false,
   nextQuestionId: value.nextQuestionId ?? null,
+  progressPercent: value.progressPercent ?? 0,
+  remainingQuestions: value.remainingQuestions ?? 0,
+  totalQuestions: value.totalQuestions ?? 0,
 }));
 
 export function normalizeCreateTriageSessionInput(input: CreateTriageSessionInput) {

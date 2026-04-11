@@ -6,7 +6,7 @@ import { TriageQuestion } from '@/src/types/triage';
 import { ThemedText } from '@/src/ui/themed-text';
 import { ThemedView } from '@/src/ui/themed-view';
 
-type TriageQuestionInputProps = {
+type TriageQuestionInputProps = Readonly<{
   multiSelection: string[];
   numericValue: number | null;
   question: TriageQuestion;
@@ -14,7 +14,7 @@ type TriageQuestionInputProps = {
   onScaleSelect: (value: number) => void;
   onSingleSelect: (optionId: string) => void;
   onToggleMulti: (optionId: string) => void;
-};
+}>;
 
 function buildScaleValues(question: TriageQuestion) {
   const values: number[] = [];
@@ -64,7 +64,10 @@ export function TriageQuestionInput({
                   { opacity: pressed ? 0.9 : 1 },
                 ]}
               >
-                <ThemedText style={selected ? styles.scalePointLabelSelected : styles.scalePointLabel}>
+                <ThemedText
+                  darkColor={selected ? '#FFFFFF' : '#D8F4F6'}
+                  lightColor={selected ? '#FFFFFF' : '#0F3A40'}
+                  style={selected ? styles.scalePointLabelSelected : styles.scalePointLabel}>
                   {value}
                 </ThemedText>
               </Pressable>
@@ -163,7 +166,6 @@ const styles = StyleSheet.create({
     width: 30,
   },
   scalePointLabel: {
-    color: '#334155',
     fontSize: 13,
     lineHeight: 18,
   },

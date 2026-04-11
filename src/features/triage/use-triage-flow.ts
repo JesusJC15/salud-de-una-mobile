@@ -1,13 +1,23 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { triageApiService } from '@/src/services/triage/triage-api';
-import { CreateTriageSessionInput, TriageAnswerSubmissionInput } from '@/src/types/triage';
+import { CreateTriageSessionInput, TriageAnswerSubmissionInput, TriageSpecialty } from '@/src/types/triage';
 
 export const triageQueryKeys = {
   all: ['triage'] as const,
+  activeRoot: ['triage', 'active'] as const,
+  activeSessions: (specialty?: TriageSpecialty) => [...triageQueryKeys.activeRoot, specialty ?? 'ALL'] as const,
   result: (sessionId: string) => [...triageQueryKeys.all, 'result', sessionId] as const,
   session: (sessionId: string) => [...triageQueryKeys.all, 'session', sessionId] as const,
 };
+
+export function useActiveTriageSessionsQuery(specialty?: TriageSpecialty) {
+  return useQuery({
+    queryFn: () => triageApiService.getActiveTriageSessions(specialty),
+    queryKey: triageQueryKeys.activeSessions(specialty),
+    staleTime: 10_000,
+  });
+}
 
 export function useTriageSessionQuery(sessionId: string, enabled = true) {
   return useQuery({
@@ -52,6 +62,20 @@ export function useAnalyzeTriageSessionMutation(sessionId: string) {
     onSuccess: async (result) => {
       queryClient.setQueryData(triageQueryKeys.result(sessionId), result);
       await queryClient.invalidateQueries({ queryKey: triageQueryKeys.session(sessionId) });
+    },
+  });
+}
+
+export function useCancelTriageSessionMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (sessionId: string) => triageApiService.cancelTriageSession(sessionId),
+    onSuccess: async (_, sessionId) => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: triageQueryKeys.activeRoot }),
+        queryClient.invalidateQueries({ queryKey: triageQueryKeys.session(sessionId) }),
+      ]);
     },
   });
 }

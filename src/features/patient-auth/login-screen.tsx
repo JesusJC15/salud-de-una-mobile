@@ -17,6 +17,7 @@ import {
 
 import { Radius } from '@/src/constants/theme';
 import { useColorScheme } from '@/src/hooks/use-color-scheme';
+import { getHumanReadableApiError } from '@/src/lib/get-human-readable-api-error';
 import { loginSchema, type LoginInput } from '@/src/schemas/auth';
 import { usePatientAuth } from '@/src/features/patient-auth/use-patient-auth';
 import { ThemedText } from '@/src/ui/themed-text';
@@ -53,10 +54,15 @@ export function PatientLoginScreen() {
   const placeholderColor = '#94A3B8';
   const errorColor = '#DC2626';
   const cardBorderColor = isDark ? 'rgba(51, 65, 85, 0.65)' : 'rgba(226, 232, 240, 0.9)';
+  const authErrorMessage = loginMutation.error ? getHumanReadableApiError(loginMutation.error) : null;
 
   const onSubmit = form.handleSubmit(async (values) => {
-    await loginMutation.mutateAsync(values);
-    router.replace('/');
+    try {
+      await loginMutation.mutateAsync(values);
+      router.replace('/');
+    } catch {
+      // El estado de error de la mutacion se renderiza en la UI.
+    }
   });
 
   return (
@@ -167,8 +173,29 @@ export function PatientLoginScreen() {
               <ThemedText style={[styles.forgotPasswordText, { color: linkColor }]}>Olvide mi contrasena</ThemedText>
             </Pressable>
 
-            {loginMutation.error instanceof Error ? (
-              <ThemedText style={[styles.authError, { color: errorColor }]}>{loginMutation.error.message}</ThemedText>
+            {authErrorMessage ? (
+              <ThemedView
+                darkColor="rgba(127, 29, 29, 0.24)"
+                lightColor="#FEF2F2"
+                style={[
+                  styles.authErrorCard,
+                  {
+                    borderColor: isDark ? 'rgba(248, 113, 113, 0.55)' : '#FECACA',
+                  },
+                ]}>
+                <View style={styles.authErrorHeader}>
+                  <MaterialIcons color={errorColor} name="error-outline" size={18} />
+                  <ThemedText darkColor="#FECACA" lightColor="#B91C1C" style={styles.authErrorTitle} type="defaultSemiBold">
+                    No pudimos iniciar sesion
+                  </ThemedText>
+                </View>
+                <ThemedText darkColor="#FECACA" lightColor="#B91C1C" style={styles.authError}>
+                  {authErrorMessage}
+                </ThemedText>
+                <ThemedText darkColor="#FCA5A5" lightColor="#7F1D1D" style={styles.authErrorHint}>
+                  Verifica tu correo y contrasena e intenta de nuevo.
+                </ThemedText>
+              </ThemedView>
             ) : null}
 
             <Pressable
@@ -380,6 +407,27 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
     marginTop: 2,
+  },
+  authErrorCard: {
+    borderRadius: Radius.lg,
+    borderWidth: 1,
+    marginTop: 2,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  authErrorHeader: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 6,
+  },
+  authErrorHint: {
+    fontSize: 13,
+    lineHeight: 18,
+    marginTop: 4,
+  },
+  authErrorTitle: {
+    fontSize: 14,
+    lineHeight: 20,
   },
   footer: {
     alignItems: 'center',

@@ -1,8 +1,13 @@
 import { EntityId, IsoDateString } from '@/src/types/common';
 
-export type TriageSpecialty = 'GENERAL_MEDICINE' | 'DENTISTRY';
+export type TriageSpecialty = 'GENERAL_MEDICINE' | 'ODONTOLOGY';
+export type TriageSessionStatus = 'IN_PROGRESS' | 'COMPLETED' | 'CANCELED' | 'EXPIRED' | 'FAILED';
 
 export type TriagePriority = 'LOW' | 'MODERATE' | 'HIGH';
+export type TriageAnalysisMode = 'AI_ASSISTED' | 'RULE_BASED';
+export type TriageAnalysisNoticeCode =
+  | 'IA_NOT_IMPLEMENTED_RULE_BASED_FALLBACK'
+  | 'IA_TEMPORARILY_UNAVAILABLE_RULE_BASED_FALLBACK';
 
 export type TriageQuestionType = 'SINGLE_CHOICE' | 'MULTI_CHOICE' | 'NUMERIC_SCALE';
 
@@ -34,11 +39,14 @@ export interface TriageResult {
   priority: TriagePriority;
   redFlags: TriageRedFlag[];
   analyzedAt: IsoDateString | null;
+  analysisMode: TriageAnalysisMode | null;
+  noticeCode: TriageAnalysisNoticeCode | null;
 }
 
 export interface TriageSession {
   id: EntityId;
   specialty: TriageSpecialty;
+  status: TriageSessionStatus;
   questions: TriageQuestion[];
   currentQuestion: TriageQuestion | null;
   currentQuestionId: EntityId | null;
@@ -47,6 +55,25 @@ export interface TriageSession {
   isComplete: boolean;
   nextQuestionId: EntityId | null;
   result: TriageResult | null;
+  createdAt: IsoDateString | null;
+  updatedAt: IsoDateString | null;
+}
+
+export interface TriageActiveSession {
+  id: EntityId;
+  specialty: TriageSpecialty;
+  status: TriageSessionStatus;
+  currentStep: number;
+  totalSteps: number;
+  currentQuestionId: EntityId | null;
+  isComplete: boolean;
+  createdAt: IsoDateString | null;
+  updatedAt: IsoDateString | null;
+}
+
+export interface TriageActiveSessionList {
+  items: TriageActiveSession[];
+  total: number;
 }
 
 export interface CreateTriageSessionInput {
@@ -71,14 +98,26 @@ export type TriageAnswerSubmissionInput =
     };
 
 export interface SubmitTriageAnswerPayload {
-  questionId: EntityId;
-  selectedOptionId?: EntityId;
-  selectedOptionIds?: EntityId[];
-  numericValue?: number;
+  answers: {
+    questionId: EntityId;
+    answerValue: string | string[] | number;
+  }[];
 }
 
 export interface SubmitTriageAnswerResponse {
   isComplete: boolean;
   nextQuestionId: EntityId | null;
   currentQuestionId: EntityId | null;
+  answeredCount: number;
+  totalQuestions: number;
+  remainingQuestions: number;
+  progressPercent: number;
+}
+
+export interface CancelTriageSessionResponse {
+  sessionId: EntityId;
+  specialty: TriageSpecialty;
+  status: TriageSessionStatus;
+  canceledAt: IsoDateString | null;
+  message: string | null;
 }
