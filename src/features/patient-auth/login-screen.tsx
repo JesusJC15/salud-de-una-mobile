@@ -54,10 +54,10 @@ export function PatientLoginScreen() {
   const errorColor = '#DC2626';
   const cardBorderColor = isDark ? 'rgba(51, 65, 85, 0.65)' : 'rgba(226, 232, 240, 0.9)';
 
-  const onSubmit = form.handleSubmit(async (values) => {
-    await loginMutation.mutateAsync(values);
+  const onSubmit = async () => {
+    await loginMutation.mutateAsync();
     router.replace('/');
-  });
+  };
 
   return (
     <ThemedView darkColor={surfaceBase} lightColor={surfaceBase} style={styles.container}>

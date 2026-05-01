@@ -27,13 +27,18 @@ export const useSessionStore = create<SessionState>((set) => ({
   session: null,
   profile: null,
   hydrate: async () => {
-    const storedAuthState = await readStoredSession();
-
-    set({
-      session: storedAuthState?.session ?? null,
-      profile: storedAuthState?.profile ?? null,
-      status: storedAuthState?.session ? 'authenticated' : 'anonymous',
-    });
+    try {
+      const storedAuthState = await readStoredSession();
+      set({
+        session: storedAuthState?.session ?? null,
+        profile: storedAuthState?.profile ?? null,
+        status: storedAuthState?.session ? 'authenticated' : 'anonymous',
+      });
+    } catch {
+      // Corrupted or unreadable stored session — clear and start fresh
+      await clearStoredSession();
+      set({ session: null, profile: null, status: 'anonymous' });
+    }
   },
   setSession: async (session, profile) => {
     await persistSession({ session, profile });

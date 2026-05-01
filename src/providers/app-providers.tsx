@@ -8,6 +8,7 @@ import {
 } from '@/src/services/api/client';
 import { ApiError } from '@/src/services/api/api-error';
 import { authService } from '@/src/services/auth/auth-service';
+import { refreshAuth0Session } from '@/src/services/auth/auth0-service';
 import { useSessionStore } from '@/src/store/session-store';
 
 function createQueryClient() {
@@ -40,10 +41,18 @@ export function AppProviders({ children }: PropsWithChildren) {
         return null;
       }
 
-      const nextSession = await authService.refreshSession(refreshToken);
-      await state.setSession(nextSession, state.profile);
-
-      return nextSession.accessToken;
+      try {
+        const refreshed = await refreshAuth0Session(refreshToken);
+        const nextSession = {
+          ...state.session!,
+          accessToken: refreshed.accessToken,
+          refreshToken: refreshed.refreshToken ?? refreshToken,
+        };
+        await state.setSession(nextSession, state.profile);
+        return refreshed.accessToken;
+      } catch {
+        return null;
+      }
     });
     setApiUnauthorizedSessionHandler(async () => {
       queryClient.clear();

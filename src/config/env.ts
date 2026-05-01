@@ -77,16 +77,25 @@ const runtimeConfigSchema = z.object({
       .enum(['development', 'preview', 'production'])
       .default(process.env.NODE_ENV === 'production' ? 'production' : 'development')
   ),
+  auth0Domain: z.preprocess(emptyStringToUndefined, z.string().optional()),
+  auth0ClientId: z.preprocess(emptyStringToUndefined, z.string().optional()),
+  auth0Audience: z.preprocess(emptyStringToUndefined, z.string().optional()),
 });
 
 const runtimeConfig = runtimeConfigSchema.parse({
   apiUrl: process.env.EXPO_PUBLIC_API_URL,
   appEnv: process.env.EXPO_PUBLIC_APP_ENV,
+  auth0Domain: process.env.EXPO_PUBLIC_AUTH0_DOMAIN,
+  auth0ClientId: process.env.EXPO_PUBLIC_AUTH0_CLIENT_ID,
+  auth0Audience: process.env.EXPO_PUBLIC_AUTH0_AUDIENCE,
 });
 
 export const appConfig = {
   apiBaseUrl: resolveApiBaseUrl(runtimeConfig.apiUrl, runtimeConfig.appEnv) ?? null,
   appEnv: runtimeConfig.appEnv,
+  auth0Domain: runtimeConfig.auth0Domain ?? null,
+  auth0ClientId: runtimeConfig.auth0ClientId ?? null,
+  auth0Audience: runtimeConfig.auth0Audience ?? null,
 };
 
 export type AppConfig = typeof appConfig;

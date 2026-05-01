@@ -7,7 +7,7 @@ module.exports = defineConfig([
   {
     ignores: ['dist/*'],
     rules: {
-      'import/no-unresolved': ['error', { ignore: ['^@react-native-community/datetimepicker$'] }],
+      'import/no-unresolved': ['error', { ignore: ['^@react-native-community/datetimepicker$', '^expo-auth-session$', '^expo-web-browser$', '^expo-crypto$'] }],
     },
   },
 ]);

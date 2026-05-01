@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import { ScrollView, StyleSheet } from 'react-native';
+import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 
 import { Radius } from '@/src/constants/theme';
 import {
@@ -12,6 +12,7 @@ import {
   translateUserGender,
   translateUserRole,
 } from '@/src/lib/identity';
+import { z } from 'zod';
 import {
   UpdatePatientProfileFormInput,
   updatePatientProfileSchema,
@@ -32,12 +33,16 @@ export function PatientProfileScreen() {
   const setProfile = useSessionStore((state) => state.setProfile);
   const patient = useSessionStore((state) => state.profile);
   const sessionStatus = useSessionStore((state) => state.status);
-  const form = useForm<UpdatePatientProfileFormInput>({
+  const form = useForm<
+    z.input<typeof updatePatientProfileSchema>,
+    unknown,
+    UpdatePatientProfileFormInput
+  >({
     defaultValues: {
-      birthDate: '',
-      firstName: '',
-      gender: '',
-      lastName: '',
+      birthDate: undefined,
+      firstName: undefined,
+      gender: undefined,
+      lastName: undefined,
     },
     resolver: zodResolver(updatePatientProfileSchema),
   });
@@ -81,10 +86,10 @@ export function PatientProfileScreen() {
     }
 
     form.reset({
-      birthDate: source.birthDate?.slice(0, 10) ?? '',
-      firstName: source.firstName ?? '',
-      gender: source.gender ?? '',
-      lastName: source.lastName ?? '',
+      birthDate: source.birthDate?.slice(0, 10) ?? undefined,
+      firstName: source.firstName ?? undefined,
+      gender: source.gender ?? undefined,
+      lastName: source.lastName ?? undefined,
     });
   }, [form, patient, profileQuery.data]);
 
@@ -214,20 +219,33 @@ export function PatientProfileScreen() {
           <Controller
             control={form.control}
             name="gender"
-            render={({ field: { onBlur, onChange, value }, fieldState: { error } }) => (
-              <AppTextField
-                autoCapitalize="characters"
-                errorMessage={error?.message}
-                label="Genero"
-                onBlur={onBlur}
-                onChangeText={onChange}
-                placeholder="MALE, FEMALE u OTHER"
-                value={value ?? ''}
-              />
+            render={({ field: { onChange, value }, fieldState: { error } }) => (
+              <View style={styles.genderField}>
+                <ThemedText>Género</ThemedText>
+                <View style={styles.genderOptions}>
+                  {(['MALE', 'FEMALE', 'OTHER'] as const).map((option) => (
+                    <TouchableOpacity
+                      key={option}
+                      onPress={() => onChange(option === value ? '' : option)}
+                      style={[
+                        styles.genderOption,
+                        value === option && styles.genderOptionSelected,
+                      ]}
+                    >
+                      <ThemedText
+                        style={value === option ? styles.genderOptionTextSelected : undefined}
+                      >
+                        {option === 'MALE' ? 'Masculino' : option === 'FEMALE' ? 'Femenino' : 'Otro'}
+                      </ThemedText>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+                {error?.message ? (
+                  <ThemedText style={styles.errorMessage}>{error.message}</ThemedText>
+                ) : null}
+              </View>
             )}
           />
-
-          <ThemedText type="muted">Valores permitidos en genero: MALE, FEMALE, OTHER.</ThemedText>
 
           <AppButton
             disabled={!isFormDirty}
@@ -283,5 +301,29 @@ const styles = StyleSheet.create({
   },
   successMessage: {
     color: '#0F9F8F',
+  },
+  genderField: {
+    gap: 8,
+  },
+  genderOptions: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  genderOption: {
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    flex: 1,
+    alignItems: 'center',
+  },
+  genderOptionSelected: {
+    borderColor: '#0F9F8F',
+    backgroundColor: '#D7F3F5',
+  },
+  genderOptionTextSelected: {
+    color: '#0F4952',
+    fontWeight: '600' as const,
   },
 });
