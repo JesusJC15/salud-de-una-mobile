@@ -5,19 +5,12 @@ import { useThemeColor } from '@/src/hooks/use-theme-color';
 
 export type ThemedTextProps = TextProps & {
   lightColor?: string;
-  darkColor?: string;
   type?: 'default' | 'title' | 'defaultSemiBold' | 'subtitle' | 'link' | 'muted' | 'eyebrow';
 };
 
-export function ThemedText({
-  style,
-  lightColor,
-  darkColor,
-  type = 'default',
-  ...rest
-}: ThemedTextProps) {
+export function ThemedText({ style, lightColor, type = 'default', ...rest }: ThemedTextProps) {
   const colorKey = type === 'muted' ? 'textMuted' : type === 'link' ? 'link' : 'text';
-  const color = useThemeColor({ light: lightColor, dark: darkColor }, colorKey);
+  const color = useThemeColor({ light: lightColor }, colorKey);
 
   return (
     <Text

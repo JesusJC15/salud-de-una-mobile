@@ -20,8 +20,8 @@ export function PatientHomeScreen({ onLoginPress, onRegisterPress }: PatientHome
 
   return (
     <ParallaxScrollView
-      headerBackgroundColor={{ light: '#F7FEFF', dark: '#0B3A3F' }}
-      headerImage={<ThemedView lightColor="#D7F3F5" darkColor="#0F4952" style={styles.heroGlow} />}>
+      headerBackgroundColor="#F7FEFF"
+      headerImage={<ThemedView lightColor="#D7F3F5" style={styles.heroGlow} />}>
       <ThemedView style={styles.heroContent}>
         <ThemedText type="eyebrow">Salud De Una</ThemedText>
         <ThemedText type="title">Salud De Una</ThemedText>
@@ -31,7 +31,7 @@ export function PatientHomeScreen({ onLoginPress, onRegisterPress }: PatientHome
         </ThemedText>
       </ThemedView>
 
-      <ThemedView lightColor="#FCFFFF" darkColor="#0D3E43" style={styles.card}>
+      <ThemedView lightColor="#FCFFFF"  style={styles.card}>
         <ThemedText type="subtitle">Sesion actual</ThemedText>
         <ThemedText>
           Estado: <ThemedText type="defaultSemiBold">{sessionStatus}</ThemedText>
@@ -52,7 +52,7 @@ export function PatientHomeScreen({ onLoginPress, onRegisterPress }: PatientHome
         ) : null}
       </ThemedView>
 
-      <ThemedView lightColor="#FCFFFF" darkColor="#0D3E43" style={styles.card}>
+      <ThemedView lightColor="#FCFFFF"  style={styles.card}>
         <ThemedText type="subtitle">Configuracion</ThemedText>
         <ThemedText>
           API base:{' '}
@@ -63,7 +63,7 @@ export function PatientHomeScreen({ onLoginPress, onRegisterPress }: PatientHome
         </ThemedText>
       </ThemedView>
 
-      <ThemedView lightColor="#FCFFFF" darkColor="#0D3E43" style={styles.card}>
+      <ThemedView lightColor="#FCFFFF"  style={styles.card}>
         <ThemedText type="subtitle">Capacidades del modulo paciente</ThemedText>
         <ThemedText>- autenticacion y persistencia de sesion</ThemedText>
         <ThemedText>- perfil de paciente con estado local sincronizado</ThemedText>

@@ -11,7 +11,10 @@ import {
 } from '@/src/services/auth/auth0-service';
 import { useSessionStore } from '@/src/store/session-store';
 import type { UserRole } from '@/src/types/enums';
-import type { RegisterInput } from '@/src/schemas/auth';
+import type { LoginInput, RegisterInput } from '@/src/schemas/auth';
+
+// Subset used for Auth0 registration — email/password are handled by Auth0.
+type Auth0RegisterData = Pick<RegisterInput, 'firstName' | 'lastName' | 'birthDate' | 'gender'>;
 
 export function usePatientAuth() {
   const setSession = useSessionStore((state) => state.setSession);
@@ -32,7 +35,7 @@ export function usePatientAuth() {
     AUTH0_DISCOVERY,
   );
 
-  async function authenticateWithAuth0(registerData?: RegisterInput) {
+  async function authenticateWithAuth0(registerData?: Auth0RegisterData) {
     const result = await promptAsync();
 
     if (result.type !== 'success') {
@@ -107,23 +110,50 @@ export function usePatientAuth() {
     return { session, profile };
   }
 
+  async function loginWithEmail(input: LoginInput) {
+    const session = await authService.loginPatient(input);
+    const fullSession = { ...session, authMethod: 'legacy' as const };
+    await setSession(fullSession, null);
+    const profile = await authService.getCurrentPatient();
+    await setSession(fullSession, profile);
+    return { session: fullSession, profile };
+  }
+
+  async function registerWithEmail(input: RegisterInput) {
+    await authService.registerPatient(input);
+    const session = await authService.loginPatient({ email: input.email, password: input.password });
+    const fullSession = { ...session, authMethod: 'legacy' as const };
+    await setSession(fullSession, null);
+    const profile = await authService.getCurrentPatient();
+    await setSession(fullSession, profile);
+    return { session: fullSession, profile };
+  }
+
   const loginMutation = useMutation({
     mutationFn: () => authenticateWithAuth0(),
-    onError: async () => {
-      await clearSession();
-    },
+    onError: async () => { await clearSession(); },
   });
 
   const registerMutation = useMutation({
-    mutationFn: (input: RegisterInput) => authenticateWithAuth0(input),
-    onError: async () => {
-      await clearSession();
-    },
+    mutationFn: (input: Auth0RegisterData) => authenticateWithAuth0(input),
+    onError: async () => { await clearSession(); },
+  });
+
+  const loginWithEmailMutation = useMutation({
+    mutationFn: (input: LoginInput) => loginWithEmail(input),
+    onError: async () => { await clearSession(); },
+  });
+
+  const registerWithEmailMutation = useMutation({
+    mutationFn: (input: RegisterInput) => registerWithEmail(input),
+    onError: async () => { await clearSession(); },
   });
 
   return {
     loginMutation,
     registerMutation,
+    loginWithEmailMutation,
+    registerWithEmailMutation,
     isReady: !!request,
   };
 }

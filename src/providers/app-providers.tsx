@@ -35,18 +35,25 @@ export function AppProviders({ children }: PropsWithChildren) {
     setApiAccessTokenResolver(() => useSessionStore.getState().session?.accessToken ?? null);
     setApiUnauthorizedRecoveryHandler(async () => {
       const state = useSessionStore.getState();
-      const refreshToken = state.session?.refreshToken;
+      const { session } = state;
 
-      if (!refreshToken) {
+      if (!session?.refreshToken) {
         return null;
       }
 
       try {
-        const refreshed = await refreshAuth0Session(refreshToken);
+        if (session.authMethod === 'legacy') {
+          const refreshed = await authService.refreshSession(session.refreshToken);
+          const nextSession = { ...refreshed, authMethod: 'legacy' as const };
+          await state.setSession(nextSession, state.profile);
+          return refreshed.accessToken;
+        }
+
+        const refreshed = await refreshAuth0Session(session.refreshToken);
         const nextSession = {
-          ...state.session!,
+          ...session,
           accessToken: refreshed.accessToken,
-          refreshToken: refreshed.refreshToken ?? refreshToken,
+          refreshToken: refreshed.refreshToken ?? session.refreshToken,
         };
         await state.setSession(nextSession, state.profile);
         return refreshed.accessToken;

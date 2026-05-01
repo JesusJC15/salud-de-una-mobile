@@ -1,4 +1,4 @@
-import { DarkTheme, DefaultTheme, type Theme } from '@react-navigation/native';
+import { DefaultTheme, type Theme } from '@react-navigation/native';
 import { Platform } from 'react-native';
 
 const interWebStack = "Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
@@ -57,32 +57,6 @@ export const Colors = {
     heroEnd: '#E6F7F8',
     overlay: 'rgba(8, 47, 50, 0.08)',
   },
-  dark: {
-    text: '#E6FBFB',
-    textMuted: '#95C4C9',
-    background: '#082F32',
-    surface: '#0D3E43',
-    surfaceMuted: '#0A3438',
-    tint: '#2DD4BF',
-    primary: '#2DD4BF',
-    primaryForeground: '#072426',
-    secondary: '#0D4B54',
-    secondaryForeground: '#DCFBFF',
-    border: 'rgba(174, 244, 239, 0.18)',
-    input: 'rgba(174, 244, 239, 0.12)',
-    icon: '#95C4C9',
-    tabIconDefault: '#6E9BA0',
-    tabIconSelected: '#2DD4BF',
-    success: '#34D399',
-    warning: '#FBBF24',
-    destructive: '#F87171',
-    info: '#22D3EE',
-    link: '#22D3EE',
-    card: '#0D3E43',
-    heroStart: '#0B3A3F',
-    heroEnd: '#061F22',
-    overlay: 'rgba(1, 10, 11, 0.28)',
-  },
 };
 
 export const Radius = {
@@ -116,7 +90,4 @@ function createNavigationTheme(theme: typeof Colors.light, baseTheme: Theme): Th
   };
 }
 
-export const NavigationThemes = {
-  dark: createNavigationTheme(Colors.dark, DarkTheme),
-  light: createNavigationTheme(Colors.light, DefaultTheme),
-};
+export const NavigationTheme = createNavigationTheme(Colors.light, DefaultTheme);

@@ -132,8 +132,8 @@ export function PatientProfileScreen() {
         </ThemedText>
       </ThemedView>
 
-      <ThemedView lightColor="#FCFFFF" darkColor="#0D3E43" style={styles.card}>
-        <ThemedView lightColor="#D7F3F5" darkColor="#0F4952" style={styles.avatar}>
+      <ThemedView lightColor="#FCFFFF" style={styles.card}>
+        <ThemedView lightColor="#D7F3F5" style={styles.avatar}>
           <ThemedText type="subtitle">{initials}</ThemedText>
         </ThemedView>
         <ThemedText type="subtitle">Resumen</ThemedText>

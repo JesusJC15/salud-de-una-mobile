@@ -7,8 +7,7 @@ import { useEffect } from 'react';
 import { ActivityIndicator, StyleSheet } from 'react-native';
 import 'react-native-reanimated';
 
-import { Colors, NavigationThemes } from '@/src/constants/theme';
-import { useColorScheme } from '@/src/hooks/use-color-scheme';
+import { Colors, NavigationTheme } from '@/src/constants/theme';
 import { AppProviders } from '@/src/providers/app-providers';
 import { useSessionStore } from '@/src/store/session-store';
 import { ThemedText } from '@/src/ui/themed-text';
@@ -21,16 +20,13 @@ export const unstable_settings = {
 };
 
 function RootNavigator() {
-  const colorScheme = useColorScheme();
   const sessionStatus = useSessionStore((state) => state.status);
 
   if (sessionStatus === 'hydrating') {
-    const theme = Colors[colorScheme ?? 'light'];
-
     return (
-      <ThemeProvider value={NavigationThemes[colorScheme ?? 'light']}>
+      <ThemeProvider value={NavigationTheme}>
         <ThemedView style={styles.loadingScreen}>
-          <ActivityIndicator color={theme.primary} size="large" />
+          <ActivityIndicator color={Colors.light.primary} size="large" />
           <ThemedText type="eyebrow">Salud De Una</ThemedText>
           <ThemedText type="title" style={styles.loadingTitle}>
             Preparando tu sesion
@@ -44,13 +40,13 @@ function RootNavigator() {
   }
 
   return (
-    <ThemeProvider value={NavigationThemes[colorScheme ?? 'light']}>
+    <ThemeProvider value={NavigationTheme}>
       <Stack>
         <Stack.Screen name="(auth)" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
       </Stack>
-      <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
+      <StatusBar style="dark" />
     </ThemeProvider>
   );
 }

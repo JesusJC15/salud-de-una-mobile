@@ -3,12 +3,10 @@ import React from 'react';
 
 import { HapticTab } from '@/src/components/haptic-tab';
 import { Colors } from '@/src/constants/theme';
-import { useColorScheme } from '@/src/hooks/use-color-scheme';
 import { useSessionStore } from '@/src/store/session-store';
 import { IconSymbol } from '@/src/ui/icon-symbol';
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
   const sessionStatus = useSessionStore((state) => state.status);
 
   if (sessionStatus === 'anonymous') {
@@ -18,11 +16,11 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
-        tabBarInactiveTintColor: Colors[colorScheme ?? 'light'].tabIconDefault,
+        tabBarActiveTintColor: Colors.light.tint,
+        tabBarInactiveTintColor: Colors.light.tabIconDefault,
         tabBarStyle: {
-          backgroundColor: Colors[colorScheme ?? 'light'].surface,
-          borderTopColor: Colors[colorScheme ?? 'light'].border,
+          backgroundColor: Colors.light.surface,
+          borderTopColor: Colors.light.border,
         },
         headerShown: false,
         tabBarButton: HapticTab,
