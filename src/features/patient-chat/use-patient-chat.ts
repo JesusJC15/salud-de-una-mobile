@@ -19,11 +19,16 @@ export type ChatMessage = {
 
 type ConnectionStatus = 'connecting' | 'connected' | 'disconnected';
 
-export function usePatientChat(consultationId: string | null) {
+export function usePatientChat(consultationId: string | null, initialIsClosed = false) {
   const session = useSessionStore((s) => s.session);
   const socketRef = useRef<Socket | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [status, setStatus] = useState<ConnectionStatus>('disconnected');
+  const [isClosed, setIsClosed] = useState(initialIsClosed);
+
+  useEffect(() => {
+    setIsClosed(initialIsClosed);
+  }, [initialIsClosed]);
 
   useEffect(() => {
     if (!consultationId || !session?.accessToken) return;
@@ -57,6 +62,13 @@ export function usePatientChat(consultationId: string | null) {
       setMessages((prev) => [...prev, msg]);
     });
 
+    socket.on('chat:error', (err: { code: string; message: string }) => {
+      if (!mounted) return;
+      if (err.code === 'FORBIDDEN' && err.message.includes('cerrada')) {
+        setIsClosed(true);
+      }
+    });
+
     socket.on('disconnect', () => {
       if (!mounted) return;
       setStatus('disconnected');
@@ -73,11 +85,11 @@ export function usePatientChat(consultationId: string | null) {
 
   const sendMessage = useCallback(
     (content: string) => {
-      if (!socketRef.current || !consultationId) return;
+      if (!socketRef.current || !consultationId || isClosed) return;
       socketRef.current.emit('chat:send', { consultationId, content });
     },
-    [consultationId],
+    [consultationId, isClosed],
   );
 
-  return { messages, status, sendMessage, currentUserId: session?.user.id ?? '' };
+  return { messages, status, sendMessage, currentUserId: session?.user.id ?? '', isClosed };
 }

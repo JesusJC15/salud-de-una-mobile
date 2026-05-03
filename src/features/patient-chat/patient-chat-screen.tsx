@@ -67,8 +67,17 @@ function MessageBubble({ msg, isOwn }: { msg: ChatMessage; isOwn: boolean }) {
   );
 }
 
-export function PatientChatScreen({ consultationId }: { consultationId: string }) {
-  const { messages, status, sendMessage, currentUserId } = usePatientChat(consultationId);
+export function PatientChatScreen({
+  consultationId,
+  isClosed: initialIsClosed = false,
+}: {
+  consultationId: string;
+  isClosed?: boolean;
+}) {
+  const { messages, status, sendMessage, currentUserId, isClosed } = usePatientChat(
+    consultationId,
+    initialIsClosed,
+  );
   const [input, setInput] = useState('');
   const flatListRef = useRef<FlatList>(null);
 
@@ -114,20 +123,30 @@ export function PatientChatScreen({ consultationId }: { consultationId: string }
           <TextInput
             value={input}
             onChangeText={setInput}
-            placeholder={status === 'connected' ? 'Escribe un mensaje...' : 'Esperando conexión...'}
+            placeholder={
+              isClosed
+                ? 'Consulta cerrada — solo lectura'
+                : status === 'connected'
+                  ? 'Escribe un mensaje...'
+                  : 'Esperando conexión...'
+            }
             placeholderTextColor={PALETTE.subtitle}
-            editable={status === 'connected'}
+            editable={!isClosed && status === 'connected'}
             multiline
-            style={[styles.textInput, { backgroundColor: PALETTE.inputBg, borderColor: PALETTE.inputBorder }]}
+            style={[
+              styles.textInput,
+              { backgroundColor: PALETTE.inputBg, borderColor: PALETTE.inputBorder },
+              isClosed && { opacity: 0.5 },
+            ]}
             onSubmitEditing={handleSend}
           />
           <Pressable
             onPress={handleSend}
-            disabled={!input.trim() || status !== 'connected'}
+            disabled={isClosed || !input.trim() || status !== 'connected'}
             style={({ pressed }) => [
               styles.sendBtn,
               {
-                backgroundColor: (!input.trim() || status !== 'connected') ? '#94A3B8' : PALETTE.primary,
+                backgroundColor: (isClosed || !input.trim() || status !== 'connected') ? '#94A3B8' : PALETTE.primary,
                 opacity: pressed ? 0.8 : 1,
               },
             ]}

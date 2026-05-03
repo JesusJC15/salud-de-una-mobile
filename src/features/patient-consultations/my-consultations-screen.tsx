@@ -161,7 +161,8 @@ function ConsultationCard({
     <Pressable
       onPress={() => {
         if (item.status !== 'PENDING') {
-          router.push(`/triage/chat/${item.id}` as never);
+          const closed = item.status === 'CLOSED' ? '1' : '0';
+          router.push(`/triage/chat/${item.id}?closed=${closed}` as never);
         }
       }}
       style={({ pressed }) => [styles.card, { opacity: pressed ? 0.9 : 1 }]}
