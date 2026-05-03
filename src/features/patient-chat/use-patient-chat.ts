@@ -1,0 +1,83 @@
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { io, type Socket } from 'socket.io-client';
+import { appConfig } from '@/src/config/env';
+import { useSessionStore } from '@/src/store/session-store';
+
+const WS_BASE_URL = (appConfig.apiBaseUrl ?? 'http://localhost:3000')
+  .replace(/\/v1$/, '')
+  .replace(/\/+$/, '');
+
+export type ChatMessage = {
+  id: string;
+  consultationId: string;
+  senderId: string;
+  senderRole: 'PATIENT' | 'DOCTOR';
+  content: string;
+  type: 'TEXT';
+  createdAt?: string;
+};
+
+type ConnectionStatus = 'connecting' | 'connected' | 'disconnected';
+
+export function usePatientChat(consultationId: string | null) {
+  const session = useSessionStore((s) => s.session);
+  const socketRef = useRef<Socket | null>(null);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [status, setStatus] = useState<ConnectionStatus>('disconnected');
+
+  useEffect(() => {
+    if (!consultationId || !session?.accessToken) return;
+
+    let mounted = true;
+    setStatus('connecting');
+
+    const socket = io(`${WS_BASE_URL}/chat`, {
+      auth: { token: session.accessToken },
+      transports: ['polling', 'websocket'],
+      reconnection: true,
+      reconnectionDelay: 1500,
+      reconnectionAttempts: 5,
+    });
+
+    socketRef.current = socket;
+
+    socket.on('connect', () => {
+      if (!mounted) return;
+      setStatus('connected');
+      socket.emit('chat:join', { consultationId });
+    });
+
+    socket.on('chat:history', ({ messages: history }: { messages: ChatMessage[] }) => {
+      if (!mounted) return;
+      setMessages(history);
+    });
+
+    socket.on('chat:message', (msg: ChatMessage) => {
+      if (!mounted) return;
+      setMessages((prev) => [...prev, msg]);
+    });
+
+    socket.on('disconnect', () => {
+      if (!mounted) return;
+      setStatus('disconnected');
+    });
+
+    return () => {
+      mounted = false;
+      socket.disconnect();
+      socketRef.current = null;
+      setMessages([]);
+      setStatus('disconnected');
+    };
+  }, [consultationId, session?.accessToken]);
+
+  const sendMessage = useCallback(
+    (content: string) => {
+      if (!socketRef.current || !consultationId) return;
+      socketRef.current.emit('chat:send', { consultationId, content });
+    },
+    [consultationId],
+  );
+
+  return { messages, status, sendMessage, currentUserId: session?.user.id ?? '' };
+}
