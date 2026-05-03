@@ -11,6 +11,7 @@ import {
 import { useSessionStore } from '@/src/store/session-store';
 import { useTriageStore } from '@/src/store/triage-store';
 import { triageService } from '@/src/features/patient-triage/triage-service';
+import { useActiveConsultation } from '@/src/features/patient-consultations/use-active-consultation';
 import { ThemedText } from '@/src/ui/themed-text';
 import { ThemedView } from '@/src/ui/themed-view';
 
@@ -289,16 +290,22 @@ export function PatientHomeScreen({
     refetchInterval: 30_000,
   });
 
-  // Determine current state
+  // Fetch the most recent non-closed consultation to recover state after app restart
+  const { data: activeConsultation } = useActiveConsultation();
+
+  // Determine current state — backend data takes precedence over in-memory store
   const activeSessions = activeSessionsData?.items ?? [];
   const hasActiveSession = activeSessions.length > 0 || !!activeSessionId;
   const activeSession = activeSessions[0];
+  const effectiveConsultationId = activeConsultation?.id ?? consultationId ?? null;
 
   const currentState: ConsultationState = (() => {
-    if (hasActiveSession && activeSession?.status === 'IN_PROGRESS') return 'triage-in-progress'
-    if (hasActiveSession && activeSession?.status === 'COMPLETED') return 'waiting'
-    if (consultationId) return 'waiting'
-    return 'no-session'
+    if (hasActiveSession && activeSession?.status === 'IN_PROGRESS') return 'triage-in-progress';
+    if (activeConsultation?.status === 'IN_ATTENTION') return 'in-attention';
+    if (activeConsultation?.status === 'PENDING') return 'waiting';
+    if (hasActiveSession && activeSession?.status === 'COMPLETED') return 'waiting';
+    if (consultationId) return 'waiting'; // fallback while backend query loads
+    return 'no-session';
   })()
 
   const firstName = patientProfile?.firstName ?? sessionUser?.email?.split('@')[0] ?? 'allí';
@@ -396,8 +403,8 @@ export function PatientHomeScreen({
         ) : (
           <StatusHero
             state={currentState}
-            consultationId={consultationId ?? undefined}
-            onGoToChat={consultationId ? () => onGoToChatPress?.(consultationId) : undefined}
+            consultationId={effectiveConsultationId ?? undefined}
+            onGoToChat={effectiveConsultationId ? () => onGoToChatPress?.(effectiveConsultationId) : undefined}
           />
         )}
 
@@ -415,11 +422,11 @@ export function PatientHomeScreen({
               onPress={() => onContinueTriagePress?.(activeSession.id)}
               variant="primary"
             />
-          ) : consultationId && currentState === 'waiting' ? (
+          ) : effectiveConsultationId && (currentState === 'waiting' || currentState === 'in-attention') ? (
             <QuickAction
               icon="chat"
-              label="Ver estado de mi consulta"
-              onPress={() => onGoToChatPress?.(consultationId)}
+              label={currentState === 'in-attention' ? 'Abrir chat con médico' : 'Ver estado de mi consulta'}
+              onPress={() => onGoToChatPress?.(effectiveConsultationId)}
               variant="primary"
             />
           ) : (
