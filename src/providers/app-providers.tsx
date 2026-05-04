@@ -8,6 +8,7 @@ import {
 } from '@/src/services/api/client';
 import { ApiError } from '@/src/services/api/api-error';
 import { authService } from '@/src/services/auth/auth-service';
+import { refreshAuth0Session } from '@/src/services/auth/auth0-service';
 import { useSessionStore } from '@/src/store/session-store';
 
 function createQueryClient() {
@@ -34,16 +35,31 @@ export function AppProviders({ children }: PropsWithChildren) {
     setApiAccessTokenResolver(() => useSessionStore.getState().session?.accessToken ?? null);
     setApiUnauthorizedRecoveryHandler(async () => {
       const state = useSessionStore.getState();
-      const refreshToken = state.session?.refreshToken;
+      const { session } = state;
 
-      if (!refreshToken) {
+      if (!session?.refreshToken) {
         return null;
       }
 
-      const nextSession = await authService.refreshSession(refreshToken);
-      await state.setSession(nextSession, state.profile);
+      try {
+        if (session.authMethod === 'legacy') {
+          const refreshed = await authService.refreshSession(session.refreshToken);
+          const nextSession = { ...refreshed, authMethod: 'legacy' as const };
+          await state.setSession(nextSession, state.profile);
+          return refreshed.accessToken;
+        }
 
-      return nextSession.accessToken;
+        const refreshed = await refreshAuth0Session(session.refreshToken);
+        const nextSession = {
+          ...session,
+          accessToken: refreshed.accessToken,
+          refreshToken: refreshed.refreshToken ?? session.refreshToken,
+        };
+        await state.setSession(nextSession, state.profile);
+        return refreshed.accessToken;
+      } catch {
+        return null;
+      }
     });
     setApiUnauthorizedSessionHandler(async () => {
       queryClient.clear();

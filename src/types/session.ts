@@ -15,6 +15,7 @@ export interface AuthSession {
   refreshToken: string;
   refreshSessionId?: string;
   user: AuthenticatedUser;
+  authMethod?: 'auth0' | 'legacy';
 }
 
 export type RefreshSessionResponse = AuthSession;

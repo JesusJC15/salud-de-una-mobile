@@ -16,7 +16,6 @@ import {
 } from 'react-native';
 
 import { Radius } from '@/src/constants/theme';
-import { useColorScheme } from '@/src/hooks/use-color-scheme';
 import { loginSchema, type LoginInput } from '@/src/schemas/auth';
 import { usePatientAuth } from '@/src/features/patient-auth/use-patient-auth';
 import { ThemedText } from '@/src/ui/themed-text';
@@ -24,9 +23,7 @@ import { ThemedView } from '@/src/ui/themed-view';
 
 export function PatientLoginScreen() {
   const router = useRouter();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
-  const { loginMutation } = usePatientAuth();
+  const { loginMutation, loginWithEmailMutation } = usePatientAuth();
   const [showPassword, setShowPassword] = useState(false);
   const form = useForm<LoginInput>({
     defaultValues: {
@@ -36,31 +33,40 @@ export function PatientLoginScreen() {
     resolver: zodResolver(loginSchema),
   });
 
-  const titleColor = isDark ? '#F1F5F9' : '#0F172A';
-  const subtitleColor = isDark ? '#94A3B8' : '#64748B';
-  const labelColor = isDark ? '#CBD5E1' : '#334155';
-  const surfaceBase = isDark ? '#082F32' : '#F0F9FA';
-  const cardBackground = isDark ? 'rgba(8, 47, 50, 0.68)' : 'rgba(240, 249, 250, 0.46)';
-  const fieldBackground = isDark ? 'rgba(30, 41, 59, 0.8)' : 'rgba(255, 255, 255, 0.8)';
-  const fieldBorder = isDark ? '#334155' : '#E2E8F0';
-  const iconColor = isDark ? 'rgba(20, 184, 166, 0.78)' : 'rgba(20, 184, 166, 0.62)';
+  const anyPending = loginWithEmailMutation.isPending || loginMutation.isPending;
+  const formError = loginWithEmailMutation.error instanceof Error ? loginWithEmailMutation.error.message : null;
+  const auth0Error = loginMutation.error instanceof Error ? loginMutation.error.message : null;
+
+  const titleColor = '#0F172A';
+  const subtitleColor = '#64748B';
+  const labelColor = '#334155';
+  const surfaceBase = '#F0F9FA';
+  const cardBackground = 'rgba(240, 249, 250, 0.46)';
+  const fieldBackground = 'rgba(255, 255, 255, 0.8)';
+  const fieldBorder = '#E2E8F0';
+  const iconColor = 'rgba(20, 184, 166, 0.62)';
   const accentColor = '#14B8A6';
   const linkColor = '#0891B2';
-  const decorativePrimary = isDark ? 'rgba(8, 145, 178, 0.2)' : 'rgba(8, 145, 178, 0.1)';
-  const decorativeSecondary = isDark ? 'rgba(20, 184, 166, 0.17)' : 'rgba(20, 184, 166, 0.1)';
-  const decorativeTertiary = isDark ? 'rgba(8, 145, 178, 0.12)' : 'rgba(8, 145, 178, 0.08)';
-  const inputTextColor = isDark ? '#F1F5F9' : '#0F172A';
+  const decorativePrimary = 'rgba(8, 145, 178, 0.1)';
+  const decorativeSecondary = 'rgba(20, 184, 166, 0.1)';
+  const decorativeTertiary = 'rgba(8, 145, 178, 0.08)';
+  const inputTextColor = '#0F172A';
   const placeholderColor = '#94A3B8';
   const errorColor = '#DC2626';
-  const cardBorderColor = isDark ? 'rgba(51, 65, 85, 0.65)' : 'rgba(226, 232, 240, 0.9)';
+  const cardBorderColor = 'rgba(226, 232, 240, 0.9)';
 
   const onSubmit = form.handleSubmit(async (values) => {
-    await loginMutation.mutateAsync(values);
+    await loginWithEmailMutation.mutateAsync(values);
     router.replace('/');
   });
 
+  const onAuth0Login = async () => {
+    await loginMutation.mutateAsync();
+    router.replace('/');
+  };
+
   return (
-    <ThemedView darkColor={surfaceBase} lightColor={surfaceBase} style={styles.container}>
+    <ThemedView lightColor={surfaceBase} style={styles.container}>
       <View pointerEvents="none" style={[styles.decorativeOrbLeft, { backgroundColor: decorativeSecondary }]} />
       <View pointerEvents="none" style={[styles.decorativeOrbRight, { backgroundColor: decorativePrimary }]} />
 
@@ -92,7 +98,7 @@ export function PatientLoginScreen() {
                   <ThemedText style={[styles.fieldLabel, { color: labelColor }]}>Correo electronico</ThemedText>
                   <ThemedView
                     lightColor={fieldBackground}
-                    darkColor={fieldBackground}
+
                     style={[
                       styles.inputShell,
                       {
@@ -126,7 +132,7 @@ export function PatientLoginScreen() {
                   <ThemedText style={[styles.fieldLabel, { color: labelColor }]}>Contrasena</ThemedText>
                   <ThemedView
                     lightColor={fieldBackground}
-                    darkColor={fieldBackground}
+
                     style={[
                       styles.inputShell,
                       {
@@ -167,19 +173,19 @@ export function PatientLoginScreen() {
               <ThemedText style={[styles.forgotPasswordText, { color: linkColor }]}>Olvide mi contrasena</ThemedText>
             </Pressable>
 
-            {loginMutation.error instanceof Error ? (
-              <ThemedText style={[styles.authError, { color: errorColor }]}>{loginMutation.error.message}</ThemedText>
+            {formError ? (
+              <ThemedText style={[styles.authError, { color: errorColor }]}>{formError}</ThemedText>
             ) : null}
 
             <Pressable
               accessibilityRole="button"
-              disabled={loginMutation.isPending}
+              disabled={anyPending}
               onPress={() => void onSubmit()}
               style={({ pressed }) => [
                 styles.loginButton,
                 {
                   borderColor: pressed ? '#0B819D' : accentColor,
-                  opacity: loginMutation.isPending ? 0.7 : 1,
+                  opacity: anyPending ? 0.7 : 1,
                 },
               ]}>
               <LinearGradient
@@ -187,12 +193,37 @@ export function PatientLoginScreen() {
                 end={{ x: 1, y: 0.5 }}
                 start={{ x: 0, y: 0.5 }}
                 style={styles.loginButtonGradient}>
-                {loginMutation.isPending ? (
+                {loginWithEmailMutation.isPending ? (
                   <ActivityIndicator color="#FFFFFF" />
                 ) : (
                   <ThemedText style={styles.loginButtonText}>Entrar</ThemedText>
                 )}
               </LinearGradient>
+            </Pressable>
+
+            <View style={styles.dividerRow}>
+              <View style={[styles.dividerLine, { backgroundColor: fieldBorder }]} />
+              <ThemedText style={[styles.dividerText, { color: subtitleColor }]}>o</ThemedText>
+              <View style={[styles.dividerLine, { backgroundColor: fieldBorder }]} />
+            </View>
+
+            {auth0Error ? (
+              <ThemedText style={[styles.authError, { color: errorColor }]}>{auth0Error}</ThemedText>
+            ) : null}
+
+            <Pressable
+              accessibilityRole="button"
+              disabled={anyPending}
+              onPress={() => void onAuth0Login()}
+              style={({ pressed }) => [
+                styles.auth0Button,
+                { borderColor: pressed ? '#0B819D' : fieldBorder, opacity: anyPending ? 0.7 : 1 },
+              ]}>
+              {loginMutation.isPending ? (
+                <ActivityIndicator color={accentColor} />
+              ) : (
+                <ThemedText style={[styles.auth0ButtonText, { color: accentColor }]}>Continuar con Auth0</ThemedText>
+              )}
             </Pressable>
           </ThemedView>
 
@@ -428,5 +459,30 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: '36%',
     transform: [{ rotate: '12deg' }],
+  },
+  dividerRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 10,
+    marginVertical: 4,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+  },
+  dividerText: {
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  auth0Button: {
+    alignItems: 'center',
+    borderRadius: Radius.lg,
+    borderWidth: 1,
+    justifyContent: 'center',
+    minHeight: 52,
+  },
+  auth0ButtonText: {
+    fontSize: 16,
+    fontWeight: '700',
   },
 });

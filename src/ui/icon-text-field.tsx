@@ -60,10 +60,11 @@ export function AppIconTextField({
 
   const resolvedAccessibilityLabel = accessibilityLabel ?? label;
   const resolvedAccessibilityHint = accessibilityHint ?? errorMessage ?? hint;
+  // Cast needed: `invalid` is an aria-invalid attribute not yet in RN's AccessibilityState type.
   const resolvedAccessibilityState = {
     ...(accessibilityState ?? {}),
-    invalid: accessibilityState?.invalid ?? !!errorMessage,
-  };
+    invalid: !!errorMessage,
+  } as typeof accessibilityState;
 
   return (
     <View style={styles.fieldBlock}>

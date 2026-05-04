@@ -26,7 +26,6 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import type { z } from 'zod';
 
 import { Radius } from '@/src/constants/theme';
-import { useColorScheme } from '@/src/hooks/use-color-scheme';
 import { type RegisterFormInput, registerFormSchema } from '@/src/schemas/auth';
 import { normalizeRegisterInput } from '@/src/features/patient-auth/register-payload';
 import { usePatientAuth } from '@/src/features/patient-auth/use-patient-auth';
@@ -38,25 +37,7 @@ import { ThemedView } from '@/src/ui/themed-view';
 const GENDER_OPTIONS: UserGender[] = ['MALE', 'FEMALE', 'OTHER'];
 type RegisterFormValues = z.input<typeof registerFormSchema>;
 
-const DARK_MODE_PALETTE = {
-  aquamarineColor: '#22D3EE',
-  cardBackground: '#020617',
-  cardBorderColor: 'rgba(148, 163, 184, 0.6)',
-  gradientColors: ['#020617', '#0F172A'] as const,
-  iconTint: '#22D3EE',
-  inputBackground: '#020617',
-  inputBorderColor: '#1F2937',
-  inputTextColor: '#E5F3FF',
-  placeholderColor: '#64748B',
-  primaryColor: '#06B6D4',
-  sectionSubtle: '#94A3B8',
-  sectionTitleColor: '#E5F3FF',
-  subtitleColor: '#CBD5F5',
-  titleColor: '#E5F3FF',
-  topBarColor: '#E5F3FF',
-};
-
-const LIGHT_MODE_PALETTE = {
+const PALETTE = {
   aquamarineColor: '#14B8A6',
   cardBackground: '#FFFFFF',
   cardBorderColor: 'rgba(20, 184, 166, 0.18)',
@@ -342,7 +323,7 @@ function PasswordField(props: Readonly<PasswordFieldProps>) {
 
 export function PatientRegisterScreen() {
   const router = useRouter();
-  const { registerMutation } = usePatientAuth();
+  const { registerMutation, registerWithEmailMutation } = usePatientAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [showBirthDatePicker, setShowBirthDatePicker] = useState(false);
@@ -362,10 +343,6 @@ export function PatientRegisterScreen() {
     },
   });
 
-  const colorScheme = useColorScheme();
-  const isDarkMode = colorScheme === 'dark';
-
-  const palette = isDarkMode ? DARK_MODE_PALETTE : LIGHT_MODE_PALETTE;
   const {
     aquamarineColor,
     cardBackground,
@@ -382,21 +359,41 @@ export function PatientRegisterScreen() {
     subtitleColor,
     titleColor,
     topBarColor,
-  } = palette;
+  } = PALETTE;
   const errorColor = '#DC2626';
+
+  const anyPending = registerWithEmailMutation.isPending || registerMutation.isPending;
 
   const onSubmit = form.handleSubmit(async (values) => {
     if (!acceptedTerms) {
       setTermsError('Debes aceptar los términos y condiciones para continuar.');
       return;
     }
-
     setTermsError(null);
-
-    await registerMutation.mutateAsync(normalizeRegisterInput(values));
-
+    await registerWithEmailMutation.mutateAsync(normalizeRegisterInput(values));
     router.replace('/');
   });
+
+  const onAuth0Register = async () => {
+    // Only validate personal info — Auth0 handles email and password.
+    const isValid = await form.trigger(['firstName', 'lastName']);
+    if (!isValid) return;
+
+    if (!acceptedTerms) {
+      setTermsError('Debes aceptar los términos y condiciones para continuar.');
+      return;
+    }
+    setTermsError(null);
+
+    const { firstName, lastName, birthDate, gender } = form.getValues();
+    await registerMutation.mutateAsync({
+      firstName: firstName.trim(),
+      lastName: lastName.trim(),
+      birthDate: birthDate ?? undefined,
+      gender,
+    });
+    router.replace('/');
+  };
 
   return (
     <LinearGradient colors={gradientColors} end={{ x: 1, y: 1 }} start={{ x: 0.1, y: 0 }} style={styles.container}>
@@ -688,23 +685,49 @@ export function PatientRegisterScreen() {
 
             {termsError ? <ThemedText style={[styles.inlineError, { color: errorColor }]}>{termsError}</ThemedText> : null}
 
+            {registerWithEmailMutation.error instanceof Error ? (
+              <ThemedText style={[styles.inlineError, { color: errorColor }]}>{registerWithEmailMutation.error.message}</ThemedText>
+            ) : null}
+
+            <Pressable
+              accessibilityRole="button"
+              disabled={anyPending}
+              onPress={() => void onSubmit()}
+              style={({ pressed }: PressableStateCallbackType) => [styles.registerButton, { opacity: anyPending ? 0.74 : 1, transform: [{ scale: pressed ? 0.99 : 1 }] }]}
+            >
+              <LinearGradient colors={[aquamarineColor, primaryColor]} end={{ x: 1, y: 0.5 }} start={{ x: 0, y: 0.5 }} style={styles.registerButtonGradient}>
+                {registerWithEmailMutation.isPending ? (
+                  <ActivityIndicator color="#FFFFFF" />
+                ) : (
+                  <ThemedText style={styles.registerButtonText}>Registrarme</ThemedText>
+                )}
+              </LinearGradient>
+            </Pressable>
+
+            <View style={styles.dividerRow}>
+              <View style={[styles.dividerLine, { backgroundColor: inputBorderColor }]} />
+              <ThemedText style={[styles.dividerText, { color: subtitleColor }]}>o</ThemedText>
+              <View style={[styles.dividerLine, { backgroundColor: inputBorderColor }]} />
+            </View>
+
             {registerMutation.error instanceof Error ? (
               <ThemedText style={[styles.inlineError, { color: errorColor }]}>{registerMutation.error.message}</ThemedText>
             ) : null}
 
             <Pressable
               accessibilityRole="button"
-              disabled={registerMutation.isPending}
-              onPress={() => void onSubmit()}
-              style={({ pressed }: PressableStateCallbackType) => [styles.registerButton, { opacity: registerMutation.isPending ? 0.74 : 1, transform: [{ scale: pressed ? 0.99 : 1 }] }]}
+              disabled={anyPending}
+              onPress={() => void onAuth0Register()}
+              style={({ pressed }: PressableStateCallbackType) => [
+                styles.auth0Button,
+                { borderColor: pressed ? primaryColor : inputBorderColor, opacity: anyPending ? 0.74 : 1 },
+              ]}
             >
-              <LinearGradient colors={[aquamarineColor, primaryColor]} end={{ x: 1, y: 0.5 }} start={{ x: 0, y: 0.5 }} style={styles.registerButtonGradient}>
-                {registerMutation.isPending ? (
-                  <ActivityIndicator color="#FFFFFF" />
-                ) : (
-                  <ThemedText style={styles.registerButtonText}>Registrarme</ThemedText>
-                )}
-              </LinearGradient>
+              {registerMutation.isPending ? (
+                <ActivityIndicator color={primaryColor} />
+              ) : (
+                <ThemedText style={[styles.auth0ButtonText, { color: primaryColor }]}>Registrarme con Auth0</ThemedText>
+              )}
             </Pressable>
           </ThemedView>
 
@@ -967,5 +990,30 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     marginTop: 8,
     opacity: 0.35,
+  },
+  dividerRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 10,
+    marginVertical: 4,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+  },
+  dividerText: {
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  auth0Button: {
+    alignItems: 'center',
+    borderRadius: 14,
+    borderWidth: 1,
+    justifyContent: 'center',
+    minHeight: 52,
+  },
+  auth0ButtonText: {
+    fontSize: 16,
+    fontWeight: '700',
   },
 });

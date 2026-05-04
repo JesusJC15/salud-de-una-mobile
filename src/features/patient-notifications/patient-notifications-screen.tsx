@@ -17,7 +17,7 @@ function NotificationCard({
   pending: boolean;
 }) {
   return (
-    <ThemedView lightColor="#FCFFFF" darkColor="#0D3E43" style={styles.card}>
+    <ThemedView lightColor="#FCFFFF" style={styles.card}>
       <View style={styles.cardHeader}>
         <ThemedText type="defaultSemiBold">{item.type}</ThemedText>
         <ThemedText type={item.read ? 'muted' : 'eyebrow'}>{item.read ? 'Leida' : 'Nueva'}</ThemedText>
@@ -49,7 +49,7 @@ export function PatientNotificationsScreen() {
         </ThemedText>
       </ThemedView>
 
-      <ThemedView lightColor="#FCFFFF" darkColor="#0D3E43" style={styles.summaryCard}>
+      <ThemedView lightColor="#FCFFFF" style={styles.summaryCard}>
         <ThemedText type="subtitle">Resumen</ThemedText>
         <ThemedText>
           Sin leer: <ThemedText type="defaultSemiBold">{unreadCount}</ThemedText>
@@ -64,7 +64,7 @@ export function PatientNotificationsScreen() {
       </ThemedView>
 
       {notificationsQuery.error instanceof Error ? (
-        <ThemedView lightColor="#FCFFFF" darkColor="#0D3E43" style={styles.summaryCard}>
+        <ThemedView lightColor="#FCFFFF" style={styles.summaryCard}>
           <ThemedText style={styles.errorMessage}>{notificationsQuery.error.message}</ThemedText>
           <AppButton
             label="Reintentar"
@@ -90,11 +90,11 @@ export function PatientNotificationsScreen() {
         )}
         ListEmptyComponent={
           notificationsQuery.isPending ? (
-            <ThemedView lightColor="#FCFFFF" darkColor="#0D3E43" style={styles.emptyCard}>
+            <ThemedView lightColor="#FCFFFF" style={styles.emptyCard}>
               <ThemedText type="muted">Cargando notificaciones...</ThemedText>
             </ThemedView>
           ) : (
-            <ThemedView lightColor="#FCFFFF" darkColor="#0D3E43" style={styles.emptyCard}>
+            <ThemedView lightColor="#FCFFFF" style={styles.emptyCard}>
               <ThemedText type="subtitle">Todo al dia</ThemedText>
               <ThemedText type="muted">
                 Cuando el backend publique eventos para el paciente, apareceran aqui.
