@@ -12,7 +12,6 @@ module.exports = {
     'src/schemas/**/*.ts',
     'src/services/**/*.ts',
     '!src/features/**/use-*.ts',
-    '!src/services/api/**',
     '!src/services/auth/token-storage.ts',
     '!src/**/*.d.ts',
     '!src/**/README.md',
