@@ -68,19 +68,33 @@ export function usePatientAuth() {
 
       await provisionPatient(accessToken, provisionData);
 
-      // Fetch a fresh token so the next API calls include the db_id claim
+      if (!refreshToken) {
+        throw new Error(
+          'Auth0 no devolvió refresh token. Verifica que el scope "offline_access" esté habilitado en la Application.',
+        );
+      }
+
+      // Fetch a fresh token so the next API calls include the db_id claim.
+      // The Auth0 Action runs on every issuance — the refreshed token will
+      // contain the app_metadata.db_id we just set via provisioning.
       const refreshed = await AuthSession.refreshAsync(
-        { clientId, refreshToken: refreshToken! },
+        { clientId, refreshToken },
         AUTH0_DISCOVERY,
       );
 
       const freshClaims = decodeTokenClaims(refreshed.accessToken);
 
+      if (!freshClaims.dbId) {
+        throw new Error(
+          'El token actualizado no incluye db_id. Verifica que el Auth0 Action "Inject SaludDeUna Custom Claims" esté activo y publicado.',
+        );
+      }
+
       const session = {
         accessToken: refreshed.accessToken,
-        refreshToken: refreshed.refreshToken ?? refreshToken ?? '',
+        refreshToken: refreshed.refreshToken ?? refreshToken,
         user: {
-          id: freshClaims.dbId ?? '',
+          id: freshClaims.dbId,
           email: freshClaims.email ?? claims.email ?? '',
           role: ((freshClaims.role ?? 'PATIENT') as UserRole),
           isActive: freshClaims.isActive ?? true,

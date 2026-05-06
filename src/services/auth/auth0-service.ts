@@ -15,7 +15,7 @@ export const AUTH0_DISCOVERY: AuthSession.DiscoveryDocument = {
 };
 
 export function makeAuth0RedirectUri() {
-  return AuthSession.makeRedirectUri({ scheme: 'saluddeunamobile' });
+  return AuthSession.makeRedirectUri({ scheme: 'saluddeunamobile', path: 'callback' });
 }
 
 export interface Auth0TokenClaims {

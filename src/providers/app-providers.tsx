@@ -9,7 +9,9 @@ import {
 import { ApiError } from '@/src/services/api/api-error';
 import { authService } from '@/src/services/auth/auth-service';
 import { refreshAuth0Session } from '@/src/services/auth/auth0-service';
+import { registerPushNotifications } from '@/src/services/notifications/push-notification-service';
 import { useSessionStore } from '@/src/store/session-store';
+import { useTriageStore } from '@/src/store/triage-store';
 
 function createQueryClient() {
   return new QueryClient({
@@ -29,6 +31,7 @@ function createQueryClient() {
 
 export function AppProviders({ children }: PropsWithChildren) {
   const hydrate = useSessionStore((state) => state.hydrate);
+  const hydrateTriageStore = useTriageStore((state) => state.hydrate);
   const [queryClient] = useState(createQueryClient);
 
   useEffect(() => {
@@ -77,7 +80,7 @@ export function AppProviders({ children }: PropsWithChildren) {
     let isMounted = true;
 
     void (async () => {
-      await hydrate();
+      await Promise.all([hydrate(), hydrateTriageStore()]);
 
       const initialState = useSessionStore.getState();
 
@@ -102,6 +105,7 @@ export function AppProviders({ children }: PropsWithChildren) {
         };
 
         await nextState.setSession(nextSession, nextState.profile);
+        void registerPushNotifications();
       } catch (error) {
         const apiError = ApiError.fromUnknown(error);
 
@@ -115,7 +119,7 @@ export function AppProviders({ children }: PropsWithChildren) {
     return () => {
       isMounted = false;
     };
-  }, [hydrate, queryClient]);
+  }, [hydrate, hydrateTriageStore, queryClient]);
 
   return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
 }
