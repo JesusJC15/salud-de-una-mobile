@@ -27,7 +27,6 @@ export function TriageResultScreen({ priority, message, consultationId, redFlags
   const config = PRIORITY_CONFIG[priority];
 
   const handleGoToChat = () => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     router.replace(`/triage/chat/${consultationId}` as any);
   };
 

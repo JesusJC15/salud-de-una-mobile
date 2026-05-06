@@ -1,4 +1,4 @@
-import axios, { AxiosHeaders, isAxiosError } from 'axios';
+import { AxiosHeaders, isAxiosError, create } from 'axios';
 
 import { appConfig } from '@/src/config/env';
 import { ApiError } from '@/src/services/api/api-error';
@@ -37,7 +37,7 @@ export function setApiUnauthorizedSessionHandler(handler: UnauthorizedSessionHan
   unauthorizedSessionHandler = handler;
 }
 
-export const apiClient = axios.create({
+export const apiClient = create({
   baseURL: appConfig.apiBaseUrl ?? undefined,
   timeout: 15_000,
   headers: {

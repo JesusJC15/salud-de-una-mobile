@@ -2,7 +2,7 @@ import { useLocalSearchParams } from 'expo-router';
 import { TriageResultScreen } from '@/src/features/patient-triage/triage-result-screen';
 
 export default function TriageResultPage() {
-  const { priority, consultationId, sessionId } = useLocalSearchParams<{
+  const { priority, consultationId } = useLocalSearchParams<{
     priority: string;
     consultationId: string;
     sessionId: string;
