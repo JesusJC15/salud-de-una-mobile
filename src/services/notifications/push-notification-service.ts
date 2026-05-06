@@ -17,15 +17,16 @@ export async function registerPushNotifications(): Promise<void> {
   if (Platform.OS === 'web') return;
 
   try {
-    const { status: existing } = await Notifications.getPermissionsAsync();
+    const existing = await Notifications.getPermissionsAsync();
     let finalStatus = existing;
+    const existingStatus = (existing as { status?: string }).status;
 
-    if (existing !== 'granted') {
-      const { status } = await Notifications.requestPermissionsAsync();
-      finalStatus = status;
+    if (existingStatus !== Notifications.PermissionStatus.GRANTED) {
+      finalStatus = await Notifications.requestPermissionsAsync();
     }
 
-    if (finalStatus !== 'granted') return;
+    const grantedStatus = (finalStatus as { status?: string }).status;
+    if (grantedStatus !== Notifications.PermissionStatus.GRANTED) return;
 
     const projectId =
       Constants.expoConfig?.extra?.eas?.projectId ??
@@ -38,5 +39,34 @@ export async function registerPushNotifications(): Promise<void> {
     await apiClient.patch('/patients/me/push-token', { token: tokenData.data });
   } catch {
     // Non-critical — silently ignore failures
+  }
+}
+
+const shownLocalNotifications = new Set<string>();
+
+export async function showLocalFollowupNotification(input: {
+  id: string;
+  title: string;
+  body: string;
+  deepLink?: string | null;
+}): Promise<void> {
+  if (Platform.OS === 'web') return;
+  if (shownLocalNotifications.has(input.id)) return;
+
+  shownLocalNotifications.add(input.id);
+
+  try {
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: input.title,
+        body: input.body,
+        data: {
+          deepLink: input.deepLink ?? undefined,
+        },
+      },
+      trigger: null,
+    });
+  } catch {
+    shownLocalNotifications.delete(input.id);
   }
 }

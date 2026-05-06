@@ -44,6 +44,7 @@ function RootNavigator() {
       <Stack>
         <Stack.Screen name="(auth)" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="followup/[followupId]" options={{ title: 'Seguimiento' }} />
         <Stack.Screen name="triage" options={{ headerShown: false }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
       </Stack>

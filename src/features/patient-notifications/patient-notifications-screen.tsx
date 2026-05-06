@@ -1,4 +1,5 @@
 import { FlatList, Pressable, StyleSheet, View } from 'react-native';
+import { useRouter } from 'expo-router';
 
 import { Radius } from '@/src/constants/theme';
 import { usePatientNotifications } from '@/src/features/patient-notifications/use-patient-notifications';
@@ -11,13 +12,16 @@ function NotificationCard({
   item,
   onMarkAsRead,
   pending,
+  onOpen,
 }: {
   item: NotificationListItem;
   onMarkAsRead: (notificationId: string) => void;
   pending: boolean;
+  onOpen: (item: NotificationListItem) => void;
 }) {
   return (
-    <ThemedView lightColor="#FCFFFF" style={styles.card}>
+    <Pressable onPress={() => onOpen(item)}>
+      <ThemedView lightColor="#FCFFFF" style={styles.card}>
       <View style={styles.cardHeader}>
         <ThemedText type="defaultSemiBold">{item.type}</ThemedText>
         <ThemedText type={item.read ? 'muted' : 'eyebrow'}>{item.read ? 'Leida' : 'Nueva'}</ThemedText>
@@ -30,11 +34,13 @@ function NotificationCard({
           <ThemedText type="link">Marcar como leida</ThemedText>
         </Pressable>
       ) : null}
-    </ThemedView>
+      </ThemedView>
+    </Pressable>
   );
 }
 
 export function PatientNotificationsScreen() {
+  const router = useRouter();
   const { markAllAsReadMutation, markAsReadMutation, notificationsQuery } = usePatientNotifications();
   const items = notificationsQuery.data?.items ?? [];
   const unreadCount = notificationsQuery.data?.unreadCount ?? 0;
@@ -86,6 +92,11 @@ export function PatientNotificationsScreen() {
             item={item}
             onMarkAsRead={(notificationId) => void markAsReadMutation.mutateAsync(notificationId)}
             pending={markAsReadMutation.isPending}
+            onOpen={(notification) => {
+              if (notification.deepLink) {
+                router.push(notification.deepLink as never);
+              }
+            }}
           />
         )}
         ListEmptyComponent={
