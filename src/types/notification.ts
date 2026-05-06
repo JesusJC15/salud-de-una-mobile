@@ -11,6 +11,9 @@ export interface Notification {
   type: string;
   status: string;
   message: string;
+  resourceId?: EntityId;
+  deepLink?: string | null;
+  metadata?: Record<string, unknown> | null;
   read: boolean;
   readAt?: IsoDateString | null;
   createdAt?: IsoDateString | null;
@@ -22,6 +25,9 @@ export interface NotificationListItem {
   type: string;
   status: string;
   message: string;
+  resourceId?: EntityId;
+  deepLink?: string | null;
+  metadata?: Record<string, unknown> | null;
   read: boolean;
   readAt: IsoDateString | null;
   createdAt: IsoDateString | null;

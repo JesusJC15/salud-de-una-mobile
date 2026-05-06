@@ -319,7 +319,7 @@ const styles = StyleSheet.create({
     width: 110,
   },
   logoOverlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     opacity: 0.5,
   },
   brand: {

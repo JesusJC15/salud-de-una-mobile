@@ -51,7 +51,6 @@ export function TriageSpecialtyScreen() {
     try {
       const session = await createSessionMutation.mutateAsync(specialty);
       setActiveSession(session.sessionId, specialty);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       router.replace(`/triage/${session.sessionId}` as any);
     } catch (err: unknown) {
       // 409 — sesión ya en progreso: extraer existingSessionId del error
@@ -59,7 +58,6 @@ export function TriageSpecialtyScreen() {
       const existingId = apiError?.response?.data?.existingSessionId;
       if (existingId) {
         setActiveSession(existingId, specialty);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         router.replace(`/triage/${existingId}` as any);
       }
     }

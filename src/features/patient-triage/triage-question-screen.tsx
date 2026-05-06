@@ -209,7 +209,6 @@ export function TriageQuestionScreen({ sessionId }: Props) {
       const analysis = await analyzeMutation.mutateAsync();
       setConsultationId(analysis.consultationId);
       router.replace(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         `/triage/result?sessionId=${sessionId}&priority=${analysis.priority}&consultationId=${analysis.consultationId}` as any,
       );
     }

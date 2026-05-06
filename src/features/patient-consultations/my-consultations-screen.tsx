@@ -11,6 +11,8 @@ import {
 import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { Colors, Radius } from '@/src/constants/theme';
+import { usePendingFollowups } from '@/src/features/patient-followup/use-patient-followups';
+import { usePatientTimeline } from '@/src/features/patient-timeline/use-patient-timeline';
 import { ThemedText } from '@/src/ui/themed-text';
 import { ThemedView } from '@/src/ui/themed-view';
 import { useConsultationHistory, useRateConsultation } from './use-consultation-history';
@@ -225,7 +227,10 @@ export function MyConsultationsScreen() {
   const [page, setPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState('');
   const [ratingTarget, setRatingTarget] = useState<ConsultationHistoryItem | null>(null);
+  const router = useRouter();
   const { data, isLoading, isError, refetch } = useConsultationHistory(page, statusFilter || undefined);
+  const pendingFollowupsQuery = usePendingFollowups();
+  const timelineQuery = usePatientTimeline();
 
   const totalPages = data ? Math.ceil(data.total / data.limit) : 1;
 
@@ -276,6 +281,47 @@ export function MyConsultationsScreen() {
           data={data?.items ?? []}
           keyExtractor={item => item.id}
           contentContainerStyle={styles.list}
+          ListHeaderComponent={(
+            <View style={styles.headerBlocks}>
+              {(pendingFollowupsQuery.data?.items.length ?? 0) > 0 && (
+                <View style={styles.sectionCard}>
+                  <ThemedText style={styles.sectionTitle}>Seguimientos pendientes</ThemedText>
+                  {pendingFollowupsQuery.data?.items.map(item => (
+                    <Pressable
+                      key={item.id}
+                      onPress={() => router.push(`/followup/${item.id}` as never)}
+                      style={styles.followupRow}
+                    >
+                      <View>
+                        <ThemedText style={styles.followupTitle}>Seguimiento programado</ThemedText>
+                        <ThemedText style={styles.followupMeta}>
+                          {formatDate(item.scheduledAt)}
+                        </ThemedText>
+                      </View>
+                      <MaterialIcons name="chevron-right" size={20} color={Colors.light.tint} />
+                    </Pressable>
+                  ))}
+                </View>
+              )}
+
+              {(timelineQuery.data?.items.length ?? 0) > 0 && (
+                <View style={styles.sectionCard}>
+                  <ThemedText style={styles.sectionTitle}>Timeline reciente</ThemedText>
+                  {timelineQuery.data?.items.slice(0, 5).map(item => (
+                    <View key={item.id} style={styles.timelineRow}>
+                      <View style={styles.timelineDot} />
+                      <View style={styles.timelineContent}>
+                        <ThemedText style={styles.timelineTitle}>{item.title}</ThemedText>
+                        <ThemedText style={styles.timelineMeta}>
+                          {item.subtitle} · {formatDate(item.occurredAt)}
+                        </ThemedText>
+                      </View>
+                    </View>
+                  ))}
+                </View>
+              )}
+            </View>
+          )}
           renderItem={({ item }) => (
             <ConsultationCard item={item} onRate={setRatingTarget} />
           )}
@@ -356,6 +402,36 @@ const styles = StyleSheet.create({
   pageButton: { padding: 6, borderRadius: Radius.md, borderWidth: 1, borderColor: Colors.light.border, backgroundColor: Colors.light.surface },
   pageButtonDisabled: { opacity: 0.4 },
   pageText: { fontSize: 13, color: Colors.light.textMuted, fontWeight: '600' },
+  headerBlocks: { gap: 12, marginBottom: 12 },
+  sectionCard: {
+    backgroundColor: Colors.light.surface,
+    borderRadius: Radius.xl,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+    gap: 10,
+    padding: 16,
+  },
+  sectionTitle: { color: Colors.light.text, fontSize: 15, fontWeight: '800' },
+  followupRow: {
+    alignItems: 'center',
+    borderRadius: Radius.lg,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 6,
+  },
+  followupTitle: { color: Colors.light.text, fontSize: 14, fontWeight: '700' },
+  followupMeta: { color: Colors.light.textMuted, fontSize: 12 },
+  timelineRow: { flexDirection: 'row', gap: 10 },
+  timelineDot: {
+    alignSelf: 'stretch',
+    backgroundColor: Colors.light.tint,
+    borderRadius: Radius.pill,
+    marginTop: 5,
+    width: 6,
+  },
+  timelineContent: { flex: 1, paddingBottom: 8 },
+  timelineTitle: { color: Colors.light.text, fontSize: 13, fontWeight: '700' },
+  timelineMeta: { color: Colors.light.textMuted, fontSize: 12 },
   modalOverlay: {
     flex: 1, backgroundColor: 'rgba(0,0,0,0.4)',
     alignItems: 'center', justifyContent: 'center', padding: 24,

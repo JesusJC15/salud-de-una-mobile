@@ -1,4 +1,6 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { useRouter } from 'expo-router';
+import * as Notifications from 'expo-notifications';
 import { PropsWithChildren, useEffect, useState } from 'react';
 
 import {
@@ -33,6 +35,7 @@ export function AppProviders({ children }: PropsWithChildren) {
   const hydrate = useSessionStore((state) => state.hydrate);
   const hydrateTriageStore = useTriageStore((state) => state.hydrate);
   const [queryClient] = useState(createQueryClient);
+  const router = useRouter();
 
   useEffect(() => {
     setApiAccessTokenResolver(() => useSessionStore.getState().session?.accessToken ?? null);
@@ -120,6 +123,29 @@ export function AppProviders({ children }: PropsWithChildren) {
       isMounted = false;
     };
   }, [hydrate, hydrateTriageStore, queryClient]);
+
+  useEffect(() => {
+    function navigateFromNotification(
+      response: Notifications.NotificationResponse | null,
+    ) {
+      const deepLink = response?.notification.request.content.data?.deepLink;
+      if (typeof deepLink === 'string' && deepLink.length > 0) {
+        router.push(deepLink as never);
+      }
+    }
+
+    void Notifications.getLastNotificationResponseAsync().then((response) => {
+      navigateFromNotification(response);
+    });
+
+    const subscription = Notifications.addNotificationResponseReceivedListener(
+      navigateFromNotification,
+    );
+
+    return () => {
+      subscription.remove();
+    };
+  }, [router]);
 
   return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
 }

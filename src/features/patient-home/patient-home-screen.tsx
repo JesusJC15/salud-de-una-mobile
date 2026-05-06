@@ -12,6 +12,7 @@ import { useSessionStore } from '@/src/store/session-store';
 import { useTriageStore } from '@/src/store/triage-store';
 import { triageService } from '@/src/features/patient-triage/triage-service';
 import { useActiveConsultation } from '@/src/features/patient-consultations/use-active-consultation';
+import { usePendingFollowups } from '@/src/features/patient-followup/use-patient-followups';
 import { ThemedText } from '@/src/ui/themed-text';
 import { ThemedView } from '@/src/ui/themed-view';
 
@@ -265,6 +266,10 @@ type PatientHomeScreenProps = {
   onStartTriagePress?: () => void;
   onContinueTriagePress?: (sessionId: string) => void;
   onGoToChatPress?: (consultationId: string) => void;
+  onOpenFollowupPress?: (followupId: string) => void;
+  onOpenHistoryPress?: () => void;
+  onOpenNotificationsPress?: () => void;
+  onOpenProfilePress?: () => void;
 };
 
 export function PatientHomeScreen({
@@ -273,6 +278,10 @@ export function PatientHomeScreen({
   onStartTriagePress,
   onContinueTriagePress,
   onGoToChatPress,
+  onOpenFollowupPress,
+  onOpenHistoryPress,
+  onOpenNotificationsPress,
+  onOpenProfilePress,
 }: PatientHomeScreenProps) {
   const sessionStatus = useSessionStore((s) => s.status);
   const sessionUser = useSessionStore((s) => s.session?.user ?? null);
@@ -292,6 +301,7 @@ export function PatientHomeScreen({
 
   // Fetch the most recent non-closed consultation to recover state after app restart
   const { data: activeConsultation } = useActiveConsultation();
+  const pendingFollowupsQuery = usePendingFollowups();
 
   // Determine current state — backend data takes precedence over in-memory store
   const activeSessions = activeSessionsData?.items ?? [];
@@ -311,6 +321,7 @@ export function PatientHomeScreen({
   const firstName = patientProfile?.firstName ?? sessionUser?.email?.split('@')[0] ?? 'allí';
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Buenos días' : hour < 19 ? 'Buenas tardes' : 'Buenas noches';
+  const nextFollowup = pendingFollowupsQuery.data?.items[0] ?? null;
 
   // ── Unauthenticated state ─────────────────────────────────────────────────
   if (!isAuthenticated) {
@@ -408,6 +419,35 @@ export function PatientHomeScreen({
           />
         )}
 
+        {nextFollowup && (
+          <ThemedView style={[styles.card, styles.followupCard, { backgroundColor: T.white }]}>
+            <View style={styles.cardHeader}>
+              <MaterialIcons name="assignment-late" size={18} color={T.amber} />
+              <ThemedText style={[styles.cardTitle, { color: T.onSurface }]}>
+                Seguimiento pendiente
+              </ThemedText>
+              <View style={[styles.followupBadge, { backgroundColor: '#fff7ed', borderColor: '#fed7aa' }]}>
+                <ThemedText style={[styles.followupBadgeText, { color: T.amber }]}>
+                  {pendingFollowupsQuery.data?.items.length} activo{(pendingFollowupsQuery.data?.items.length ?? 0) > 1 ? 's' : ''}
+                </ThemedText>
+              </View>
+            </View>
+            <ThemedText style={[styles.summaryText, { color: T.secondaryText }]}>
+              Responde tu control post-consulta para actualizar síntomas y priorizar atención si empeoraste.
+            </ThemedText>
+            <Pressable
+              onPress={() => onOpenFollowupPress?.(nextFollowup.id)}
+              style={({ pressed }) => [
+                styles.followupCta,
+                { backgroundColor: T.primary, opacity: pressed ? 0.85 : 1 },
+              ]}
+            >
+              <MaterialIcons name="arrow-forward" size={16} color="#fff" />
+              <ThemedText style={styles.ctaText}>Responder seguimiento</ThemedText>
+            </Pressable>
+          </ThemedView>
+        )}
+
         {/* ── AI Summary (if triage is done) ── */}
         {currentState === 'waiting' && (
           <AiSummaryCard priority="MODERATE" />
@@ -446,9 +486,9 @@ export function PatientHomeScreen({
           </ThemedText>
           <View style={styles.quickGrid}>
             {[
-              { icon: 'history' as const, label: 'Mis consultas', onPress: () => {} },
-              { icon: 'notifications' as const, label: 'Notificaciones', onPress: () => {} },
-              { icon: 'person' as const, label: 'Mi perfil', onPress: () => {} },
+              { icon: 'history' as const, label: 'Mis consultas', onPress: () => onOpenHistoryPress?.() },
+              { icon: 'notifications' as const, label: 'Notificaciones', onPress: () => onOpenNotificationsPress?.() },
+              { icon: 'person' as const, label: 'Mi perfil', onPress: () => onOpenProfilePress?.() },
               { icon: 'help-outline' as const, label: 'Ayuda', onPress: () => {} },
             ].map((item) => (
               <QuickAction key={item.label} icon={item.icon} label={item.label} onPress={item.onPress} />
@@ -564,6 +604,23 @@ const styles = StyleSheet.create({
   },
   priorityText: { fontSize: 11, fontWeight: '800' },
   summaryText: { fontSize: 14, lineHeight: 22 },
+  followupCard: { gap: 14 },
+  followupBadge: {
+    borderRadius: 999,
+    borderWidth: 1,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  followupBadgeText: { fontSize: 11, fontWeight: '800' },
+  followupCta: {
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    borderRadius: 14,
+    flexDirection: 'row',
+    gap: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
 
   // Actions
   actionsSection: { gap: 10 },
