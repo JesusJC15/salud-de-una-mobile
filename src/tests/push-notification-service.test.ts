@@ -1,3 +1,7 @@
+import { Platform } from 'react-native';
+import { registerPushNotifications } from '@/src/services/notifications/push-notification-service';
+import * as clientModule from '@/src/services/api/client';
+
 // Mock modules before importing the service
 jest.mock('react-native', () => ({
   Platform: {
@@ -30,10 +34,6 @@ jest.mock('@/src/services/api/client', () => ({
     patch: jest.fn(),
   },
 }));
-
-import { Platform } from 'react-native';
-import { registerPushNotifications } from '@/src/services/notifications/push-notification-service';
-import * as clientModule from '@/src/services/api/client';
 
 const mockApiClient = clientModule.apiClient as any;
 const mockNotifications = jest.requireMock('expo-notifications');

@@ -6,14 +6,18 @@ const TRIAGE_KEY = 'salud-de-una.patient.triage';
 async function write(value: string | null) {
   if (Platform.OS === 'web') {
     if (typeof localStorage === 'undefined') return;
-    value === null
-      ? localStorage.removeItem(TRIAGE_KEY)
-      : localStorage.setItem(TRIAGE_KEY, value);
+    if (value === null) {
+      localStorage.removeItem(TRIAGE_KEY);
+    } else {
+      localStorage.setItem(TRIAGE_KEY, value);
+    }
     return;
   }
-  value === null
-    ? await SecureStore.deleteItemAsync(TRIAGE_KEY)
-    : await SecureStore.setItemAsync(TRIAGE_KEY, value);
+  if (value === null) {
+    await SecureStore.deleteItemAsync(TRIAGE_KEY);
+  } else {
+    await SecureStore.setItemAsync(TRIAGE_KEY, value);
+  }
 }
 
 async function read(): Promise<string | null> {

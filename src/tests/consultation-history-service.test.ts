@@ -275,7 +275,7 @@ describe('consultationHistoryService', () => {
 
       mockApiClient.post.mockResolvedValue(mockResponse);
 
-      const result = await consultationHistoryService.rateConsultation('1', 3, '');
+      await consultationHistoryService.rateConsultation('1', 3, '');
 
       // Empty string is falsy, so it should NOT be included in the payload
       expect(mockApiClient.post).toHaveBeenCalledWith('/consultations/1/rate', {

@@ -1,7 +1,7 @@
 import { AxiosHeaders } from 'axios';
 
-const requestHandlers: Array<(config: Record<string, unknown>) => Promise<Record<string, unknown>>> = [];
-const responseHandlers: Array<(error: unknown) => Promise<unknown>> = [];
+const requestHandlers: ((config: Record<string, unknown>) => Promise<Record<string, unknown>>)[] = [];
+const responseHandlers: ((error: unknown) => Promise<unknown>)[] = [];
 
 jest.mock('axios', () => {
   const actual = jest.requireActual('axios');
@@ -273,7 +273,6 @@ describe('apiClient interceptors', () => {
     const {
       setApiUnauthorizedRecoveryHandler,
       setApiUnauthorizedSessionHandler,
-      apiClient,
     } = await loadModule('https://api.test/v1');
 
     let callCount = 0;
@@ -294,7 +293,7 @@ describe('apiClient interceptors', () => {
     };
 
     // Send two concurrent 401 errors
-    const results = await Promise.all([
+    await Promise.all([
       responseHandlers[0](error).catch(() => null),
       responseHandlers[0](error).catch(() => null),
     ]);

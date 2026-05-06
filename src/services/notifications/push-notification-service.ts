@@ -21,12 +21,12 @@ export async function registerPushNotifications(): Promise<void> {
     let finalStatus = existing;
     const existingStatus = (existing as { status?: string }).status;
 
-    if (existingStatus !== Notifications.PermissionStatus.GRANTED) {
+    if (existingStatus !== 'granted') {
       finalStatus = await Notifications.requestPermissionsAsync();
     }
 
     const grantedStatus = (finalStatus as { status?: string }).status;
-    if (grantedStatus !== Notifications.PermissionStatus.GRANTED) return;
+    if (grantedStatus !== 'granted') return;
 
     const projectId =
       Constants.expoConfig?.extra?.eas?.projectId ??
