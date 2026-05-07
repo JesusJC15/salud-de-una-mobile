@@ -133,4 +133,34 @@ describe('auth0-service', () => {
       provisionPatient('token-123', { firstName: 'Ana', lastName: 'Gomez' })
     ).rejects.toThrow('No se pudo completar el registro del paciente');
   });
+
+  it('reads email from namespace claim when payload.email is absent', () => {
+    const token = buildToken({
+      sub: 'auth0|xyz',
+      'https://salud-de-una.com/email': 'ns@example.com',
+      'https://salud-de-una.com/db_id': 'db-2',
+    });
+
+    const claims = decodeTokenClaims(token);
+
+    expect(claims.email).toBe('ns@example.com');
+    expect(claims.dbId).toBe('db-2');
+  });
+
+  it('returns undefined email when neither source is present', () => {
+    const token = buildToken({ sub: 'auth0|noemail' });
+
+    const claims = decodeTokenClaims(token);
+
+    expect(claims.email).toBeUndefined();
+  });
+
+  it('uses empty string sub fallback when sub is missing from payload', () => {
+    const token = buildToken({ email: 'a@b.com' });
+
+    const claims = decodeTokenClaims(token);
+
+    expect(claims.sub).toBe('');
+    expect(claims.email).toBe('a@b.com');
+  });
 });

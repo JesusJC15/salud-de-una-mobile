@@ -1,5 +1,5 @@
 import { Platform } from 'react-native';
-import { registerPushNotifications } from '@/src/services/notifications/push-notification-service';
+import { registerPushNotifications, showLocalFollowupNotification } from '@/src/services/notifications/push-notification-service';
 import * as clientModule from '@/src/services/api/client';
 
 // Mock modules before importing the service
@@ -27,6 +27,7 @@ jest.mock('expo-notifications', () => ({
   getPermissionsAsync: jest.fn(),
   requestPermissionsAsync: jest.fn(),
   getExpoPushTokenAsync: jest.fn(),
+  scheduleNotificationAsync: jest.fn(),
 }));
 
 jest.mock('@/src/services/api/client', () => ({
@@ -196,5 +197,62 @@ describe('registerPushNotifications', () => {
     mockNotifications.getPermissionsAsync.mockRejectedValue({ some: 'error', message: 'Failed' });
 
     await expect(registerPushNotifications()).resolves.toBeUndefined();
+  });
+});
+
+describe('showLocalFollowupNotification', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    (Platform as any).OS = 'ios';
+  });
+
+  it('returns early on web platform', async () => {
+    (Platform as any).OS = 'web';
+
+    await showLocalFollowupNotification({ id: 'n1', title: 'T', body: 'B' });
+
+    expect(mockNotifications.scheduleNotificationAsync).not.toHaveBeenCalled();
+  });
+
+  it('schedules a local notification', async () => {
+    mockNotifications.scheduleNotificationAsync.mockResolvedValue(undefined);
+
+    await showLocalFollowupNotification({ id: 'n-unique-1', title: 'Recordatorio', body: 'Tu seguimiento' });
+
+    expect(mockNotifications.scheduleNotificationAsync).toHaveBeenCalledWith({
+      content: { title: 'Recordatorio', body: 'Tu seguimiento', data: { deepLink: undefined } },
+      trigger: null,
+    });
+  });
+
+  it('passes deepLink in notification data when provided', async () => {
+    mockNotifications.scheduleNotificationAsync.mockResolvedValue(undefined);
+
+    await showLocalFollowupNotification({ id: 'n-unique-2', title: 'T', body: 'B', deepLink: '/followup/123' });
+
+    expect(mockNotifications.scheduleNotificationAsync).toHaveBeenCalledWith(
+      expect.objectContaining({ content: expect.objectContaining({ data: { deepLink: '/followup/123' } }) }),
+    );
+  });
+
+  it('does not schedule the same notification id twice', async () => {
+    mockNotifications.scheduleNotificationAsync.mockResolvedValue(undefined);
+
+    await showLocalFollowupNotification({ id: 'n-dedup', title: 'T', body: 'B' });
+    await showLocalFollowupNotification({ id: 'n-dedup', title: 'T', body: 'B' });
+
+    expect(mockNotifications.scheduleNotificationAsync).toHaveBeenCalledTimes(1);
+  });
+
+  it('silently ignores schedule errors and allows retry', async () => {
+    mockNotifications.scheduleNotificationAsync.mockRejectedValue(new Error('schedule failed'));
+
+    await expect(
+      showLocalFollowupNotification({ id: 'n-err-retry', title: 'T', body: 'B' }),
+    ).resolves.toBeUndefined();
+
+    mockNotifications.scheduleNotificationAsync.mockResolvedValue(undefined);
+    await showLocalFollowupNotification({ id: 'n-err-retry', title: 'T', body: 'B' });
+    expect(mockNotifications.scheduleNotificationAsync).toHaveBeenCalledTimes(2);
   });
 });

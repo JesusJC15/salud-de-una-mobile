@@ -2,8 +2,10 @@ import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 import { z } from 'zod';
 
-function normalizeApiBaseUrl(value: string) {
-  return value.replace(/\/+$/, '');
+function normalizeApiBaseUrl(value: string): string {
+  let end = value.length;
+  while (end > 0 && value[end - 1] === '/') end--;
+  return end === value.length ? value : value.slice(0, end);
 }
 
 function readExpoHostUri() {

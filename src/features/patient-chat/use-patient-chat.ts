@@ -3,9 +3,15 @@ import { io, type Socket } from 'socket.io-client';
 import { appConfig } from '@/src/config/env';
 import { useSessionStore } from '@/src/store/session-store';
 
-const WS_BASE_URL = (appConfig.apiBaseUrl ?? 'http://localhost:3000')
-  .replace(/\/v1$/, '')
-  .replace(/\/+$/, '');
+function trimTrailingSlashes(url: string): string {
+  let end = url.length;
+  while (end > 0 && url[end - 1] === '/') end--;
+  return end === url.length ? url : url.slice(0, end);
+}
+
+const WS_BASE_URL = trimTrailingSlashes(
+  (appConfig.apiBaseUrl ?? 'http://localhost:3000').replace(/\/v1$/, ''),
+);
 
 export type ChatMessage = {
   id: string;

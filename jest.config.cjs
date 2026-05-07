@@ -11,7 +11,6 @@ module.exports = {
     'src/lib/**/*.ts',
     'src/schemas/**/*.ts',
     'src/services/**/*.ts',
-    'src/providers/**/*.tsx',
     '!src/features/**/use-*.ts',
     '!src/services/auth/token-storage.ts',
     '!src/**/*.d.ts',
