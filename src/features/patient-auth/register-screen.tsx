@@ -323,7 +323,7 @@ function PasswordField(props: Readonly<PasswordFieldProps>) {
 
 export function PatientRegisterScreen() {
   const router = useRouter();
-  const { registerMutation, registerWithEmailMutation } = usePatientAuth();
+  const { registerMutation, registerWithEmailMutation, isReady } = usePatientAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [showBirthDatePicker, setShowBirthDatePicker] = useState(false);
@@ -716,11 +716,11 @@ export function PatientRegisterScreen() {
 
             <Pressable
               accessibilityRole="button"
-              disabled={anyPending}
+              disabled={anyPending || !isReady}
               onPress={() => void onAuth0Register()}
               style={({ pressed }: PressableStateCallbackType) => [
                 styles.auth0Button,
-                { borderColor: pressed ? primaryColor : inputBorderColor, opacity: anyPending ? 0.74 : 1 },
+                { borderColor: pressed ? primaryColor : inputBorderColor, opacity: anyPending || !isReady ? 0.74 : 1 },
               ]}
             >
               {registerMutation.isPending ? (

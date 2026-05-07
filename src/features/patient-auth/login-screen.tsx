@@ -23,7 +23,7 @@ import { ThemedView } from '@/src/ui/themed-view';
 
 export function PatientLoginScreen() {
   const router = useRouter();
-  const { loginMutation, loginWithEmailMutation } = usePatientAuth();
+  const { loginMutation, loginWithEmailMutation, isReady } = usePatientAuth();
   const [showPassword, setShowPassword] = useState(false);
   const form = useForm<LoginInput>({
     defaultValues: {
@@ -213,11 +213,11 @@ export function PatientLoginScreen() {
 
             <Pressable
               accessibilityRole="button"
-              disabled={anyPending}
+              disabled={anyPending || !isReady}
               onPress={() => void onAuth0Login()}
               style={({ pressed }) => [
                 styles.auth0Button,
-                { borderColor: pressed ? '#0B819D' : fieldBorder, opacity: anyPending ? 0.7 : 1 },
+                { borderColor: pressed ? '#0B819D' : fieldBorder, opacity: anyPending || !isReady ? 0.7 : 1 },
               ]}>
               {loginMutation.isPending ? (
                 <ActivityIndicator color={accentColor} />

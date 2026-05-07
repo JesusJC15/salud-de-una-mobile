@@ -18,6 +18,7 @@ type Auth0RegisterData = Pick<RegisterInput, 'firstName' | 'lastName' | 'birthDa
 
 export function usePatientAuth() {
   const setSession = useSessionStore((state) => state.setSession);
+  const setProfile = useSessionStore((state) => state.setProfile);
   const clearSession = useSessionStore((state) => state.clearSession);
 
   const redirectUri = makeAuth0RedirectUri();
@@ -36,6 +37,10 @@ export function usePatientAuth() {
   );
 
   async function authenticateWithAuth0(registerData?: Auth0RegisterData) {
+    if (!request?.codeVerifier) {
+      throw new Error('El flujo de autenticación no está listo. Intenta de nuevo.');
+    }
+
     const result = await promptAsync();
 
     if (result.type !== 'success') {
@@ -47,7 +52,7 @@ export function usePatientAuth() {
         clientId,
         code: result.params.code,
         redirectUri,
-        extraParams: { code_verifier: request!.codeVerifier! },
+        extraParams: { code_verifier: request.codeVerifier },
       },
       AUTH0_DISCOVERY,
     );
@@ -93,6 +98,7 @@ export function usePatientAuth() {
       const session = {
         accessToken: refreshed.accessToken,
         refreshToken: refreshed.refreshToken ?? refreshToken,
+        authMethod: 'auth0' as const,
         user: {
           id: freshClaims.dbId,
           email: freshClaims.email ?? claims.email ?? '',
@@ -103,13 +109,14 @@ export function usePatientAuth() {
 
       await setSession(session, null);
       const profile = await authService.getCurrentPatient();
-      await setSession(session, profile);
+      setProfile(profile);
       return { session, profile };
     }
 
     const session = {
       accessToken,
       refreshToken: refreshToken ?? '',
+      authMethod: 'auth0' as const,
       user: {
         id: claims.dbId,
         email: claims.email ?? '',
@@ -120,7 +127,7 @@ export function usePatientAuth() {
 
     await setSession(session, null);
     const profile = await authService.getCurrentPatient();
-    await setSession(session, profile);
+    setProfile(profile);
     return { session, profile };
   }
 
@@ -129,7 +136,7 @@ export function usePatientAuth() {
     const fullSession = { ...session, authMethod: 'legacy' as const };
     await setSession(fullSession, null);
     const profile = await authService.getCurrentPatient();
-    await setSession(fullSession, profile);
+    setProfile(profile);
     return { session: fullSession, profile };
   }
 
@@ -139,7 +146,7 @@ export function usePatientAuth() {
     const fullSession = { ...session, authMethod: 'legacy' as const };
     await setSession(fullSession, null);
     const profile = await authService.getCurrentPatient();
-    await setSession(fullSession, profile);
+    setProfile(profile);
     return { session: fullSession, profile };
   }
 
