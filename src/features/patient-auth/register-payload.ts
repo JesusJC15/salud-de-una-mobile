@@ -1,6 +1,9 @@
 import type { RegisterFormInput, RegisterInput } from '@/src/schemas/auth';
 
-export function normalizeRegisterInput(input: RegisterFormInput): RegisterInput {
+export function normalizeRegisterInput(
+  input: RegisterFormInput,
+  acceptedTerms: boolean,
+): RegisterInput {
   const normalizedBirthDate = input.birthDate?.trim();
   const normalizedEmail = input.email.trim();
 
@@ -11,5 +14,6 @@ export function normalizeRegisterInput(input: RegisterFormInput): RegisterInput 
     password: input.password,
     gender: input.gender,
     birthDate: normalizedBirthDate || null,
+    acceptTerms: acceptedTerms,
   };
 }

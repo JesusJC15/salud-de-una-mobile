@@ -12,7 +12,7 @@ describe('normalizeRegisterInput', () => {
       confirmPassword: STRONG_PASSWORD,
       birthDate: '   ',
       gender: 'FEMALE',
-    });
+    }, false);
 
     expect(result.birthDate).toBeNull();
   });
@@ -26,7 +26,7 @@ describe('normalizeRegisterInput', () => {
       confirmPassword: STRONG_PASSWORD,
       birthDate: ' 1990-08-20 ',
       gender: 'FEMALE',
-    });
+    }, false);
 
     expect(result.birthDate).toBe('1990-08-20');
   });
@@ -40,7 +40,7 @@ describe('normalizeRegisterInput', () => {
       confirmPassword: STRONG_PASSWORD,
       birthDate: undefined,
       gender: 'OTHER',
-    });
+    }, false);
 
     expect(result).toEqual({
       email: 'patient@example.com',
@@ -49,7 +49,21 @@ describe('normalizeRegisterInput', () => {
       password: STRONG_PASSWORD,
       birthDate: null,
       gender: 'OTHER',
+      acceptTerms: false,
     });
     expect(result).not.toHaveProperty('confirmPassword');
+  });
+
+  it('passes acceptTerms flag through', () => {
+    const result = normalizeRegisterInput({
+      email: 'patient@example.com',
+      firstName: 'Ana',
+      lastName: 'Gomez',
+      password: STRONG_PASSWORD,
+      confirmPassword: STRONG_PASSWORD,
+      birthDate: undefined,
+    }, true);
+
+    expect(result.acceptTerms).toBe(true);
   });
 });

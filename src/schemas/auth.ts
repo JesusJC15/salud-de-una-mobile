@@ -31,6 +31,7 @@ export const registerSchema = z.object({
       message: 'La fecha de nacimiento debe usar el formato YYYY-MM-DD.',
     }),
   gender: z.enum(['MALE', 'FEMALE', 'OTHER']).optional(),
+  acceptTerms: z.boolean().optional(),
 });
 
 export const registerFormSchema = registerSchema

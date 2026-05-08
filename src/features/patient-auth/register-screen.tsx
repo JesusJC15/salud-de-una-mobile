@@ -370,7 +370,7 @@ export function PatientRegisterScreen() {
       return;
     }
     setTermsError(null);
-    await registerWithEmailMutation.mutateAsync(normalizeRegisterInput(values));
+    await registerWithEmailMutation.mutateAsync(normalizeRegisterInput(values, acceptedTerms));
     router.replace('/');
   });
 
@@ -680,7 +680,11 @@ export function PatientRegisterScreen() {
                 {acceptedTerms ? <MaterialIcons color="#FFFFFF" name="check" size={14} /> : null}
               </View>
 
-              <ThemedText style={[styles.termsText, { color: subtitleColor }]}>Acepto términos y condiciones y política de privacidad.</ThemedText>
+              <ThemedText style={[styles.termsText, { color: subtitleColor }]}>
+                Autorizo el tratamiento de mis datos personales, incluida información de salud, conforme a la{' '}
+                <ThemedText style={{ color: PALETTE.primaryColor }}>Política de Privacidad</ThemedText>
+                {' '}y la Ley 1581 de 2012.
+              </ThemedText>
             </Pressable>
 
             {termsError ? <ThemedText style={[styles.inlineError, { color: errorColor }]}>{termsError}</ThemedText> : null}
