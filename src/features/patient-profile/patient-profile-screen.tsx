@@ -32,7 +32,6 @@ export function PatientProfileScreen() {
   const clearSession = useSessionStore((state) => state.clearSession);
   const setProfile = useSessionStore((state) => state.setProfile);
   const patient = useSessionStore((state) => state.profile);
-  const sessionStatus = useSessionStore((state) => state.status);
   const form = useForm<
     z.input<typeof updatePatientProfileSchema>,
     unknown,
@@ -137,9 +136,6 @@ export function PatientProfileScreen() {
           <ThemedText type="subtitle">{initials}</ThemedText>
         </ThemedView>
         <ThemedText type="subtitle">Resumen</ThemedText>
-        <ThemedText>
-          Estado de sesion: <ThemedText type="defaultSemiBold">{sessionStatus}</ThemedText>
-        </ThemedText>
         <ThemedText>
           Nombre: <ThemedText type="defaultSemiBold">{displayName}</ThemedText>
         </ThemedText>

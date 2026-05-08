@@ -3,6 +3,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import type { TriageSpecialty } from '@/src/schemas/triage';
+import { ApiError } from '@/src/services/api/api-error';
 import { useTriageStore } from '@/src/store/triage-store';
 import { ThemedText } from '@/src/ui/themed-text';
 import { ThemedView } from '@/src/ui/themed-view';
@@ -53,12 +54,15 @@ export function TriageSpecialtyScreen() {
       setActiveSession(session.sessionId, specialty);
       router.replace(`/triage/${session.sessionId}` as any);
     } catch (err: unknown) {
-      // 409 — sesión ya en progreso: extraer existingSessionId del error
-      const apiError = err as { response?: { data?: { existingSessionId?: string } } };
-      const existingId = apiError?.response?.data?.existingSessionId;
-      if (existingId) {
-        setActiveSession(existingId, specialty);
-        router.replace(`/triage/${existingId}` as any);
+      // 409 — sesión ya en progreso: extraer existingSessionId del payload envuelto en ApiError
+      if (err instanceof ApiError && err.statusCode === 409) {
+        const payload = (err.details as { payload?: { existingSessionId?: string } } | undefined)?.payload;
+        const existingId = payload?.existingSessionId;
+        if (existingId) {
+          setActiveSession(existingId, specialty);
+          router.replace(`/triage/${existingId}` as any);
+          return;
+        }
       }
     }
   };

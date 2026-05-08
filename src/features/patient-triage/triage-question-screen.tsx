@@ -208,8 +208,12 @@ export function TriageQuestionScreen({ sessionId }: Props) {
     if (result.isComplete) {
       const analysis = await analyzeMutation.mutateAsync();
       setConsultationId(analysis.consultationId);
+      const redFlagsParam = analysis.redFlags?.length
+        ? encodeURIComponent(JSON.stringify(analysis.redFlags))
+        : '';
+      const messageParam = analysis.message ? encodeURIComponent(analysis.message) : '';
       router.replace(
-        `/triage/result?sessionId=${sessionId}&priority=${analysis.priority}&consultationId=${analysis.consultationId}` as any,
+        `/triage/result?sessionId=${sessionId}&priority=${analysis.priority}&consultationId=${analysis.consultationId}&message=${messageParam}&redFlags=${redFlagsParam}` as any,
       );
     }
   };

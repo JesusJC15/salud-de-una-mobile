@@ -13,10 +13,11 @@ export default ({ config }: ConfigContext): AppConfig => ({
   orientation: "portrait",
   icon: "./assets/images/icon.png",
   scheme: "saluddeunamobile",
-  userInterfaceStyle: "automatic",
+  userInterfaceStyle: "light",
   newArchEnabled: true,
   ios: {
     supportsTablet: true,
+    bundleIdentifier: "com.jesusjc15.saluddeunamobile",
   },
   android: {
     adaptiveIcon: {
@@ -52,6 +53,14 @@ export default ({ config }: ConfigContext): AppConfig => ({
     "expo-image",
     "expo-secure-store",
     "expo-web-browser",
+    [
+      "expo-notifications",
+      {
+        icon: "./assets/images/icon.png",
+        color: "#14b8a6",
+        defaultChannel: "default",
+      },
+    ],
   ],
   experiments: {
     typedRoutes: true,

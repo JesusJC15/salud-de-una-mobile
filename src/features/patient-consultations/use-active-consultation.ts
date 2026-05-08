@@ -24,7 +24,10 @@ export function useActiveConsultation() {
       return null;
     },
     enabled: isAuthenticated,
-    staleTime: 15_000,
-    refetchInterval: 30_000,
+    staleTime: 10_000,
+    refetchInterval: (query) => {
+      const consultation = query.state.data;
+      return consultation?.status === 'PENDING' ? 10_000 : 30_000;
+    },
   });
 }

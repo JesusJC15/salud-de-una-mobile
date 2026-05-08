@@ -13,8 +13,29 @@ import { useTriageStore } from '@/src/store/triage-store';
 import { triageService } from '@/src/features/patient-triage/triage-service';
 import { useActiveConsultation } from '@/src/features/patient-consultations/use-active-consultation';
 import { usePendingFollowups } from '@/src/features/patient-followup/use-patient-followups';
+import { usePatientNotifications } from '@/src/features/patient-notifications/use-patient-notifications';
+import type { NotificationListItem } from '@/src/types/notification';
 import { ThemedText } from '@/src/ui/themed-text';
 import { ThemedView } from '@/src/ui/themed-view';
+
+function getRelativeTime(dateStr?: string | null): string {
+  if (!dateStr) return '';
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const minutes = Math.floor(diff / 60_000);
+  if (minutes < 60) return minutes <= 1 ? 'Hace un momento' : `Hace ${minutes} min`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `Hace ${hours} hora${hours > 1 ? 's' : ''}`;
+  const days = Math.floor(hours / 24);
+  return `Hace ${days} día${days > 1 ? 's' : ''}`;
+}
+
+const NOTIFICATION_ICON_MAP: Record<string, React.ComponentProps<typeof MaterialIcons>['name']> = {
+  FOLLOWUP_REMINDER: 'assignment-late',
+  CONSULTATION_UPDATE: 'chat',
+  NEW_MESSAGE: 'chat',
+  TRIAGE_COMPLETE: 'check-circle',
+  SYSTEM: 'info',
+};
 
 // ─── Design Tokens ────────────────────────────────────────────────────────────
 
@@ -322,6 +343,8 @@ export function PatientHomeScreen({
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Buenos días' : hour < 19 ? 'Buenas tardes' : 'Buenas noches';
   const nextFollowup = pendingFollowupsQuery.data?.items[0] ?? null;
+  const { notificationsQuery } = usePatientNotifications();
+  const previewNotifications: NotificationListItem[] = (notificationsQuery.data?.items ?? []).slice(0, 3);
 
   // ── Unauthenticated state ─────────────────────────────────────────────────
   if (!isAuthenticated) {
@@ -450,7 +473,10 @@ export function PatientHomeScreen({
 
         {/* ── AI Summary (if triage is done) ── */}
         {currentState === 'waiting' && (
-          <AiSummaryCard priority="MODERATE" />
+          <AiSummaryCard
+            priority={activeConsultation?.priority}
+            summary={activeConsultation?.clinicalSummary ?? undefined}
+          />
         )}
 
         {/* ── Primary action ── */}
@@ -497,34 +523,29 @@ export function PatientHomeScreen({
         </ThemedView>
 
         {/* ── Notifications preview ── */}
-        <ThemedView style={[styles.card, { backgroundColor: T.white }]}>
-          <View style={[styles.cardHeader, { marginBottom: 14 }]}>
-            <ThemedText style={[styles.cardTitle, { color: T.onSurface }]}>
-              Notificaciones
-            </ThemedText>
-            <Pressable>
-              <ThemedText style={[styles.seeAll, { color: T.secondary }]}>Ver todo</ThemedText>
-            </Pressable>
-          </View>
-          <View style={styles.notifList}>
-            <NotificationRow
-              icon="chat"
-              message="Un médico respondió tu consulta"
-              time="Hace 2 horas"
-              unread
-            />
-            <NotificationRow
-              icon="check-circle"
-              message="Tu triage fue completado exitosamente"
-              time="Ayer"
-            />
-            <NotificationRow
-              icon="info"
-              message="Bienvenido a SaludDeUna"
-              time="Hace 3 días"
-            />
-          </View>
-        </ThemedView>
+        {previewNotifications.length > 0 && (
+          <ThemedView style={[styles.card, { backgroundColor: T.white }]}>
+            <View style={[styles.cardHeader, { marginBottom: 14 }]}>
+              <ThemedText style={[styles.cardTitle, { color: T.onSurface }]}>
+                Notificaciones
+              </ThemedText>
+              <Pressable onPress={() => onOpenNotificationsPress?.()}>
+                <ThemedText style={[styles.seeAll, { color: T.secondary }]}>Ver todo</ThemedText>
+              </Pressable>
+            </View>
+            <View style={styles.notifList}>
+              {previewNotifications.map((n) => (
+                <NotificationRow
+                  key={n.id}
+                  icon={NOTIFICATION_ICON_MAP[n.type] ?? 'notifications'}
+                  message={n.message}
+                  time={getRelativeTime(n.createdAt)}
+                  unread={!n.read}
+                />
+              ))}
+            </View>
+          </ThemedView>
+        )}
 
       </ScrollView>
     </LinearGradient>

@@ -27,7 +27,6 @@ function NotificationCard({
         <ThemedText type={item.read ? 'muted' : 'eyebrow'}>{item.read ? 'Leida' : 'Nueva'}</ThemedText>
       </View>
       <ThemedText>{item.message}</ThemedText>
-      <ThemedText type="muted">Estado backend: {item.status}</ThemedText>
       <ThemedText type="muted">Creada: {item.createdAt ?? 'Sin fecha'}</ThemedText>
       {!item.read ? (
         <Pressable disabled={pending} onPress={() => onMarkAsRead(item.id)} style={styles.inlineAction}>

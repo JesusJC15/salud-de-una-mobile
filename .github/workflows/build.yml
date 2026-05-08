@@ -7,26 +7,65 @@ on:
   pull_request:
     types: [opened, synchronize, reopened]
 
+env:
+  EXPO_PUBLIC_API_URL: http://localhost:3000/v1
+  EXPO_PUBLIC_APP_ENV: development
+  EXPO_PUBLIC_AUTH0_DOMAIN: salud-de-una.us.auth0.com
+  EXPO_PUBLIC_AUTH0_CLIENT_ID: placeholder
+  EXPO_PUBLIC_AUTH0_AUDIENCE: https://api.salud-de-una.com
+
 jobs:
-  sonarqube:
+  quality:
+    name: Quality Gate
     runs-on: ubuntu-latest
 
-    env:
-      EXPO_PUBLIC_API_URL: http://localhost:3000/v1
-      EXPO_PUBLIC_APP_ENV: development
-
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
       - name: Install dependencies
-        run: yarn install --ignore-scripts
+        run: npm ci
+
+      - name: TypeScript check
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
 
       - name: Test and coverage
-        run: yarn test:cov
+        run: npm run test:cov
+
+  sonarqube:
+    name: SonarQube Scan
+    runs-on: ubuntu-latest
+    needs: quality
+    if: ${{ secrets.SONARCLOUD_TOKEN != '' }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Test and coverage (for SonarQube report)
+        run: npm run test:cov
 
       - name: SonarQube Scan
-        uses: SonarSource/sonarqube-scan-action@v7
+        uses: SonarSource/sonarqube-scan-action@v5
         env:
           SONAR_TOKEN: ${{ secrets.SONARCLOUD_TOKEN }}

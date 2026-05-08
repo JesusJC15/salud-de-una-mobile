@@ -44,7 +44,7 @@ export function usePatientChat(consultationId: string | null, initialIsClosed = 
 
     const socket = io(`${WS_BASE_URL}/chat`, {
       auth: { token: session.accessToken },
-      transports: ['polling', 'websocket'],
+      transports: ['websocket', 'polling'],
       reconnection: true,
       reconnectionDelay: 1500,
       reconnectionAttempts: 5,
