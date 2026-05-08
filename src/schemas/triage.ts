@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export const triageSpecialtySchema = z.enum(['GENERAL_MEDICINE', 'ODONTOLOGY']);
+export const triageSpecialtySchema = z.enum(['GENERAL_MEDICINE', 'ODONTOLOGY', 'URGENT_CARE']);
 export type TriageSpecialty = z.infer<typeof triageSpecialtySchema>;
 
 export const triageQuestionTypeSchema = z.enum([

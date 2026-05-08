@@ -28,7 +28,9 @@ type SpecialtyOption = {
   description: string;
 };
 
-const SPECIALTIES: SpecialtyOption[] = [
+type SpecialtyOptionExtended = SpecialtyOption & { urgent?: boolean };
+
+const SPECIALTIES: SpecialtyOptionExtended[] = [
   {
     key: 'GENERAL_MEDICINE',
     label: 'Medicina General',
@@ -40,6 +42,13 @@ const SPECIALTIES: SpecialtyOption[] = [
     label: 'Odontología',
     icon: 'medical-services',
     description: 'Dolor dental, inflamación, sangrado bucal',
+  },
+  {
+    key: 'URGENT_CARE',
+    label: 'Urgencias',
+    icon: 'emergency',
+    description: 'Emergencias médicas, dolor intenso, sangrado activo, dificultad respiratoria',
+    urgent: true,
   },
 ];
 
@@ -90,29 +99,46 @@ export function TriageSpecialtyScreen() {
               disabled={createSessionMutation.isPending}
               style={({ pressed }) => [
                 styles.card,
+                s.urgent && styles.cardUrgent,
                 {
-                  backgroundColor: PALETTE.card,
-                  borderColor: PALETTE.cardBorder,
+                  backgroundColor: s.urgent ? '#FFF7ED' : PALETTE.card,
+                  borderColor: s.urgent ? 'rgba(239, 68, 68, 0.3)' : PALETTE.cardBorder,
                   opacity: createSessionMutation.isPending ? 0.7 : pressed ? 0.85 : 1,
                   transform: [{ scale: pressed ? 0.98 : 1 }],
                 },
               ]}
             >
-              <View style={[styles.iconBadge, { backgroundColor: 'rgba(20,184,166,0.12)' }]}>
-                <MaterialIcons name={s.icon} size={28} color={PALETTE.teal} />
+              <View
+                style={[
+                  styles.iconBadge,
+                  { backgroundColor: s.urgent ? 'rgba(239,68,68,0.12)' : 'rgba(20,184,166,0.12)' },
+                ]}
+              >
+                <MaterialIcons name={s.icon} size={28} color={s.urgent ? '#EF4444' : PALETTE.teal} />
               </View>
               <ThemedView style={styles.cardText}>
-                <ThemedText style={[styles.cardTitle, { color: PALETTE.title }]}>
-                  {s.label}
-                </ThemedText>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                  <ThemedText style={[styles.cardTitle, { color: s.urgent ? '#B91C1C' : PALETTE.title }]}>
+                    {s.label}
+                  </ThemedText>
+                  {s.urgent ? (
+                    <View style={styles.urgentBadge}>
+                      <ThemedText style={styles.urgentBadgeText}>URGENTE</ThemedText>
+                    </View>
+                  ) : null}
+                </View>
                 <ThemedText style={[styles.cardDesc, { color: PALETTE.subtitle }]}>
                   {s.description}
                 </ThemedText>
               </ThemedView>
               {createSessionMutation.isPending ? (
-                <ActivityIndicator color={PALETTE.primary} />
+                <ActivityIndicator color={s.urgent ? '#EF4444' : PALETTE.primary} />
               ) : (
-                <MaterialIcons name="arrow-forward-ios" size={16} color={PALETTE.primary} />
+                <MaterialIcons
+                  name="arrow-forward-ios"
+                  size={16}
+                  color={s.urgent ? '#EF4444' : PALETTE.primary}
+                />
               )}
             </Pressable>
           ))}
@@ -165,4 +191,12 @@ const styles = StyleSheet.create({
   cardTitle: { fontSize: 17, fontWeight: '800', marginBottom: 3 },
   cardDesc: { fontSize: 13, lineHeight: 18 },
   errorText: { marginTop: 16, textAlign: 'center', fontSize: 14 },
+  cardUrgent: { shadowColor: '#EF4444', shadowOpacity: 0.1 },
+  urgentBadge: {
+    backgroundColor: '#FEE2E2',
+    borderRadius: 6,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  urgentBadgeText: { color: '#DC2626', fontSize: 10, fontWeight: '800', letterSpacing: 0.5 },
 });
