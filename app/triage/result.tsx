@@ -2,12 +2,13 @@ import { useLocalSearchParams } from 'expo-router';
 import { TriageResultScreen } from '@/src/features/patient-triage/triage-result-screen';
 
 export default function TriageResultPage() {
-  const { priority, consultationId, message, redFlags } = useLocalSearchParams<{
+  const { priority, consultationId, message, redFlags, evidence } = useLocalSearchParams<{
     priority: string;
     consultationId: string;
     sessionId: string;
     message: string;
     redFlags: string;
+    evidence: string;
   }>();
 
   const validPriority = ['LOW', 'MODERATE', 'HIGH'].includes(priority ?? '')
@@ -30,12 +31,34 @@ export default function TriageResultPage() {
     }
   }
 
+  let parsedEvidence:
+    | {
+        answer: string;
+        grounded: boolean;
+        fallback: boolean;
+        citations: {
+          title: string;
+          authority: string;
+          sectionPath?: string;
+          snippet: string;
+        }[];
+      }
+    | undefined;
+  if (evidence) {
+    try {
+      parsedEvidence = JSON.parse(decodeURIComponent(evidence));
+    } catch {
+      parsedEvidence = undefined;
+    }
+  }
+
   return (
     <TriageResultScreen
       priority={validPriority}
       message={resolvedMessage}
       consultationId={consultationId ?? ''}
       redFlags={parsedRedFlags}
+      evidence={parsedEvidence}
     />
   );
 }

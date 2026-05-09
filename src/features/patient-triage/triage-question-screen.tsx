@@ -212,8 +212,11 @@ export function TriageQuestionScreen({ sessionId }: Props) {
         ? encodeURIComponent(JSON.stringify(analysis.redFlags))
         : '';
       const messageParam = analysis.message ? encodeURIComponent(analysis.message) : '';
+      const evidenceParam = analysis.evidence
+        ? encodeURIComponent(JSON.stringify(analysis.evidence))
+        : '';
       router.replace(
-        `/triage/result?sessionId=${sessionId}&priority=${analysis.priority}&consultationId=${analysis.consultationId}&message=${messageParam}&redFlags=${redFlagsParam}` as any,
+        `/triage/result?sessionId=${sessionId}&priority=${analysis.priority}&consultationId=${analysis.consultationId}&message=${messageParam}&redFlags=${redFlagsParam}&evidence=${evidenceParam}` as any,
       );
     }
   };

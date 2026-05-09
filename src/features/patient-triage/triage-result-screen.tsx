@@ -19,9 +19,20 @@ type Props = {
   message: string;
   consultationId: string;
   redFlags?: { code: string; severity: string; evidence: string }[];
+  evidence?: {
+    answer: string;
+    grounded: boolean;
+    fallback: boolean;
+    citations: {
+      title: string;
+      authority: string;
+      sectionPath?: string;
+      snippet: string;
+    }[];
+  };
 };
 
-export function TriageResultScreen({ priority, message, consultationId, redFlags = [] }: Props) {
+export function TriageResultScreen({ priority, message, consultationId, redFlags = [], evidence }: Props) {
   const router = useRouter();
   const clearTriage = useTriageStore((s) => s.clearTriage);
   const config = PRIORITY_CONFIG[priority];
@@ -70,6 +81,34 @@ export function TriageResultScreen({ priority, message, consultationId, redFlags
           </ThemedView>
         )}
 
+        {evidence?.answer ? (
+          <ThemedView style={[styles.evidenceCard, { backgroundColor: '#ECFEFF', borderColor: '#A5F3FC' }]}>
+            <ThemedText style={[styles.evidenceTitle, { color: '#0F766E' }]}>
+              Evidencia informativa
+            </ThemedText>
+            <ThemedText style={[styles.evidenceText, { color: '#155E75' }]}>
+              {evidence.answer}
+            </ThemedText>
+            {evidence.citations.slice(0, 2).map((citation, index) => (
+              <View key={`${citation.title}-${index}`} style={styles.evidenceCitation}>
+                <ThemedText style={[styles.evidenceCitationTitle, { color: '#164E63' }]}>
+                  {citation.title}
+                  {' · '}
+                  {citation.authority}
+                </ThemedText>
+                {citation.sectionPath ? (
+                  <ThemedText style={[styles.evidenceCitationMeta, { color: '#0F766E' }]}>
+                    {citation.sectionPath}
+                  </ThemedText>
+                ) : null}
+                <ThemedText style={[styles.evidenceCitationSnippet, { color: '#155E75' }]}>
+                  {citation.snippet}
+                </ThemedText>
+              </View>
+            ))}
+          </ThemedView>
+        ) : null}
+
         <View style={styles.actions}>
           <Pressable
             onPress={handleGoToChat}
@@ -115,6 +154,19 @@ const styles = StyleSheet.create({
   redFlagsTitle: { fontSize: 14, fontWeight: '800' },
   redFlagRow: { alignItems: 'flex-start', flexDirection: 'row', gap: 8 },
   redFlagText: { flex: 1, fontSize: 13, lineHeight: 19 },
+  evidenceCard: { borderRadius: 14, borderWidth: 1, gap: 10, padding: 16 },
+  evidenceTitle: { fontSize: 14, fontWeight: '800' },
+  evidenceText: { fontSize: 13, lineHeight: 20 },
+  evidenceCitation: {
+    borderColor: 'rgba(14, 116, 144, 0.18)',
+    borderRadius: 12,
+    borderWidth: 1,
+    gap: 4,
+    padding: 10,
+  },
+  evidenceCitationTitle: { fontSize: 12, fontWeight: '800' },
+  evidenceCitationMeta: { fontSize: 11, fontWeight: '700' },
+  evidenceCitationSnippet: { fontSize: 12, lineHeight: 18 },
   actions: { gap: 12, marginTop: 8 },
   chatBtn: {
     alignItems: 'center', borderRadius: 14, flexDirection: 'row',

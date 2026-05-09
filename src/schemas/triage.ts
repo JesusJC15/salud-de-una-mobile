@@ -85,6 +85,21 @@ export const analyzeSessionResponseSchema = z.object({
   highPriorityAlert: z.boolean(),
   analysisMode: z.enum(['AI_ASSISTED', 'RULE_BASED']).optional(),
   noticeCode: z.string().optional(),
+  evidence: z.object({
+    traceId: z.string(),
+    grounded: z.boolean(),
+    fallback: z.boolean(),
+    answer: z.string(),
+    citations: z.array(z.object({
+      chunkId: z.string(),
+      documentId: z.string(),
+      title: z.string(),
+      sectionPath: z.string().optional(),
+      authority: z.string(),
+      snippet: z.string(),
+      score: z.number(),
+    })),
+  }).optional(),
 });
 export type AnalyzeSessionResponse = z.infer<typeof analyzeSessionResponseSchema>;
 
