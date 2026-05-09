@@ -2,6 +2,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRef, useState } from 'react';
 import {
+  ActivityIndicator,
   FlatList,
   KeyboardAvoidingView,
   Platform,
@@ -13,6 +14,7 @@ import {
 import { ThemedText } from '@/src/ui/themed-text';
 import type { ChatMessage } from './use-patient-chat';
 import { usePatientChat } from './use-patient-chat';
+import { useConsultationPayment } from './use-consultation-payment';
 
 const PALETTE = {
   bg: ['#F0F9FA', '#E0F2F1'] as const,
@@ -78,6 +80,8 @@ export function PatientChatScreen({
     consultationId,
     initialIsClosed,
   );
+  const { alreadyPaid, paidTransaction, isPaying, isError: payError, pay } =
+    useConsultationPayment(isClosed ? consultationId : null);
   const [input, setInput] = useState('');
   const flatListRef = useRef<FlatList>(null);
 
@@ -117,6 +121,42 @@ export function PatientChatScreen({
           <MessageBubble msg={item} isOwn={item.senderId === currentUserId} />
         )}
       />
+
+      {isClosed && (
+        <View style={styles.paymentBanner}>
+          {alreadyPaid ? (
+            <View style={styles.paidRow}>
+              <MaterialIcons name="check-circle" size={18} color="#059669" />
+              <ThemedText style={styles.paidText}>
+                Consulta pagada —{' '}
+                {paidTransaction
+                  ? `$${paidTransaction.amount.toLocaleString('es-CO')} COP`
+                  : ''}
+              </ThemedText>
+            </View>
+          ) : (
+            <Pressable
+              style={({ pressed }) => [styles.payBtn, { opacity: isPaying || pressed ? 0.8 : 1 }]}
+              disabled={isPaying}
+              onPress={() => void pay()}
+            >
+              {isPaying ? (
+                <ActivityIndicator color="#FFFFFF" size="small" />
+              ) : (
+                <>
+                  <MaterialIcons name="payment" size={18} color="#FFFFFF" />
+                  <ThemedText style={styles.payBtnText}>Pagar consulta</ThemedText>
+                </>
+              )}
+            </Pressable>
+          )}
+          {payError && (
+            <ThemedText style={styles.payErrorText}>
+              Error al procesar el pago. Intenta de nuevo.
+            </ThemedText>
+          )}
+        </View>
+      )}
 
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <View style={[styles.inputBar, { backgroundColor: PALETTE.cardBg, borderTopColor: PALETTE.inputBorder }]}>
@@ -160,6 +200,28 @@ export function PatientChatScreen({
 }
 
 const styles = StyleSheet.create({
+  paymentBanner: {
+    backgroundColor: '#F0FDF4',
+    borderTopWidth: 1,
+    borderTopColor: '#BBF7D0',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    gap: 6,
+  },
+  paidRow: { alignItems: 'center', flexDirection: 'row', gap: 8 },
+  paidText: { color: '#059669', fontSize: 14, fontWeight: '700' },
+  payBtn: {
+    alignItems: 'center',
+    backgroundColor: '#0891B2',
+    borderRadius: 12,
+    flexDirection: 'row',
+    gap: 8,
+    justifyContent: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+  },
+  payBtnText: { color: '#FFFFFF', fontSize: 15, fontWeight: '700' },
+  payErrorText: { color: '#DC2626', fontSize: 12, marginTop: 4 },
   container: { flex: 1 },
   statusBar: {
     alignItems: 'center', flexDirection: 'row', gap: 8,

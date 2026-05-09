@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { billingService } from '@/src/services/billing/billing-service';
 
 import { Radius } from '@/src/constants/theme';
 import {
@@ -259,8 +260,52 @@ export function PatientProfileScreen() {
         />
         <AppButton label="Cerrar sesion" loading={isLoggingOut} onPress={() => void handleLogout()} variant="secondary" />
       </ThemedView>
+
+      <TransactionHistorySection />
       </ThemedView>
     </ScrollView>
+  );
+}
+
+function TransactionHistorySection() {
+  const transactionsQuery = useQuery({
+    queryKey: ['transactions'],
+    queryFn: () => billingService.getMyTransactions(),
+    staleTime: 60_000,
+  });
+
+  const transactions = transactionsQuery.data ?? [];
+
+  return (
+    <ThemedView lightColor="#FCFFFF" style={styles.card}>
+      <ThemedText type="subtitle">Mis pagos</ThemedText>
+      {transactionsQuery.isLoading && (
+        <ThemedText type="muted">Cargando historial...</ThemedText>
+      )}
+      {!transactionsQuery.isLoading && transactions.length === 0 && (
+        <ThemedText type="muted">No tienes pagos registrados aún.</ThemedText>
+      )}
+      {transactions.slice(0, 10).map((t) => (
+        <View key={t._id} style={styles.transactionRow}>
+          <View style={{ flex: 1 }}>
+            <ThemedText type="defaultSemiBold">
+              {t.specialty.replace('_', ' ')}
+            </ThemedText>
+            <ThemedText type="muted" style={{ fontSize: 11 }}>
+              {t.createdAt ? new Date(t.createdAt).toLocaleDateString('es-CO') : '—'}
+            </ThemedText>
+          </View>
+          <View style={[styles.statusBadge, { backgroundColor: t.status === 'COMPLETED' ? '#D1FAE5' : '#FEF3C7' }]}>
+            <ThemedText style={{ color: t.status === 'COMPLETED' ? '#059669' : '#D97706', fontSize: 11, fontWeight: '700' }}>
+              {t.status === 'COMPLETED' ? 'PAGADO' : 'PENDIENTE'}
+            </ThemedText>
+          </View>
+          <ThemedText type="defaultSemiBold" style={{ marginLeft: 8 }}>
+            ${t.amount.toLocaleString('es-CO')}
+          </ThemedText>
+        </View>
+      ))}
+    </ThemedView>
   );
 }
 
@@ -297,6 +342,18 @@ const styles = StyleSheet.create({
   },
   successMessage: {
     color: '#0F9F8F',
+  },
+  transactionRow: {
+    alignItems: 'center',
+    borderTopColor: '#F1F5F9',
+    borderTopWidth: 1,
+    flexDirection: 'row',
+    paddingVertical: 8,
+  },
+  statusBadge: {
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
   },
   genderField: {
     gap: 8,
