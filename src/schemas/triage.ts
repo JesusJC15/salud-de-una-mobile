@@ -32,7 +32,7 @@ export const triageQuestionSchema = z.object({
 });
 export type TriageQuestion = z.infer<typeof triageQuestionSchema>;
 
-export const createSessionResponseSchema = z.object({
+const triageSessionBaseSchema = z.object({
   sessionId: z.string(),
   specialty: triageSpecialtySchema,
   status: z.enum(['IN_PROGRESS', 'COMPLETED', 'CANCELED', 'FAILED', 'EXPIRED']),
@@ -44,7 +44,19 @@ export const createSessionResponseSchema = z.object({
   nextQuestionId: z.string().nullable(),
   isComplete: z.boolean(),
 });
+
+export const createSessionResponseSchema = triageSessionBaseSchema;
 export type CreateSessionResponse = z.infer<typeof createSessionResponseSchema>;
+
+export const sessionDetailResponseSchema = triageSessionBaseSchema.extend({
+  id: z.string().optional(),
+  currentQuestionId: z.string().nullable().optional(),
+  currentStep: z.number().optional(),
+  totalSteps: z.number().optional(),
+  createdAt: z.string().nullable().optional(),
+  updatedAt: z.string().nullable().optional(),
+});
+export type SessionDetailResponse = z.infer<typeof sessionDetailResponseSchema>;
 
 export const saveAnswersResponseSchema = z.object({
   sessionId: z.string(),

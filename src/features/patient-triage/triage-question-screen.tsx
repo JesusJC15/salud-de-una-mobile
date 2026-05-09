@@ -232,6 +232,16 @@ export function TriageQuestionScreen({ sessionId }: Props) {
     );
   }
 
+  if (sessionQuery.isError) {
+    return (
+      <LinearGradient colors={PALETTE.bg} style={styles.centered}>
+        <ThemedText style={{ color: PALETTE.error }}>
+          Error al cargar la sesión. Intenta de nuevo.
+        </ThemedText>
+      </LinearGradient>
+    );
+  }
+
   if (!session || !nextQuestion) {
     return (
       <LinearGradient colors={PALETTE.bg} style={styles.centered}>

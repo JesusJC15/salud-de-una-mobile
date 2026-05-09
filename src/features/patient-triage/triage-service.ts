@@ -4,6 +4,7 @@ import {
   analyzeSessionResponseSchema,
   createSessionResponseSchema,
   saveAnswersResponseSchema,
+  sessionDetailResponseSchema,
   type TriageSpecialty,
 } from '@/src/schemas/triage';
 
@@ -23,7 +24,7 @@ export const triageService = {
 
   async getSessionDetail(sessionId: string) {
     const res = await apiClient.get(`/triage/sessions/${sessionId}`);
-    return createSessionResponseSchema.parse(res.data);
+    return sessionDetailResponseSchema.parse(res.data);
   },
 
   async saveAnswers(
