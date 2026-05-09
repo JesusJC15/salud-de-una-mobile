@@ -2,13 +2,25 @@ module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'node',
   roots: ['<rootDir>/src/tests'],
+  moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json'],
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/$1',
+  },
+  transform: {
+    '^.+\\.(ts|tsx)$': [
+      'ts-jest',
+      {
+        tsconfig: {
+          jsx: 'react-jsx',
+        },
+      },
+    ],
   },
   clearMocks: true,
   collectCoverageFrom: [
     'src/features/**/*.ts',
     'src/lib/**/*.ts',
+    'src/providers/**/*.tsx',
     'src/schemas/**/*.ts',
     'src/services/**/*.ts',
     '!src/features/**/use-*.ts',

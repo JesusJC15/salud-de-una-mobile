@@ -89,6 +89,17 @@ describe('auth0-service', () => {
     expect(decodeTokenClaims('invalid')).toEqual({ sub: '' });
   });
 
+  it('returns empty claims when payload cannot be parsed as JSON', () => {
+    const malformedPayload = Buffer.from('{"sub":').toString('base64')
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=+$/, '');
+
+    expect(decodeTokenClaims(`header.${malformedPayload}.signature`)).toEqual({
+      sub: '',
+    });
+  });
+
   it('refreshes auth0 session', async () => {
     const result = await refreshAuth0Session('refresh-123');
 

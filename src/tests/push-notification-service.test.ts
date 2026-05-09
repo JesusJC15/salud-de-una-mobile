@@ -46,6 +46,30 @@ describe('registerPushNotifications', () => {
     (Platform as any).OS = 'ios';
   });
 
+  it('configures the notification handler on module load', async () => {
+    jest.resetModules();
+    const isolatedNotifications = jest.requireMock('expo-notifications');
+
+    await jest.isolateModulesAsync(async () => {
+      await import('@/src/services/notifications/push-notification-service');
+    });
+
+    expect(isolatedNotifications.setNotificationHandler).toHaveBeenCalledWith(
+      expect.objectContaining({
+        handleNotification: expect.any(Function),
+      }),
+    );
+
+    const handler = isolatedNotifications.setNotificationHandler.mock.calls[0][0];
+    await expect(handler.handleNotification()).resolves.toEqual({
+      shouldShowAlert: true,
+      shouldPlaySound: true,
+      shouldSetBadge: false,
+      shouldShowBanner: true,
+      shouldShowList: true,
+    });
+  });
+
   it('returns early on web platform', async () => {
     (Platform as any).OS = 'web';
 
