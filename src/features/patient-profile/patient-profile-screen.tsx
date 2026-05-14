@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Alert, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { billingService } from '@/src/services/billing/billing-service';
 
 import { Radius } from '@/src/constants/theme';
@@ -88,6 +88,34 @@ export function PatientProfileScreen() {
       passwordForm.reset();
     },
   });
+
+  const exportDataMutation = useMutation({
+    mutationFn: () => authService.exportPatientData(),
+  });
+
+  const deleteAccountMutation = useMutation({
+    mutationFn: () => authService.anonymizeAccount(),
+    onSuccess: async () => {
+      queryClient.clear();
+      await clearSession();
+      router.replace('/(auth)/login');
+    },
+  });
+
+  function handleDeleteAccount() {
+    Alert.alert(
+      'Eliminar cuenta',
+      'Esta acción es irreversible. Todos tus datos serán anonimizados conforme a la Ley 1581 de 2012. ¿Deseas continuar?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Eliminar',
+          style: 'destructive',
+          onPress: () => void deleteAccountMutation.mutateAsync(),
+        },
+      ],
+    );
+  }
 
   useEffect(() => {
     if (profileQuery.data) {
@@ -355,6 +383,34 @@ export function PatientProfileScreen() {
           variant="secondary"
         />
         <AppButton label="Cerrar sesion" loading={isLoggingOut} onPress={() => void handleLogout()} variant="secondary" />
+      </ThemedView>
+
+      <ThemedView lightColor="#FCFFFF" style={styles.card}>
+        <ThemedText type="subtitle">Privacidad y datos</ThemedText>
+        <ThemedText type="muted">
+          Conforme a la Ley 1581 de 2012, podés descargar o eliminar tus datos personales.
+        </ThemedText>
+        {exportDataMutation.isSuccess && (
+          <ThemedText style={styles.successMessage}>Solicitud de exportación recibida.</ThemedText>
+        )}
+        {exportDataMutation.error instanceof Error && (
+          <ThemedText style={styles.errorMessage}>{exportDataMutation.error.message}</ThemedText>
+        )}
+        <AppButton
+          label="Descargar mis datos"
+          loading={exportDataMutation.isPending}
+          onPress={() => void exportDataMutation.mutateAsync()}
+          variant="secondary"
+        />
+        {deleteAccountMutation.error instanceof Error && (
+          <ThemedText style={styles.errorMessage}>{deleteAccountMutation.error.message}</ThemedText>
+        )}
+        <AppButton
+          label="Eliminar mi cuenta"
+          loading={deleteAccountMutation.isPending}
+          onPress={handleDeleteAccount}
+          variant="secondary"
+        />
       </ThemedView>
 
       <TransactionHistorySection />

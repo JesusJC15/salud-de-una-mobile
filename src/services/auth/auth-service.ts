@@ -68,4 +68,17 @@ export const authService = {
 
     return response.data;
   },
+
+  async exportPatientData() {
+    const response = await apiClient.get<Record<string, unknown>>('/patients/me/data-export');
+    return response.data;
+  },
+
+  async anonymizeAccount() {
+    const response = await apiClient.delete<{ anonymized: boolean; accountState: string }>(
+      '/patients/me/account',
+      { skipAuthRefresh: true },
+    );
+    return response.data;
+  },
 };

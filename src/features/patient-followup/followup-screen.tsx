@@ -11,6 +11,7 @@ import {
 import Slider from '@react-native-community/slider';
 import { useRouter } from 'expo-router';
 import { Colors, Radius } from '@/src/constants/theme';
+import { ApiError } from '@/src/services/api/api-error';
 import { ThemedText } from '@/src/ui/themed-text';
 import { ThemedView } from '@/src/ui/themed-view';
 import { useFollowup, useSubmitFollowup } from './use-patient-followups';
@@ -135,6 +136,13 @@ export function FollowupScreen({ followupId }: { followupId: string }) {
           ? <ActivityIndicator color="#fff" size="small" />
           : <ThemedText style={styles.submitText}>Enviar seguimiento</ThemedText>}
       </Pressable>
+
+      {submitMutation.isError && (
+        <ThemedText style={styles.errorText}>
+          {ApiError.fromUnknown(submitMutation.error).message ||
+            'No se pudo enviar el seguimiento. Intenta de nuevo.'}
+        </ThemedText>
+      )}
     </ScrollView>
   );
 }
@@ -177,4 +185,5 @@ const styles = StyleSheet.create({
     padding: 14,
   },
   submitText: { color: '#fff', fontSize: 15, fontWeight: '800' },
+  errorText: { color: Colors.light.destructive, fontSize: 13, marginTop: 4, textAlign: 'center' },
 });
