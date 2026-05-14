@@ -41,7 +41,10 @@ export const billingService = {
   },
 
   async getMyTransactions(): Promise<Transaction[]> {
-    const res = await apiClient.get<Transaction[]>('/billing/transactions/me');
-    return res.data;
+    const res = await apiClient.get<
+      Transaction[] | { items: Transaction[]; total: number; page: number; limit: number }
+    >('/billing/transactions/me');
+    // Backend returns paginated { items, total, page, limit }
+    return Array.isArray(res.data) ? res.data : res.data.items;
   },
 };
