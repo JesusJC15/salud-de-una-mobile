@@ -46,7 +46,7 @@ export function useConsultationPayment(consultationId: string | null) {
     const transaction = await initiateMutation.mutateAsync(consultationId);
     // Simulated payment gateway delay — replace with real webhook/redirect when integrating a PSP
     await new Promise((resolve) => setTimeout(resolve, 1500));
-    await confirmMutation.mutateAsync(transaction._id);
+    await confirmMutation.mutateAsync(transaction.id);
   };
 
   const isPaying = initiateMutation.isPending || confirmMutation.isPending;

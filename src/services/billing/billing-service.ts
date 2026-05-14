@@ -10,7 +10,7 @@ export type BillingPrice = {
 };
 
 export type Transaction = {
-  _id: string;
+  id: string;
   consultationId: string;
   specialty: string;
   amount: number;
@@ -41,10 +41,9 @@ export const billingService = {
   },
 
   async getMyTransactions(): Promise<Transaction[]> {
-    const res = await apiClient.get<
-      Transaction[] | { items: Transaction[]; total: number; page: number; limit: number }
-    >('/billing/transactions/me');
-    // Backend returns paginated { items, total, page, limit }
-    return Array.isArray(res.data) ? res.data : res.data.items;
+    const res = await apiClient.get<{ items: Transaction[]; total: number; page: number; limit: number }>(
+      '/billing/transactions/me',
+    );
+    return res.data.items;
   },
 };

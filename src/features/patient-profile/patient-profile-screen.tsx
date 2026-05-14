@@ -438,7 +438,7 @@ function TransactionHistorySection() {
         <ThemedText type="muted">No tienes pagos registrados aún.</ThemedText>
       )}
       {transactions.slice(0, 10).map((t) => (
-        <View key={t._id} style={styles.transactionRow}>
+        <View key={t.id} style={styles.transactionRow}>
           <View style={{ flex: 1 }}>
             <ThemedText type="defaultSemiBold">
               {t.specialty.replace('_', ' ')}
