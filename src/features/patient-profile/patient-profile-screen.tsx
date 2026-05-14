@@ -15,7 +15,9 @@ import {
 } from '@/src/lib/identity';
 import { z } from 'zod';
 import {
+  ChangePasswordFormInput,
   UpdatePatientProfileFormInput,
+  changePasswordSchema,
   updatePatientProfileSchema,
 } from '@/src/schemas/patient-profile';
 import { authService } from '@/src/services/auth/auth-service';
@@ -30,9 +32,12 @@ export function PatientProfileScreen() {
   const queryClient = useQueryClient();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const sessionUser = useSessionStore((state) => state.session?.user ?? null);
+  const authMethod = useSessionStore((state) => state.session?.authMethod ?? null);
   const clearSession = useSessionStore((state) => state.clearSession);
   const setProfile = useSessionStore((state) => state.setProfile);
   const patient = useSessionStore((state) => state.profile);
+  const isLegacyAuth = authMethod === 'legacy';
+
   const form = useForm<
     z.input<typeof updatePatientProfileSchema>,
     unknown,
@@ -45,6 +50,11 @@ export function PatientProfileScreen() {
       lastName: undefined,
     },
     resolver: zodResolver(updatePatientProfileSchema),
+  });
+
+  const passwordForm = useForm<ChangePasswordFormInput>({
+    defaultValues: { currentPassword: '', newPassword: '', confirmNewPassword: '' },
+    resolver: zodResolver(changePasswordSchema),
   });
 
   const profileQuery = useQuery({
@@ -65,6 +75,17 @@ export function PatientProfileScreen() {
     onSuccess: async (nextProfile) => {
       setProfile(nextProfile);
       await queryClient.invalidateQueries({ queryKey: ['patient-profile', sessionUser?.id] });
+    },
+  });
+
+  const changePasswordMutation = useMutation({
+    mutationFn: (values: ChangePasswordFormInput) =>
+      authService.updateCurrentPatient({
+        currentPassword: values.currentPassword,
+        newPassword: values.newPassword,
+      }),
+    onSuccess: () => {
+      passwordForm.reset();
     },
   });
 
@@ -251,6 +272,81 @@ export function PatientProfileScreen() {
             onPress={() => void onSubmitProfile()}
           />
         </ThemedView>
+
+        {isLegacyAuth && (
+          <ThemedView style={styles.formSection}>
+            <ThemedText type="subtitle">Cambiar contraseña</ThemedText>
+
+            <Controller
+              control={passwordForm.control}
+              name="currentPassword"
+              render={({ field: { onBlur, onChange, value }, fieldState: { error } }) => (
+                <AppTextField
+                  autoCapitalize="none"
+                  errorMessage={error?.message}
+                  label="Contraseña actual"
+                  onBlur={onBlur}
+                  onChangeText={onChange}
+                  secureTextEntry
+                  value={value}
+                />
+              )}
+            />
+
+            <Controller
+              control={passwordForm.control}
+              name="newPassword"
+              render={({ field: { onBlur, onChange, value }, fieldState: { error } }) => (
+                <AppTextField
+                  autoCapitalize="none"
+                  errorMessage={error?.message}
+                  label="Nueva contraseña"
+                  onBlur={onBlur}
+                  onChangeText={onChange}
+                  secureTextEntry
+                  value={value}
+                />
+              )}
+            />
+
+            <Controller
+              control={passwordForm.control}
+              name="confirmNewPassword"
+              render={({ field: { onBlur, onChange, value }, fieldState: { error } }) => (
+                <AppTextField
+                  autoCapitalize="none"
+                  errorMessage={error?.message}
+                  label="Confirmar nueva contraseña"
+                  onBlur={onBlur}
+                  onChangeText={onChange}
+                  secureTextEntry
+                  value={value}
+                />
+              )}
+            />
+
+            {changePasswordMutation.isSuccess && (
+              <ThemedText style={styles.successMessage}>
+                Contraseña actualizada correctamente.
+              </ThemedText>
+            )}
+            {changePasswordMutation.error instanceof Error && (
+              <ThemedText style={styles.errorMessage}>
+                {changePasswordMutation.error.message}
+              </ThemedText>
+            )}
+
+            <AppButton
+              label="Actualizar contraseña"
+              loading={changePasswordMutation.isPending}
+              onPress={() =>
+                void passwordForm.handleSubmit((values) =>
+                  changePasswordMutation.mutateAsync(values)
+                )()
+              }
+            />
+          </ThemedView>
+        )}
 
         <AppButton
           label="Recargar perfil"

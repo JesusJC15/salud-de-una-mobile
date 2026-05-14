@@ -367,7 +367,7 @@ describe('AppProviders', () => {
         request: {
           content: {
             data: {
-              deepLink: '/followups/1',
+              deepLink: '/followup/1',
             },
           },
         },
@@ -376,7 +376,7 @@ describe('AppProviders', () => {
 
     await renderAppProviders();
 
-    expect(routerPush).toHaveBeenCalledWith('/followups/1');
+    expect(routerPush).toHaveBeenCalledWith('/followup/1');
 
     const notificationListener = addNotificationResponseReceivedListener.mock.calls[0][0] as (
       response: unknown,
@@ -387,7 +387,7 @@ describe('AppProviders', () => {
         request: {
           content: {
             data: {
-              deepLink: '/consultations/2',
+              deepLink: '/triage/chat/2',
             },
           },
         },
@@ -406,7 +406,7 @@ describe('AppProviders', () => {
       },
     });
 
-    expect(routerPush).toHaveBeenCalledWith('/consultations/2');
+    expect(routerPush).toHaveBeenCalledWith('/triage/chat/2');
     expect(routerPush).toHaveBeenCalledTimes(2);
   });
 });

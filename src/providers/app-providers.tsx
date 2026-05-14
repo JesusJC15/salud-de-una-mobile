@@ -11,6 +11,7 @@ import {
 import { ApiError } from '@/src/services/api/api-error';
 import { authService } from '@/src/services/auth/auth-service';
 import { refreshAuth0Session } from '@/src/services/auth/auth0-service';
+import { isAllowedDeepLink } from '@/src/lib/deep-link';
 import { registerPushNotifications } from '@/src/services/notifications/push-notification-service';
 import { useSessionStore } from '@/src/store/session-store';
 import { useTriageStore } from '@/src/store/triage-store';
@@ -129,7 +130,7 @@ export function AppProviders({ children }: PropsWithChildren) {
       response: Notifications.NotificationResponse | null,
     ) {
       const deepLink = response?.notification.request.content.data?.deepLink;
-      if (typeof deepLink === 'string' && deepLink.length > 0) {
+      if (typeof deepLink === 'string' && deepLink.length > 0 && isAllowedDeepLink(deepLink)) {
         router.push(deepLink as never);
       }
     }

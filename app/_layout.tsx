@@ -8,6 +8,7 @@ import { ActivityIndicator, StyleSheet } from 'react-native';
 import 'react-native-reanimated';
 
 import { Colors, NavigationTheme } from '@/src/constants/theme';
+import { ErrorBoundary } from '@/src/components/error-boundary';
 import { AppProviders } from '@/src/providers/app-providers';
 import { useSessionStore } from '@/src/store/session-store';
 import { ThemedText } from '@/src/ui/themed-text';
@@ -71,9 +72,11 @@ export default function RootLayout() {
   }
 
   return (
-    <AppProviders>
-      <RootNavigator />
-    </AppProviders>
+    <ErrorBoundary>
+      <AppProviders>
+        <RootNavigator />
+      </AppProviders>
+    </ErrorBoundary>
   );
 }
 

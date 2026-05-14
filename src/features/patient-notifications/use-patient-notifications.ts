@@ -2,20 +2,10 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef } from 'react';
 import { io, type Socket } from 'socket.io-client';
 
-import { appConfig } from '@/src/config/env';
+import { WS_BASE_URL } from '@/src/constants/ws';
 import { patientNotificationService } from '@/src/services/notifications/patient-notification-service';
 import { showLocalFollowupNotification } from '@/src/services/notifications/push-notification-service';
 import { useSessionStore } from '@/src/store/session-store';
-
-function trimTrailingSlashes(url: string): string {
-  let end = url.length;
-  while (end > 0 && url[end - 1] === '/') end--;
-  return end === url.length ? url : url.slice(0, end);
-}
-
-const WS_BASE_URL = trimTrailingSlashes(
-  (appConfig.apiBaseUrl ?? 'http://localhost:3000').replace(/\/v1$/, ''),
-);
 
 const PATIENT_NOTIFICATIONS_QUERY_KEY = ['patient-notifications'];
 
@@ -48,21 +38,25 @@ export function usePatientNotifications() {
   useEffect(() => {
     if (!session?.accessToken) return;
 
+    let mounted = true;
+
     const socket = io(`${WS_BASE_URL}/notifications`, {
       auth: { token: session.accessToken },
       transports: ['websocket', 'polling'],
       reconnection: true,
       reconnectionDelay: 1500,
-      reconnectionAttempts: 5,
+      reconnectionAttempts: 50,
     });
 
     socketRef.current = socket;
 
     socket.on('notification:new', () => {
+      if (!mounted) return;
       void queryClient.invalidateQueries({ queryKey: PATIENT_NOTIFICATIONS_QUERY_KEY });
     });
 
     return () => {
+      mounted = false;
       socket.disconnect();
       socketRef.current = null;
     };

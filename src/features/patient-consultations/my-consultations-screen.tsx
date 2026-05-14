@@ -21,6 +21,7 @@ import type { ConsultationHistoryItem } from './consultation-history-service';
 const SPECIALTY_LABELS: Record<string, string> = {
   GENERAL_MEDICINE: 'Medicina General',
   ODONTOLOGY: 'Odontología',
+  URGENT_CARE: 'Urgencias',
 };
 
 const PRIORITY_CONFIG = {

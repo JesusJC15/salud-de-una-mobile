@@ -1,17 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { io, type Socket } from 'socket.io-client';
-import { appConfig } from '@/src/config/env';
+import { WS_BASE_URL } from '@/src/constants/ws';
 import { useSessionStore } from '@/src/store/session-store';
-
-function trimTrailingSlashes(url: string): string {
-  let end = url.length;
-  while (end > 0 && url[end - 1] === '/') end--;
-  return end === url.length ? url : url.slice(0, end);
-}
-
-const WS_BASE_URL = trimTrailingSlashes(
-  (appConfig.apiBaseUrl ?? 'http://localhost:3000').replace(/\/v1$/, ''),
-);
 
 export type ChatMessage = {
   id: string;
@@ -31,6 +21,7 @@ export function usePatientChat(consultationId: string | null, initialIsClosed = 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [status, setStatus] = useState<ConnectionStatus>('disconnected');
   const [isClosed, setIsClosed] = useState(initialIsClosed);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
     setIsClosed(initialIsClosed);
@@ -41,13 +32,14 @@ export function usePatientChat(consultationId: string | null, initialIsClosed = 
 
     let mounted = true;
     setStatus('connecting');
+    setErrorMessage(null);
 
     const socket = io(`${WS_BASE_URL}/chat`, {
       auth: { token: session.accessToken },
       transports: ['websocket', 'polling'],
       reconnection: true,
       reconnectionDelay: 1500,
-      reconnectionAttempts: 5,
+      reconnectionAttempts: 50,
     });
 
     socketRef.current = socket;
@@ -55,6 +47,7 @@ export function usePatientChat(consultationId: string | null, initialIsClosed = 
     socket.on('connect', () => {
       if (!mounted) return;
       setStatus('connected');
+      setErrorMessage(null);
       socket.emit('chat:join', { consultationId });
     });
 
@@ -70,8 +63,13 @@ export function usePatientChat(consultationId: string | null, initialIsClosed = 
 
     socket.on('chat:error', (err: { code: string; message: string }) => {
       if (!mounted) return;
-      if (err.code === 'FORBIDDEN' && err.message.includes('cerrada')) {
-        setIsClosed(true);
+      if (err.code === 'FORBIDDEN') {
+        if (err.message.includes('cerrada')) {
+          setIsClosed(true);
+        } else {
+          // Consultation pending assignment or other access error
+          setErrorMessage(err.message);
+        }
       }
     });
 
@@ -97,5 +95,12 @@ export function usePatientChat(consultationId: string | null, initialIsClosed = 
     [consultationId, isClosed],
   );
 
-  return { messages, status, sendMessage, currentUserId: session?.user.id ?? '', isClosed };
+  return {
+    messages,
+    status,
+    sendMessage,
+    currentUserId: session?.user.id ?? '',
+    isClosed,
+    errorMessage,
+  };
 }

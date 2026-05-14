@@ -1,3 +1,4 @@
+import { z } from 'zod';
 import { apiClient } from '@/src/services/api/client';
 import {
   activeSessionsResponseSchema,
@@ -7,6 +8,11 @@ import {
   sessionDetailResponseSchema,
   type TriageSpecialty,
 } from '@/src/schemas/triage';
+
+const cancelSessionResponseSchema = z.object({
+  sessionId: z.string(),
+  status: z.string(),
+});
 
 export type AnswerValue = string | boolean | number | string[];
 
@@ -44,6 +50,6 @@ export const triageService = {
 
   async cancelSession(sessionId: string) {
     const res = await apiClient.patch(`/triage/sessions/${sessionId}/cancel`);
-    return res.data as { sessionId: string; status: string };
+    return cancelSessionResponseSchema.parse(res.data);
   },
 };

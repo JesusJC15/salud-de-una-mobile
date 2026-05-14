@@ -1,5 +1,13 @@
 import type { EntityId, IsoDateString } from '@/src/types/common';
 
+export type NotificationType =
+  | 'FOLLOWUP_REMINDER'
+  | 'CONSULTATION_UPDATE'
+  | 'NEW_MESSAGE'
+  | 'TRIAGE_COMPLETE'
+  | 'SYSTEM'
+  | 'DOCTOR_STATUS_CHANGE';
+
 export interface ListNotificationsInput {
   unreadOnly?: boolean;
   limit?: number;
@@ -8,7 +16,7 @@ export interface ListNotificationsInput {
 export interface Notification {
   id?: EntityId;
   userId?: EntityId;
-  type: string;
+  type: NotificationType | string;
   status: string;
   message: string;
   resourceId?: EntityId;
@@ -22,7 +30,7 @@ export interface Notification {
 
 export interface NotificationListItem {
   id: EntityId;
-  type: string;
+  type: NotificationType | string;
   status: string;
   message: string;
   resourceId?: EntityId;

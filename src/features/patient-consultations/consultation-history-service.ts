@@ -3,7 +3,7 @@ import { apiClient } from '@/src/services/api/client';
 
 export const consultationHistoryItemSchema = z.object({
   id: z.string(),
-  specialty: z.string(),
+  specialty: z.enum(['GENERAL_MEDICINE', 'ODONTOLOGY', 'URGENT_CARE']),
   priority: z.enum(['LOW', 'MODERATE', 'HIGH']),
   status: z.enum(['PENDING', 'IN_ATTENTION', 'CLOSED']),
   clinicalSummary: z.string().optional().nullable(),

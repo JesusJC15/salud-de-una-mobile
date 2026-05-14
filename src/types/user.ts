@@ -22,4 +22,6 @@ export interface UpdatePatientProfileInput {
   lastName?: string;
   birthDate?: IsoDateString;
   gender?: UserGender;
+  currentPassword?: string;
+  newPassword?: string;
 }

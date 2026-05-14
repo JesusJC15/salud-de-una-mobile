@@ -2,7 +2,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import Slider from '@react-native-community/slider';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -166,6 +166,7 @@ export function TriageQuestionScreen({ sessionId }: Props) {
   const [multiValue, setMultiValue] = useState<string[]>([]);
   const [numericValue, setNumericValue] = useState<number>(5);
   const [validationError, setValidationError] = useState<string | null>(null);
+  const analyzeInFlight = useRef(false);
 
   const session = sessionQuery.data;
   const nextQuestion = session?.questions.find(
@@ -206,7 +207,14 @@ export function TriageQuestionScreen({ sessionId }: Props) {
     resetAnswerState();
 
     if (result.isComplete) {
-      const analysis = await analyzeMutation.mutateAsync();
+      if (analyzeInFlight.current) return;
+      analyzeInFlight.current = true;
+      let analysis;
+      try {
+        analysis = await analyzeMutation.mutateAsync();
+      } finally {
+        analyzeInFlight.current = false;
+      }
       setConsultationId(analysis.consultationId);
       const redFlagsParam = analysis.redFlags?.length
         ? encodeURIComponent(JSON.stringify(analysis.redFlags))

@@ -2,6 +2,10 @@ import * as Notifications from 'expo-notifications';
 import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 import { apiClient } from '@/src/services/api/client';
+import {
+  hasShownNotification,
+  markNotificationShown,
+} from '@/src/services/storage/notification-dedup-storage';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -42,8 +46,6 @@ export async function registerPushNotifications(): Promise<void> {
   }
 }
 
-const shownLocalNotifications = new Set<string>();
-
 export async function showLocalFollowupNotification(input: {
   id: string;
   title: string;
@@ -51,9 +53,9 @@ export async function showLocalFollowupNotification(input: {
   deepLink?: string | null;
 }): Promise<void> {
   if (Platform.OS === 'web') return;
-  if (shownLocalNotifications.has(input.id)) return;
 
-  shownLocalNotifications.add(input.id);
+  const alreadyShown = await hasShownNotification(input.id);
+  if (alreadyShown) return;
 
   try {
     await Notifications.scheduleNotificationAsync({
@@ -66,7 +68,8 @@ export async function showLocalFollowupNotification(input: {
       },
       trigger: null,
     });
+    await markNotificationShown(input.id);
   } catch {
-    shownLocalNotifications.delete(input.id);
+    // Scheduling failed — don't mark as shown so we retry next time
   }
 }

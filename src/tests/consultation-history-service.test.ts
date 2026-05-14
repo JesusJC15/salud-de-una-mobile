@@ -22,7 +22,7 @@ describe('consultationHistoryService', () => {
           items: [
             {
               id: '1',
-              specialty: 'General',
+              specialty: 'GENERAL_MEDICINE',
               priority: 'MODERATE',
               status: 'CLOSED',
               clinicalSummary: 'Summary',
@@ -75,7 +75,7 @@ describe('consultationHistoryService', () => {
           items: [
             {
               id: '1',
-              specialty: 'General',
+              specialty: 'GENERAL_MEDICINE',
               priority: 'HIGH',
               status: 'PENDING',
               clinicalSummary: null,
@@ -124,10 +124,10 @@ describe('consultationHistoryService', () => {
           items: [
             {
               id: '1',
-              specialty: 'Cardiology',
+              specialty: 'ODONTOLOGY',
               priority: 'HIGH',
               status: 'CLOSED',
-              clinicalSummary: 'Heart checkup',
+              clinicalSummary: 'Dental checkup',
               rating: 5,
               ratingComment: 'Great service',
               createdAt: '2024-01-01T00:00:00Z',
@@ -135,10 +135,10 @@ describe('consultationHistoryService', () => {
             },
             {
               id: '2',
-              specialty: 'Dermatology',
+              specialty: 'URGENT_CARE',
               priority: 'LOW',
               status: 'CLOSED',
-              clinicalSummary: 'Skin checkup',
+              clinicalSummary: 'Emergency checkup',
               rating: 4,
               ratingComment: null,
               createdAt: '2024-01-10T00:00:00Z',
@@ -156,8 +156,8 @@ describe('consultationHistoryService', () => {
       const result = await consultationHistoryService.getMyHistory();
 
       expect(result.items).toHaveLength(2);
-      expect(result.items[0].specialty).toBe('Cardiology');
-      expect(result.items[1].specialty).toBe('Dermatology');
+      expect(result.items[0].specialty).toBe('ODONTOLOGY');
+      expect(result.items[1].specialty).toBe('URGENT_CARE');
     });
 
     it('validates response schema', async () => {
@@ -166,7 +166,7 @@ describe('consultationHistoryService', () => {
           items: [
             {
               id: '1',
-              specialty: 'General',
+              specialty: 'GENERAL_MEDICINE',
               priority: 'MODERATE',
               status: 'IN_ATTENTION',
               clinicalSummary: null,

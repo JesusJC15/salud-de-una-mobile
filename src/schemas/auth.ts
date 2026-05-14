@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-const passwordRule = /^(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
+export const passwordRule = /^(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
 const isoDateRule = /^\d{4}-\d{2}-\d{2}$/;
 const emailSchema = z.string().trim().pipe(z.email({ message: 'Ingresa un correo electrónico válido.' }));
 

@@ -22,6 +22,20 @@ jest.mock('expo-constants', () => ({
   },
 }));
 
+// Simulate real SecureStore: setItemAsync stores, getItemAsync reads back
+const secureStoreData: Record<string, string> = {};
+jest.mock('expo-secure-store', () => ({
+  getItemAsync: jest.fn((key: string) => Promise.resolve(secureStoreData[key] ?? null)),
+  setItemAsync: jest.fn((key: string, value: string) => {
+    secureStoreData[key] = value;
+    return Promise.resolve(undefined);
+  }),
+  deleteItemAsync: jest.fn((key: string) => {
+    delete secureStoreData[key];
+    return Promise.resolve(undefined);
+  }),
+}));
+
 jest.mock('expo-notifications', () => ({
   setNotificationHandler: jest.fn(),
   getPermissionsAsync: jest.fn(),
@@ -227,6 +241,8 @@ describe('registerPushNotifications', () => {
 describe('showLocalFollowupNotification', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    // Clear the simulated SecureStore between tests
+    Object.keys(secureStoreData).forEach((k) => delete secureStoreData[k]);
     (Platform as any).OS = 'ios';
   });
 

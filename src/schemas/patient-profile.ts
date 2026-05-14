@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { passwordRule } from '@/src/schemas/auth';
 
 const patientGenderValues = ['MALE', 'FEMALE', 'OTHER'] as const;
 
@@ -24,3 +25,19 @@ export const updatePatientProfileSchema = z.object({
 });
 
 export type UpdatePatientProfileFormInput = z.infer<typeof updatePatientProfileSchema>;
+
+export const changePasswordSchema = z
+  .object({
+    currentPassword: z.string().min(1, 'Ingresá tu contraseña actual.'),
+    newPassword: z.string().regex(passwordRule, {
+      message:
+        'La contraseña debe tener al menos 8 caracteres e incluir una mayúscula, un número y un carácter especial.',
+    }),
+    confirmNewPassword: z.string().min(1, 'Confirmá la nueva contraseña.'),
+  })
+  .refine((d) => d.newPassword === d.confirmNewPassword, {
+    message: 'Las contraseñas no coinciden.',
+    path: ['confirmNewPassword'],
+  });
+
+export type ChangePasswordFormInput = z.infer<typeof changePasswordSchema>;

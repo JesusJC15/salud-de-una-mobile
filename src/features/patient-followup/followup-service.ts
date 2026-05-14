@@ -38,6 +38,13 @@ export const timelineResponseSchema = z.object({
   nextCursor: z.string().nullable(),
 });
 
+export const submitFollowupResponseSchema = z.object({
+  followup: followupSchema,
+  priorityEscalated: z.boolean(),
+  createdConsultationId: z.string().nullable(),
+});
+
+export type SubmitFollowupResponse = z.infer<typeof submitFollowupResponseSchema>;
 export type Followup = z.infer<typeof followupSchema>;
 export type TimelineEvent = z.infer<typeof timelineEventSchema>;
 
@@ -63,11 +70,7 @@ export const followupService = {
     newSymptoms?: string;
   }) {
     const res = await apiClient.post('/followups', input);
-    return res.data as {
-      followup: Followup;
-      priorityEscalated: boolean;
-      createdConsultationId: string | null;
-    };
+    return submitFollowupResponseSchema.parse(res.data);
   },
 
   async getTimeline(patientId: string, cursor?: string) {

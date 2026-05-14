@@ -76,7 +76,7 @@ export function PatientChatScreen({
   consultationId: string;
   isClosed?: boolean;
 }) {
-  const { messages, status, sendMessage, currentUserId, isClosed } = usePatientChat(
+  const { messages, status, sendMessage, currentUserId, isClosed, errorMessage } = usePatientChat(
     consultationId,
     initialIsClosed,
   );
@@ -100,6 +100,13 @@ export function PatientChatScreen({
           {STATUS_LABEL[status] ?? 'Desconectado'}
         </ThemedText>
       </View>
+
+      {errorMessage && !isClosed && (
+        <View style={styles.errorBanner}>
+          <MaterialIcons name="info-outline" size={16} color="#D97706" />
+          <ThemedText style={styles.errorBannerText}>{errorMessage}</ThemedText>
+        </View>
+      )}
 
       <FlatList
         ref={flatListRef}
@@ -141,7 +148,10 @@ export function PatientChatScreen({
               onPress={() => void pay()}
             >
               {isPaying ? (
-                <ActivityIndicator color="#FFFFFF" size="small" />
+                <>
+                  <ActivityIndicator color="#FFFFFF" size="small" />
+                  <ThemedText style={styles.payBtnText}>Procesando pago...</ThemedText>
+                </>
               ) : (
                 <>
                   <MaterialIcons name="payment" size={18} color="#FFFFFF" />
@@ -151,9 +161,14 @@ export function PatientChatScreen({
             </Pressable>
           )}
           {payError && (
-            <ThemedText style={styles.payErrorText}>
-              Error al procesar el pago. Intenta de nuevo.
-            </ThemedText>
+            <View style={styles.payErrorRow}>
+              <ThemedText style={styles.payErrorText}>
+                Error al procesar el pago.
+              </ThemedText>
+              <Pressable onPress={() => void pay()} style={styles.retryLink}>
+                <ThemedText style={styles.retryLinkText}>Reintentar</ThemedText>
+              </Pressable>
+            </View>
           )}
         </View>
       )}
@@ -221,7 +236,21 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   payBtnText: { color: '#FFFFFF', fontSize: 15, fontWeight: '700' },
-  payErrorText: { color: '#DC2626', fontSize: 12, marginTop: 4 },
+  payErrorRow: { alignItems: 'center', flexDirection: 'row', gap: 8 },
+  payErrorText: { color: '#DC2626', fontSize: 12 },
+  retryLink: { paddingHorizontal: 4 },
+  retryLinkText: { color: '#0891B2', fontSize: 12, fontWeight: '700' },
+  errorBanner: {
+    alignItems: 'center',
+    backgroundColor: '#FFFBEB',
+    borderTopColor: '#FDE68A',
+    borderTopWidth: 1,
+    flexDirection: 'row',
+    gap: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+  },
+  errorBannerText: { color: '#D97706', flex: 1, fontSize: 13, lineHeight: 18 },
   container: { flex: 1 },
   statusBar: {
     alignItems: 'center', flexDirection: 'row', gap: 8,
