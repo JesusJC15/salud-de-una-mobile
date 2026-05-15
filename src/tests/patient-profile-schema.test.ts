@@ -6,13 +6,17 @@ describe('updatePatientProfileSchema', () => {
       birthDate: '1990-08-20',
       firstName: 'Ana',
       gender: 'female',
+      heightCm: '165',
       lastName: 'Gomez',
+      weightKg: '62.5',
     });
 
     expect(result.success).toBe(true);
 
     if (result.success) {
       expect(result.data.gender).toBe('FEMALE');
+      expect(result.data.heightCm).toBe(165);
+      expect(result.data.weightKg).toBe(62.5);
     }
   });
 
@@ -33,15 +37,28 @@ describe('updatePatientProfileSchema', () => {
       birthDate: '',
       firstName: ' ',
       gender: '',
+      heightCm: '',
       lastName: '',
+      weightKg: '',
     });
 
     expect(result).toEqual({
       birthDate: undefined,
       firstName: undefined,
       gender: undefined,
+      heightCm: undefined,
       lastName: undefined,
+      weightKg: undefined,
     });
+  });
+
+  it('rejects out-of-range anthropometric values', () => {
+    const result = updatePatientProfileSchema.safeParse({
+      heightCm: '300',
+      weightKg: '0',
+    });
+
+    expect(result.success).toBe(false);
   });
 });
 

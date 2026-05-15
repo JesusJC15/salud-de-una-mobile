@@ -73,7 +73,9 @@ export function PatientProfileScreen() {
       birthDate: undefined,
       firstName: undefined,
       gender: undefined,
+      heightCm: undefined,
       lastName: undefined,
+      weightKg: undefined,
     },
     resolver: zodResolver(updatePatientProfileSchema),
   });
@@ -96,7 +98,9 @@ export function PatientProfileScreen() {
         birthDate: values.birthDate,
         firstName: values.firstName,
         gender: values.gender,
+        heightCm: values.heightCm,
         lastName: values.lastName,
+        weightKg: values.weightKg,
       }),
     onSuccess: async (nextProfile) => {
       setProfile(nextProfile);
@@ -164,7 +168,9 @@ export function PatientProfileScreen() {
       birthDate: source.birthDate?.slice(0, 10) ?? undefined,
       firstName: source.firstName ?? undefined,
       gender: source.gender ?? undefined,
+      heightCm: source.heightCm?.toString() ?? undefined,
       lastName: source.lastName ?? undefined,
+      weightKg: source.weightKg?.toString() ?? undefined,
     });
   }, [form, patient, profileQuery.data]);
 
@@ -279,6 +285,28 @@ export function PatientProfileScreen() {
               <ThemedText style={styles.infoValue}>{genderLabel ?? 'Sin especificar'}</ThemedText>
             </View>
           </View>
+          <View style={styles.infoItem}>
+            <View style={styles.infoIcon}>
+              <MaterialIcons color={PALETTE.iconTint} name="height" size={18} />
+            </View>
+            <View style={styles.infoText}>
+              <ThemedText style={styles.infoLabel}>Altura</ThemedText>
+              <ThemedText style={styles.infoValue}>
+                {profile?.heightCm ? `${profile.heightCm} cm` : 'Sin especificar'}
+              </ThemedText>
+            </View>
+          </View>
+          <View style={styles.infoItem}>
+            <View style={styles.infoIcon}>
+              <MaterialIcons color={PALETTE.iconTint} name="monitor-weight" size={18} />
+            </View>
+            <View style={styles.infoText}>
+              <ThemedText style={styles.infoLabel}>Peso</ThemedText>
+              <ThemedText style={styles.infoValue}>
+                {profile?.weightKg ? `${profile.weightKg} kg` : 'Sin especificar'}
+              </ThemedText>
+            </View>
+          </View>
         </View>
         {profileQuery.isPending ? (
           <ThemedText type="muted">Actualizando datos del perfil...</ThemedText>
@@ -385,6 +413,44 @@ export function PatientProfileScreen() {
                   <ThemedText style={styles.errorMessage}>{error.message}</ThemedText>
                 ) : null}
               </View>
+            )}
+          />
+
+          <Controller
+            control={form.control}
+            name="heightCm"
+            render={({ field: { onBlur, onChange, value }, fieldState: { error } }) => (
+              <AppIconTextField
+                autoCapitalize="none"
+                errorMessage={error?.message}
+                iconName="height"
+                keyboardType="numeric"
+                label="Altura (cm)"
+                onBlur={onBlur}
+                onChangeText={onChange}
+                placeholder="Ej: 165"
+                value={value?.toString() ?? ''}
+                {...iconFieldColors}
+              />
+            )}
+          />
+
+          <Controller
+            control={form.control}
+            name="weightKg"
+            render={({ field: { onBlur, onChange, value }, fieldState: { error } }) => (
+              <AppIconTextField
+                autoCapitalize="none"
+                errorMessage={error?.message}
+                iconName="monitor-weight"
+                keyboardType="numeric"
+                label="Peso (kg)"
+                onBlur={onBlur}
+                onChangeText={onChange}
+                placeholder="Ej: 62.5"
+                value={value?.toString() ?? ''}
+                {...iconFieldColors}
+              />
             )}
           />
 

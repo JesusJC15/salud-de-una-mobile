@@ -9,6 +9,14 @@ const optionalTrimmedString = z
   .optional()
   .transform((value) => (value && value.length > 0 ? value : undefined));
 
+const optionalNumberString = (label: string, min: number, max: number) =>
+  optionalTrimmedString
+    .refine((value) => !value || /^\d+(\.\d+)?$/.test(value), `${label} debe ser un número.`)
+    .transform((value) => (value ? Number(value) : undefined))
+    .refine((value) => value === undefined || (value >= min && value <= max), {
+      message: `${label} debe estar entre ${min} y ${max}.`,
+    });
+
 export const updatePatientProfileSchema = z.object({
   firstName: optionalTrimmedString,
   lastName: optionalTrimmedString,
@@ -22,6 +30,8 @@ export const updatePatientProfileSchema = z.object({
       message: 'Valores permitidos: MALE, FEMALE, OTHER.',
     })
     .transform((value) => value as (typeof patientGenderValues)[number] | undefined),
+  heightCm: optionalNumberString('La altura', 30, 260),
+  weightKg: optionalNumberString('El peso', 1, 400),
 });
 
 export type UpdatePatientProfileFormInput = z.infer<typeof updatePatientProfileSchema>;

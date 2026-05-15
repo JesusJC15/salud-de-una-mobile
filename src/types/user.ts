@@ -11,6 +11,8 @@ export interface UserProfile {
   role: UserRole;
   birthDate?: IsoDateString | null;
   gender?: UserGender;
+  heightCm?: number | null;
+  weightKg?: number | null;
   phone?: string | null;
   isActive?: boolean;
   createdAt?: IsoDateString | null;
@@ -22,6 +24,8 @@ export interface UpdatePatientProfileInput {
   lastName?: string;
   birthDate?: IsoDateString;
   gender?: UserGender;
+  heightCm?: number;
+  weightKg?: number;
   currentPassword?: string;
   newPassword?: string;
 }
