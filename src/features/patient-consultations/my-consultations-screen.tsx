@@ -144,15 +144,11 @@ function ConsultationCard({
   const priority = getConsultationPriorityChip(item.priority);
   const status = getConsultationStatusChip(item.status);
   const canRate = item.status === 'CLOSED' && item.rating == null;
+  const canOpenChat = item.status !== 'PENDING';
 
   return (
     <Pressable
-      onPress={() => {
-        if (item.status !== 'PENDING') {
-          const closed = item.status === 'CLOSED' ? '1' : '0';
-          router.push(`/triage/chat/${item.id}?closed=${closed}` as never);
-        }
-      }}
+      onPress={() => router.push(`/consultations/${item.id}` as never)}
       style={({ pressed }) => [styles.card, { opacity: pressed ? 0.9 : 1 }]}
     >
       <View style={styles.cardHeader}>
@@ -189,11 +185,21 @@ function ConsultationCard({
       )}
 
       <View style={styles.cardFooter}>
-        {item.status !== 'PENDING' && (
-          <>
-            <ThemedText style={styles.viewChat}>Ver chat</ThemedText>
-            <MaterialIcons name="chevron-right" size={16} color={Colors.light.tint} />
-          </>
+        <View style={styles.detailLink}>
+          <ThemedText style={styles.viewDetail}>Ver detalle</ThemedText>
+          <MaterialIcons name="chevron-right" size={16} color={Colors.light.tint} />
+        </View>
+        {canOpenChat && (
+          <Pressable
+            onPress={(e) => {
+              e.stopPropagation();
+              router.push(`/triage/chat/${item.id}?closed=${item.status === 'CLOSED' ? '1' : '0'}` as never);
+            }}
+            style={styles.chatButton}
+          >
+            <MaterialIcons name="chat-bubble-outline" size={14} color={Colors.light.tint} />
+            <ThemedText style={styles.chatButtonText}>Ver chat</ThemedText>
+          </Pressable>
         )}
         {canRate && (
           <Pressable
@@ -379,9 +385,22 @@ const styles = StyleSheet.create({
   date: { fontSize: 12, color: Colors.light.textMuted },
   summary: { fontSize: 13, color: Colors.light.textMuted, lineHeight: 18 },
   stars: { flexDirection: 'row', gap: 2 },
-  cardFooter: { flexDirection: 'row', alignItems: 'center', gap: 2, marginTop: 4 },
-  viewChat: { fontSize: 13, fontWeight: '700', color: Colors.light.tint },
-  rateButton: { flexDirection: 'row', alignItems: 'center', gap: 4, marginLeft: 'auto' },
+  cardFooter: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8, marginTop: 4 },
+  detailLink: { alignItems: 'center', flexDirection: 'row', gap: 2 },
+  viewDetail: { fontSize: 13, fontWeight: '700', color: Colors.light.tint },
+  chatButton: {
+    alignItems: 'center',
+    borderColor: Colors.light.border,
+    borderRadius: Radius.pill,
+    borderWidth: 1,
+    flexDirection: 'row',
+    gap: 4,
+    marginLeft: 'auto',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
+  chatButtonText: { fontSize: 13, fontWeight: '700', color: Colors.light.tint },
+  rateButton: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   rateButtonText: { fontSize: 13, fontWeight: '700', color: Colors.light.tint },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 48, gap: 12 },
   errorText: { fontSize: 14, color: Colors.light.destructive, textAlign: 'center' },

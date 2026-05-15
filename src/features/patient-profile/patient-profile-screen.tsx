@@ -1,9 +1,11 @@
 import { zodResolver } from '@hookform/resolvers/zod';
+import { MaterialIcons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import { Alert, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { billingService } from '@/src/services/billing/billing-service';
 
@@ -25,14 +27,36 @@ import {
 import { authService } from '@/src/services/auth/auth-service';
 import { useSessionStore } from '@/src/store/session-store';
 import { AppButton } from '@/src/ui/button';
-import { AppTextField } from '@/src/ui/text-field';
+import { AppIconTextField } from '@/src/ui/icon-text-field';
 import { ThemedText } from '@/src/ui/themed-text';
 import { ThemedView } from '@/src/ui/themed-view';
+
+const PALETTE = {
+  aquamarineColor: '#14B8A6',
+  cardBackground: '#FFFFFF',
+  cardBorderColor: 'rgba(20, 184, 166, 0.18)',
+  gradientColors: ['#F0F9FA', '#E0F2F1'] as const,
+  iconTint: '#14B8A6',
+  inputBackground: '#FFFFFF',
+  inputBorderColor: '#D7E3EC',
+  inputTextColor: '#0F172A',
+  placeholderColor: '#94A3B8',
+  primaryColor: '#0891B2',
+  sectionSubtle: '#334155',
+  sectionTitleColor: '#0F172A',
+  subtitleColor: '#475569',
+  titleColor: '#0F172A',
+};
+
+const ERROR_COLOR = '#DC2626';
 
 export function PatientProfileScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmNewPassword, setShowConfirmNewPassword] = useState(false);
   const sessionUser = useSessionStore((state) => state.session?.user ?? null);
   const authMethod = useSessionStore((state) => state.session?.authMethod ?? null);
   const clearSession = useSessionStore((state) => state.clearSession);
@@ -150,6 +174,17 @@ export function PatientProfileScreen() {
   const roleLabel = translateUserRole(profile?.role ?? sessionUser?.role ?? null);
   const genderLabel = translateUserGender(profile?.gender);
   const isFormDirty = form.formState.isDirty;
+  const iconFieldColors = {
+    errorColor: ERROR_COLOR,
+    focusColor: PALETTE.primaryColor,
+    iconColor: PALETTE.iconTint,
+    inputBackgroundColor: PALETTE.inputBackground,
+    inputBorderColor: PALETTE.inputBorderColor,
+    inputTextColor: PALETTE.inputTextColor,
+    labelColor: PALETTE.sectionSubtle,
+    placeholderColor: PALETTE.placeholderColor,
+    selectionColor: PALETTE.aquamarineColor,
+  };
 
   const onSubmitProfile = form.handleSubmit(async (values) => {
     await updateProfileMutation.mutateAsync(values);
@@ -174,35 +209,77 @@ export function PatientProfileScreen() {
 
   return (
     <SafeAreaView edges={['top', 'left', 'right']} style={styles.safeArea}>
-      <ScrollView contentContainerStyle={styles.content}>
-        <ThemedView style={styles.container}>
+      <LinearGradient colors={PALETTE.gradientColors} end={{ x: 1, y: 1 }} start={{ x: 0.1, y: 0 }} style={styles.gradient}>
+        <ScrollView contentContainerStyle={styles.content}>
+          <ThemedView style={styles.container}>
       <ThemedView style={styles.header}>
-        <ThemedText type="eyebrow">Cuenta del paciente</ThemedText>
-        <ThemedText type="title">Perfil</ThemedText>
-        <ThemedText type="muted">
-          Vista de perfil del paciente autenticado con datos cargados desde la sesion actual.
+        <ThemedText style={[styles.headerTitle, { color: PALETTE.titleColor }]}>Perfil</ThemedText>
+        <ThemedText style={[styles.headerSubtitle, { color: PALETTE.subtitleColor }]}>
+          Administra tus datos personales y la seguridad de tu cuenta.
         </ThemedText>
       </ThemedView>
 
-      <ThemedView lightColor="#FCFFFF" style={styles.card}>
-        <ThemedView lightColor="#D7F3F5" style={styles.avatar}>
-          <ThemedText type="subtitle">{initials}</ThemedText>
-        </ThemedView>
-        <ThemedText type="subtitle">Resumen</ThemedText>
-        <ThemedText>
-          Nombre: <ThemedText type="defaultSemiBold">{displayName}</ThemedText>
-        </ThemedText>
-        <ThemedText>
-          Correo: <ThemedText type="defaultSemiBold">{profile?.email ?? sessionUser?.email ?? 'Sin datos cargados'}</ThemedText>
-        </ThemedText>
-        <ThemedText>
-          Rol: <ThemedText type="defaultSemiBold">{roleLabel || 'Paciente'}</ThemedText>
-        </ThemedText>
-        {genderLabel ? (
-          <ThemedText>
-            Genero: <ThemedText type="defaultSemiBold">{genderLabel}</ThemedText>
-          </ThemedText>
-        ) : null}
+      <ThemedView lightColor={PALETTE.cardBackground} style={styles.card}>
+        <View style={styles.profileSummary}>
+          <LinearGradient
+            colors={[PALETTE.aquamarineColor, PALETTE.primaryColor]}
+            style={styles.avatar}
+          >
+            <ThemedText style={styles.avatarText}>{initials}</ThemedText>
+          </LinearGradient>
+          <View style={styles.profileSummaryText}>
+            <View style={styles.summaryTitleRow}>
+              <ThemedText style={styles.summaryName}>{displayName}</ThemedText>
+              <View style={styles.roleBadge}>
+                <ThemedText style={styles.roleBadgeText}>{roleLabel || 'Paciente'}</ThemedText>
+              </View>
+            </View>
+            <ThemedText style={styles.summarySubtitle}>
+              Perfil del paciente
+            </ThemedText>
+          </View>
+        </View>
+
+        <View style={styles.infoGrid}>
+          <View style={styles.infoItem}>
+            <View style={styles.infoIcon}>
+              <MaterialIcons color={PALETTE.iconTint} name="badge" size={18} />
+            </View>
+            <View style={styles.infoText}>
+              <ThemedText style={styles.infoLabel}>Nombre</ThemedText>
+              <ThemedText style={styles.infoValue}>{displayName}</ThemedText>
+            </View>
+          </View>
+          <View style={styles.infoItem}>
+            <View style={styles.infoIcon}>
+              <MaterialIcons color={PALETTE.iconTint} name="mail-outline" size={18} />
+            </View>
+            <View style={styles.infoText}>
+              <ThemedText style={styles.infoLabel}>Correo</ThemedText>
+              <ThemedText style={styles.infoValue} numberOfLines={1}>
+                {profile?.email ?? sessionUser?.email ?? 'Sin datos cargados'}
+              </ThemedText>
+            </View>
+          </View>
+          <View style={styles.infoItem}>
+            <View style={styles.infoIcon}>
+              <MaterialIcons color={PALETTE.iconTint} name="verified-user" size={18} />
+            </View>
+            <View style={styles.infoText}>
+              <ThemedText style={styles.infoLabel}>Rol</ThemedText>
+              <ThemedText style={styles.infoValue}>{roleLabel || 'Paciente'}</ThemedText>
+            </View>
+          </View>
+          <View style={styles.infoItem}>
+            <View style={styles.infoIcon}>
+              <MaterialIcons color={PALETTE.iconTint} name="wc" size={18} />
+            </View>
+            <View style={styles.infoText}>
+              <ThemedText style={styles.infoLabel}>Género</ThemedText>
+              <ThemedText style={styles.infoValue}>{genderLabel ?? 'Sin especificar'}</ThemedText>
+            </View>
+          </View>
+        </View>
         {profileQuery.isPending ? (
           <ThemedText type="muted">Actualizando datos del perfil...</ThemedText>
         ) : null}
@@ -217,19 +294,29 @@ export function PatientProfileScreen() {
         ) : null}
 
         <ThemedView style={styles.formSection}>
-          <ThemedText type="subtitle">Editar perfil</ThemedText>
+          <View style={styles.sectionHeader}>
+            <View style={styles.sectionIconBadge}>
+              <MaterialIcons color={PALETTE.iconTint} name="person" size={20} />
+            </View>
+            <ThemedText style={[styles.sectionTitle, { color: PALETTE.sectionTitleColor }]}>
+              Editar perfil
+            </ThemedText>
+          </View>
 
           <Controller
             control={form.control}
             name="firstName"
             render={({ field: { onBlur, onChange, value }, fieldState: { error } }) => (
-              <AppTextField
+              <AppIconTextField
                 autoCapitalize="words"
                 errorMessage={error?.message}
+                iconName="badge"
                 label="Nombre"
                 onBlur={onBlur}
                 onChangeText={onChange}
+                placeholder="Ej: Ana"
                 value={value ?? ''}
+                {...iconFieldColors}
               />
             )}
           />
@@ -238,13 +325,16 @@ export function PatientProfileScreen() {
             control={form.control}
             name="lastName"
             render={({ field: { onBlur, onChange, value }, fieldState: { error } }) => (
-              <AppTextField
+              <AppIconTextField
                 autoCapitalize="words"
                 errorMessage={error?.message}
+                iconName="person-outline"
                 label="Apellido"
                 onBlur={onBlur}
                 onChangeText={onChange}
+                placeholder="Ej: Gómez"
                 value={value ?? ''}
+                {...iconFieldColors}
               />
             )}
           />
@@ -253,14 +343,16 @@ export function PatientProfileScreen() {
             control={form.control}
             name="birthDate"
             render={({ field: { onBlur, onChange, value }, fieldState: { error } }) => (
-              <AppTextField
+              <AppIconTextField
                 autoCapitalize="none"
                 errorMessage={error?.message}
+                iconName="calendar-month"
                 label="Fecha de nacimiento"
                 onBlur={onBlur}
                 onChangeText={onChange}
                 placeholder="YYYY-MM-DD"
                 value={value ?? ''}
+                {...iconFieldColors}
               />
             )}
           />
@@ -306,20 +398,41 @@ export function PatientProfileScreen() {
 
         {isLegacyAuth && (
           <ThemedView style={styles.formSection}>
-            <ThemedText type="subtitle">Cambiar contraseña</ThemedText>
+            <View style={styles.sectionHeader}>
+              <View style={styles.sectionIconBadge}>
+                <MaterialIcons color={PALETTE.iconTint} name="lock" size={20} />
+              </View>
+              <ThemedText style={[styles.sectionTitle, { color: PALETTE.sectionTitleColor }]}>
+                Cambiar contraseña
+              </ThemedText>
+            </View>
 
             <Controller
               control={passwordForm.control}
               name="currentPassword"
               render={({ field: { onBlur, onChange, value }, fieldState: { error } }) => (
-                <AppTextField
+                <AppIconTextField
                   autoCapitalize="none"
+                  autoCorrect={false}
                   errorMessage={error?.message}
+                  iconName="lock-outline"
                   label="Contraseña actual"
                   onBlur={onBlur}
                   onChangeText={onChange}
-                  secureTextEntry
+                  placeholder="********"
+                  rightAccessory={
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel={showCurrentPassword ? 'Ocultar contraseña actual' : 'Mostrar contraseña actual'}
+                      hitSlop={10}
+                      onPress={() => setShowCurrentPassword((previous) => !previous)}
+                    >
+                      <MaterialIcons color={PALETTE.subtitleColor} name={showCurrentPassword ? 'visibility-off' : 'visibility'} size={20} />
+                    </Pressable>
+                  }
+                  secureTextEntry={!showCurrentPassword}
                   value={value}
+                  {...iconFieldColors}
                 />
               )}
             />
@@ -328,14 +441,29 @@ export function PatientProfileScreen() {
               control={passwordForm.control}
               name="newPassword"
               render={({ field: { onBlur, onChange, value }, fieldState: { error } }) => (
-                <AppTextField
+                <AppIconTextField
                   autoCapitalize="none"
+                  autoCorrect={false}
                   errorMessage={error?.message}
+                  hint="Debe tener 8+ caracteres, mayúscula, número y carácter especial."
+                  iconName="lock"
                   label="Nueva contraseña"
                   onBlur={onBlur}
                   onChangeText={onChange}
-                  secureTextEntry
+                  placeholder="********"
+                  rightAccessory={
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel={showNewPassword ? 'Ocultar nueva contraseña' : 'Mostrar nueva contraseña'}
+                      hitSlop={10}
+                      onPress={() => setShowNewPassword((previous) => !previous)}
+                    >
+                      <MaterialIcons color={PALETTE.subtitleColor} name={showNewPassword ? 'visibility-off' : 'visibility'} size={20} />
+                    </Pressable>
+                  }
+                  secureTextEntry={!showNewPassword}
                   value={value}
+                  {...iconFieldColors}
                 />
               )}
             />
@@ -344,14 +472,28 @@ export function PatientProfileScreen() {
               control={passwordForm.control}
               name="confirmNewPassword"
               render={({ field: { onBlur, onChange, value }, fieldState: { error } }) => (
-                <AppTextField
+                <AppIconTextField
                   autoCapitalize="none"
+                  autoCorrect={false}
                   errorMessage={error?.message}
+                  iconName="lock-reset"
                   label="Confirmar nueva contraseña"
                   onBlur={onBlur}
                   onChangeText={onChange}
-                  secureTextEntry
+                  placeholder="********"
+                  rightAccessory={
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel={showConfirmNewPassword ? 'Ocultar confirmación de contraseña' : 'Mostrar confirmación de contraseña'}
+                      hitSlop={10}
+                      onPress={() => setShowConfirmNewPassword((previous) => !previous)}
+                    >
+                      <MaterialIcons color={PALETTE.subtitleColor} name={showConfirmNewPassword ? 'visibility-off' : 'visibility'} size={20} />
+                    </Pressable>
+                  }
+                  secureTextEntry={!showConfirmNewPassword}
                   value={value}
+                  {...iconFieldColors}
                 />
               )}
             />
@@ -417,8 +559,9 @@ export function PatientProfileScreen() {
       </ThemedView>
 
           <TransactionHistorySection />
-        </ThemedView>
-      </ScrollView>
+          </ThemedView>
+        </ScrollView>
+      </LinearGradient>
     </SafeAreaView>
   );
 }
@@ -468,39 +611,178 @@ function TransactionHistorySection() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
+    backgroundColor: PALETTE.gradientColors[0],
+  },
+  gradient: {
+    flex: 1,
   },
   content: {
     minHeight: '100%',
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 28,
   },
   container: {
     gap: 16,
-    padding: 24,
+    backgroundColor: 'transparent',
   },
   header: {
-    gap: 8,
+    backgroundColor: 'transparent',
+    gap: 6,
+    marginBottom: 2,
+    paddingHorizontal: 2,
+  },
+  headerTitle: {
+    fontSize: 31,
+    fontWeight: '800',
+    letterSpacing: -0.4,
+    lineHeight: 37,
+  },
+  headerSubtitle: {
+    fontSize: 15,
+    lineHeight: 21,
   },
   avatar: {
     alignItems: 'center',
     borderRadius: Radius.pill,
-    height: 72,
+    height: 68,
     justifyContent: 'center',
-    marginBottom: 8,
-    width: 72,
+    width: 68,
+  },
+  avatarText: {
+    color: '#FFFFFF',
+    fontSize: 22,
+    fontWeight: '900',
+  },
+  profileSummary: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 14,
+  },
+  profileSummaryText: {
+    flex: 1,
+    gap: 5,
+  },
+  summaryTitleRow: {
+    alignItems: 'flex-start',
+    gap: 8,
+  },
+  summaryName: {
+    color: PALETTE.titleColor,
+    fontSize: 21,
+    fontWeight: '900',
+    letterSpacing: -0.2,
+    lineHeight: 26,
+  },
+  summarySubtitle: {
+    color: PALETTE.subtitleColor,
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  roleBadge: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#E6FFFB',
+    borderColor: PALETTE.cardBorderColor,
+    borderRadius: Radius.pill,
+    borderWidth: 1,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  roleBadgeText: {
+    color: PALETTE.primaryColor,
+    fontSize: 11,
+    fontWeight: '800',
+  },
+  infoGrid: {
+    borderTopColor: '#E2EEF4',
+    borderTopWidth: 1,
+    gap: 10,
+    marginTop: 6,
+    paddingTop: 14,
+  },
+  infoItem: {
+    alignItems: 'center',
+    backgroundColor: '#F8FCFD',
+    borderColor: '#E2EEF4',
+    borderRadius: Radius.lg,
+    borderWidth: 1,
+    flexDirection: 'row',
+    gap: 10,
+    padding: 12,
+  },
+  infoIcon: {
+    alignItems: 'center',
+    backgroundColor: 'rgba(20, 184, 166, 0.1)',
+    borderRadius: Radius.md,
+    height: 36,
+    justifyContent: 'center',
+    width: 36,
+  },
+  infoText: {
+    flex: 1,
+    minWidth: 0,
+  },
+  infoLabel: {
+    color: PALETTE.subtitleColor,
+    fontSize: 11,
+    fontWeight: '700',
+    lineHeight: 15,
+  },
+  infoValue: {
+    color: PALETTE.titleColor,
+    fontSize: 14,
+    fontWeight: '800',
+    lineHeight: 20,
   },
   card: {
-    gap: 8,
+    backgroundColor: PALETTE.cardBackground,
+    borderColor: PALETTE.cardBorderColor,
+    borderWidth: 1,
     borderRadius: Radius.xl,
+    gap: 10,
     padding: 20,
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    elevation: 2,
   },
   formSection: {
-    gap: 12,
-    marginTop: 8,
+    backgroundColor: 'transparent',
+    gap: 14,
+    marginTop: 12,
+    paddingTop: 4,
+  },
+  sectionHeader: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 2,
+  },
+  sectionIconBadge: {
+    alignItems: 'center',
+    backgroundColor: 'rgba(20, 184, 166, 0.12)',
+    borderRadius: Radius.pill,
+    height: 36,
+    justifyContent: 'center',
+    width: 36,
+  },
+  sectionTitle: {
+    flex: 1,
+    fontSize: 19,
+    fontWeight: '800',
+    letterSpacing: -0.2,
   },
   errorMessage: {
-    color: '#DC2626',
+    color: ERROR_COLOR,
+    fontSize: 13,
+    lineHeight: 18,
   },
   successMessage: {
     color: '#0F9F8F',
+    fontSize: 13,
+    fontWeight: '700',
+    lineHeight: 18,
   },
   transactionRow: {
     alignItems: 'center',
@@ -519,23 +801,26 @@ const styles = StyleSheet.create({
   },
   genderOptions: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 8,
   },
   genderOption: {
-    borderRadius: 8,
+    alignItems: 'center',
+    backgroundColor: PALETTE.inputBackground,
+    borderColor: PALETTE.inputBorderColor,
+    borderRadius: Radius.pill,
     borderWidth: 1,
-    borderColor: '#CBD5E1',
+    justifyContent: 'center',
+    minHeight: 38,
     paddingHorizontal: 14,
     paddingVertical: 8,
-    flex: 1,
-    alignItems: 'center',
   },
   genderOptionSelected: {
-    borderColor: '#0F9F8F',
-    backgroundColor: '#D7F3F5',
+    borderColor: PALETTE.primaryColor,
+    backgroundColor: PALETTE.primaryColor,
   },
   genderOptionTextSelected: {
-    color: '#0F4952',
-    fontWeight: '600' as const,
+    color: '#FFFFFF',
+    fontWeight: '700' as const,
   },
 });

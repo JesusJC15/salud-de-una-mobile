@@ -1,8 +1,10 @@
 import { MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
 import {
   ActivityIndicator,
+  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -211,31 +213,42 @@ function AiSummaryCard({ summary, priority }: { summary?: string; priority?: str
 }
 
 function QuickAction({
+  disabled = false,
   icon,
   label,
+  loading = false,
   onPress,
   variant = 'default',
 }: {
+  disabled?: boolean;
   icon: React.ComponentProps<typeof MaterialIcons>['name'];
   label: string;
+  loading?: boolean;
   onPress: () => void;
-  variant?: 'default' | 'primary';
+  variant?: 'default' | 'primary' | 'urgent';
 }) {
-  if (variant === 'primary') {
+  if (variant === 'primary' || variant === 'urgent') {
+    const gradientColors = variant === 'urgent' ? [T.error, '#f97316'] as const : [T.primary, T.secondary] as const;
+
     return (
       <Pressable
+        disabled={disabled || loading}
         onPress={onPress}
-        style={({ pressed }) => ({ opacity: pressed ? 0.85 : 1 })}
+        style={({ pressed }) => ({ opacity: disabled || loading ? 0.72 : pressed ? 0.85 : 1 })}
       >
         <LinearGradient
-          colors={[T.primary, T.secondary]}
+          colors={gradientColors}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0.5 }}
-          style={styles.primaryAction}
+          style={[styles.primaryAction, variant === 'urgent' && styles.urgentAction]}
         >
           <MaterialIcons name={icon} size={22} color="#fff" />
           <ThemedText style={styles.primaryActionText}>{label}</ThemedText>
-          <MaterialIcons name="arrow-forward" size={18} color="rgba(255,255,255,0.7)" />
+          {loading ? (
+            <ActivityIndicator color="#FFFFFF" />
+          ) : (
+            <MaterialIcons name="arrow-forward" size={18} color="rgba(255,255,255,0.7)" />
+          )}
         </LinearGradient>
       </Pressable>
     );
@@ -243,10 +256,11 @@ function QuickAction({
 
   return (
     <Pressable
+      disabled={disabled || loading}
       onPress={onPress}
       style={({ pressed }) => [
         styles.secondaryAction,
-        { backgroundColor: T.surfaceContainer, opacity: pressed ? 0.75 : 1 },
+        { backgroundColor: T.surfaceContainer, opacity: disabled || loading ? 0.72 : pressed ? 0.75 : 1 },
       ]}
     >
       <View style={[styles.actionIconBadge, { backgroundColor: T.white }]}>
@@ -255,6 +269,7 @@ function QuickAction({
       <ThemedText style={[styles.secondaryActionText, { color: T.onSurface }]}>
         {label}
       </ThemedText>
+      {loading ? <ActivityIndicator color={T.secondary} /> : null}
     </Pressable>
   );
 }
@@ -286,14 +301,92 @@ function NotificationRow({
   );
 }
 
+function AccountMenu({
+  initial,
+  isLoggingOut,
+  onLogoutPress,
+  onProfilePress,
+}: {
+  initial: string;
+  isLoggingOut?: boolean;
+  onLogoutPress?: () => void;
+  onProfilePress?: () => void;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+
+  const closeAndRun = (action?: () => void) => {
+    setIsOpen(false);
+    action?.();
+  };
+
+  return (
+    <View>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Abrir menú de cuenta"
+        onPress={() => setIsOpen(true)}
+        style={({ pressed }) => [
+          styles.accountButton,
+          { backgroundColor: T.primary, opacity: pressed ? 0.85 : 1 },
+        ]}
+      >
+        <ThemedText style={styles.avatarInitial}>{initial}</ThemedText>
+        <MaterialIcons color="#FFFFFF" name="keyboard-arrow-down" size={16} />
+      </Pressable>
+
+      <Modal transparent animationType="fade" visible={isOpen} onRequestClose={() => setIsOpen(false)}>
+        <Pressable style={styles.menuOverlay} onPress={() => setIsOpen(false)}>
+          <Pressable style={styles.accountMenu} onPress={() => undefined}>
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => closeAndRun(onProfilePress)}
+              style={({ pressed }) => [styles.menuItem, pressed && styles.menuItemPressed]}
+            >
+              <View style={styles.menuIconBadge}>
+                <MaterialIcons color={T.secondary} name="person" size={18} />
+              </View>
+              <ThemedText style={styles.menuItemText}>Perfil</ThemedText>
+            </Pressable>
+
+            <View style={styles.menuDivider} />
+
+            <Pressable
+              accessibilityRole="button"
+              disabled={isLoggingOut}
+              onPress={() => closeAndRun(onLogoutPress)}
+              style={({ pressed }) => [
+                styles.menuItem,
+                pressed && !isLoggingOut && styles.menuItemPressed,
+                isLoggingOut && styles.menuItemDisabled,
+              ]}
+            >
+              <View style={[styles.menuIconBadge, styles.menuIconBadgeDanger]}>
+                <MaterialIcons color={T.error} name="logout" size={18} />
+              </View>
+              <ThemedText style={[styles.menuItemText, styles.menuItemTextDanger]}>
+                {isLoggingOut ? 'Cerrando...' : 'Cerrar sesión'}
+              </ThemedText>
+              {isLoggingOut ? <ActivityIndicator color={T.error} size="small" /> : null}
+            </Pressable>
+          </Pressable>
+        </Pressable>
+      </Modal>
+    </View>
+  );
+}
+
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
 type PatientHomeScreenProps = {
   onLoginPress: () => void;
   onRegisterPress: () => void;
   onStartTriagePress?: () => void;
+  onStartUrgentCarePress?: () => void;
+  isStartingUrgentCare?: boolean;
+  isLoggingOut?: boolean;
   onContinueTriagePress?: (sessionId: string) => void;
   onGoToChatPress?: (consultationId: string) => void;
+  onLogoutPress?: () => void;
   onOpenFollowupPress?: (followupId: string) => void;
   onOpenHistoryPress?: () => void;
   onOpenNotificationsPress?: () => void;
@@ -304,8 +397,12 @@ export function PatientHomeScreen({
   onLoginPress,
   onRegisterPress,
   onStartTriagePress,
+  onStartUrgentCarePress,
+  isStartingUrgentCare = false,
+  isLoggingOut = false,
   onContinueTriagePress,
   onGoToChatPress,
+  onLogoutPress,
   onOpenFollowupPress,
   onOpenHistoryPress,
   onOpenNotificationsPress,
@@ -435,11 +532,12 @@ export function PatientHomeScreen({
               {firstName} 👋
             </ThemedText>
           </View>
-          <View style={[styles.avatarBadge, { backgroundColor: T.primary }]}>
-            <ThemedText style={styles.avatarInitial}>
-              {firstName.charAt(0).toUpperCase()}
-            </ThemedText>
-          </View>
+          <AccountMenu
+            initial={firstName.charAt(0).toUpperCase()}
+            isLoggingOut={isLoggingOut}
+            onLogoutPress={onLogoutPress}
+            onProfilePress={onOpenProfilePress}
+          />
         </View>
 
         {/* ── Status Hero ── */}
@@ -509,12 +607,22 @@ export function PatientHomeScreen({
               variant="primary"
             />
           ) : (
-            <QuickAction
-              icon="add-circle"
-              label="Nueva consulta"
-              onPress={() => onStartTriagePress?.()}
-              variant="primary"
-            />
+            <>
+              <QuickAction
+                icon="emergency"
+                label={isStartingUrgentCare ? 'Iniciando urgencias...' : 'Urgencias'}
+                loading={isStartingUrgentCare}
+                onPress={() => onStartUrgentCarePress?.()}
+                variant="urgent"
+              />
+              <QuickAction
+                disabled={isStartingUrgentCare}
+                icon="add-circle"
+                label="Nueva consulta"
+                onPress={() => onStartTriagePress?.()}
+                variant="primary"
+              />
+            </>
           )}
         </View>
 
@@ -599,10 +707,75 @@ const styles = StyleSheet.create({
   greetingRow: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between' },
   greetingMeta: { fontSize: 13, fontWeight: '500' },
   greetingName: { fontSize: 24, fontWeight: '900', letterSpacing: -0.3 },
-  avatarBadge: {
-    alignItems: 'center', borderRadius: 20, height: 40, justifyContent: 'center', width: 40,
+  accountButton: {
+    alignItems: 'center',
+    borderRadius: 20,
+    flexDirection: 'row',
+    gap: 1,
+    height: 40,
+    justifyContent: 'center',
+    paddingLeft: 13,
+    paddingRight: 8,
   },
   avatarInitial: { color: '#fff', fontSize: 18, fontWeight: '900' },
+  menuOverlay: {
+    flex: 1,
+    paddingHorizontal: 20,
+    paddingTop: 72,
+  },
+  accountMenu: {
+    alignSelf: 'flex-end',
+    backgroundColor: T.white,
+    borderColor: 'rgba(20,184,166,0.18)',
+    borderRadius: 18,
+    borderWidth: 1,
+    minWidth: 210,
+    padding: 8,
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.14,
+    shadowRadius: 20,
+    elevation: 8,
+  },
+  menuItem: {
+    alignItems: 'center',
+    borderRadius: 12,
+    flexDirection: 'row',
+    gap: 10,
+    minHeight: 46,
+    paddingHorizontal: 10,
+  },
+  menuItemPressed: {
+    backgroundColor: T.surfaceContainer,
+  },
+  menuItemDisabled: {
+    opacity: 0.7,
+  },
+  menuIconBadge: {
+    alignItems: 'center',
+    backgroundColor: T.surfaceContainer,
+    borderRadius: 10,
+    height: 34,
+    justifyContent: 'center',
+    width: 34,
+  },
+  menuIconBadgeDanger: {
+    backgroundColor: '#fef2f2',
+  },
+  menuItemText: {
+    color: T.onSurface,
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '800',
+  },
+  menuItemTextDanger: {
+    color: T.error,
+  },
+  menuDivider: {
+    backgroundColor: '#E2EEF4',
+    height: 1,
+    marginVertical: 4,
+  },
 
   // Status Hero
   statusHero: {
@@ -663,6 +836,9 @@ const styles = StyleSheet.create({
     gap: 12, paddingHorizontal: 20, paddingVertical: 18,
     shadowColor: T.primary, shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.25, shadowRadius: 16, elevation: 4,
+  },
+  urgentAction: {
+    shadowColor: T.error,
   },
   primaryActionText: { color: '#fff', flex: 1, fontSize: 16, fontWeight: '800' },
   secondaryAction: {

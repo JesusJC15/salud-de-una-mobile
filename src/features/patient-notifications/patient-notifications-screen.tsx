@@ -17,7 +17,6 @@ import { isAllowedDeepLink } from '@/src/lib/deep-link';
 import { useToast } from '@/src/providers/toast-provider';
 import { usePatientNotifications } from '@/src/features/patient-notifications/use-patient-notifications';
 import type { NotificationListItem } from '@/src/types/notification';
-import { AppButton } from '@/src/ui/button';
 import { ThemedText } from '@/src/ui/themed-text';
 import { ThemedView } from '@/src/ui/themed-view';
 
@@ -189,9 +188,8 @@ export function PatientNotificationsScreen() {
   return (
     <SafeAreaView edges={['top', 'left', 'right']} style={styles.safeArea}>
       <ThemedView style={styles.container}>
-        <ThemedView style={styles.header}>
-          <ThemedText type="eyebrow">Paciente</ThemedText>
-          <ThemedText type="title">Notificaciones</ThemedText>
+        <View style={styles.header}>
+          <ThemedText style={styles.title}>Notificaciones</ThemedText>
           <View style={styles.connectionRow}>
             <View
               style={[
@@ -201,19 +199,50 @@ export function PatientNotificationsScreen() {
             />
             <ThemedText type="muted">{CONNECTION_STATUS_LABELS[connectionStatus]}</ThemedText>
           </View>
-        </ThemedView>
+        </View>
 
         <ThemedView lightColor="#FCFFFF" style={styles.summaryCard}>
-          <ThemedText type="subtitle">
-            Sin leer: <ThemedText type="defaultSemiBold">{unreadCount}</ThemedText>
-          </ThemedText>
-          <AppButton
+          <View style={styles.summaryContent}>
+            <View style={[styles.summaryIconBadge, unreadCount === 0 && styles.summaryIconBadgeQuiet]}>
+              <MaterialIcons
+                color={unreadCount > 0 ? '#FFFFFF' : Colors.light.tint}
+                name={unreadCount > 0 ? 'notifications-active' : 'notifications-none'}
+                size={20}
+              />
+            </View>
+            <View style={styles.summaryTextBlock}>
+              <ThemedText style={styles.summaryLabel}>Pendientes por leer</ThemedText>
+              <ThemedText style={styles.summaryTitle}>
+                {unreadCount === 0
+                  ? 'Todo al día'
+                  : `${unreadCount} notificación${unreadCount === 1 ? '' : 'es'}`}
+              </ThemedText>
+            </View>
+          </View>
+          <Pressable
+            accessibilityRole="button"
             disabled={unreadCount === 0}
-            label="Marcar todas como leídas"
-            loading={markAllAsReadMutation.isPending}
             onPress={() => void handleMarkAllAsRead()}
-            variant="secondary"
-          />
+            style={({ pressed }) => [
+              styles.markAllButton,
+              unreadCount === 0 && styles.markAllButtonDisabled,
+              pressed && unreadCount > 0 && styles.markAllButtonPressed,
+            ]}
+          >
+            <MaterialIcons
+              color={unreadCount === 0 ? Colors.light.textMuted : Colors.light.tint}
+              name={markAllAsReadMutation.isPending ? 'hourglass-top' : 'done-all'}
+              size={16}
+            />
+            <ThemedText
+              style={[
+                styles.markAllButtonText,
+                unreadCount === 0 && styles.markAllButtonTextDisabled,
+              ]}
+            >
+              {markAllAsReadMutation.isPending ? 'Actualizando...' : 'Marcar leídas'}
+            </ThemedText>
+          </Pressable>
         </ThemedView>
 
         {notificationsQuery.error instanceof Error ? (
@@ -262,19 +291,96 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    gap: 16,
-    padding: 24,
+    gap: 12,
   },
   header: {
     gap: 6,
+    paddingBottom: 8,
+    paddingHorizontal: 20,
+    paddingTop: 16,
+  },
+  title: {
+    color: Colors.light.text,
+    fontSize: 24,
+    fontWeight: '800',
+    letterSpacing: -0.4,
   },
   summaryCard: {
+    alignItems: 'center',
+    borderColor: 'rgba(20, 184, 166, 0.16)',
+    borderWidth: 1,
     borderRadius: Radius.xl,
-    gap: 10,
+    flexDirection: 'row',
+    gap: 12,
+    justifyContent: 'space-between',
+    marginHorizontal: 16,
     padding: 16,
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 12,
+    elevation: 1,
+  },
+  summaryContent: {
+    alignItems: 'center',
+    flex: 1,
+    flexDirection: 'row',
+    gap: 12,
+  },
+  summaryIconBadge: {
+    alignItems: 'center',
+    backgroundColor: Colors.light.tint,
+    borderRadius: Radius.pill,
+    height: 44,
+    justifyContent: 'center',
+    width: 44,
+  },
+  summaryIconBadgeQuiet: {
+    backgroundColor: '#E6FFFB',
+  },
+  summaryTextBlock: {
+    flex: 1,
+    gap: 2,
+  },
+  summaryLabel: {
+    color: Colors.light.textMuted,
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  summaryTitle: {
+    color: Colors.light.text,
+    fontSize: 17,
+    fontWeight: '800',
+  },
+  markAllButton: {
+    alignItems: 'center',
+    backgroundColor: '#ECFEFF',
+    borderColor: 'rgba(8, 145, 178, 0.2)',
+    borderRadius: Radius.pill,
+    borderWidth: 1,
+    flexDirection: 'row',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+  },
+  markAllButtonDisabled: {
+    backgroundColor: Colors.light.surface,
+    borderColor: Colors.light.border,
+  },
+  markAllButtonPressed: {
+    opacity: 0.78,
+  },
+  markAllButtonText: {
+    color: Colors.light.tint,
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  markAllButtonTextDisabled: {
+    color: Colors.light.textMuted,
   },
   listContent: {
     gap: 10,
+    paddingHorizontal: 16,
     paddingBottom: 32,
   },
   card: {
