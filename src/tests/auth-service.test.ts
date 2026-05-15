@@ -6,6 +6,7 @@ jest.mock('@/src/services/api/client', () => ({
     get: jest.fn(),
     post: jest.fn(),
     put: jest.fn(),
+    delete: jest.fn(),
   },
 }));
 
@@ -94,11 +95,45 @@ describe('authService', () => {
     });
   });
 
+  it('updateCurrentPatient omits null values as well', async () => {
+    (apiClient.put as jest.Mock).mockResolvedValue({ data: { id: '1' } });
+
+    await authService.updateCurrentPatient(
+      {
+        firstName: 'Ana',
+        birthDate: null,
+        gender: null,
+      } as unknown as Parameters<typeof authService.updateCurrentPatient>[0],
+    );
+
+    expect(apiClient.put).toHaveBeenCalledWith('/patients/me', {
+      firstName: 'Ana',
+    });
+  });
+
   it('getCurrentAuthUser calls /auth/me', async () => {
     (apiClient.get as jest.Mock).mockResolvedValue({ data: { user: { id: '1' } } });
 
     await authService.getCurrentAuthUser();
 
     expect(apiClient.get).toHaveBeenCalledWith('/auth/me');
+  });
+
+  it('exportPatientData calls /patients/me/data-export', async () => {
+    const payload = { generatedAt: '2026-05-14T12:00:00.000Z' };
+    (apiClient.get as jest.Mock).mockResolvedValue({ data: payload });
+
+    await expect(authService.exportPatientData()).resolves.toEqual(payload);
+    expect(apiClient.get).toHaveBeenCalledWith('/patients/me/data-export');
+  });
+
+  it('anonymizeAccount calls DELETE /patients/me/account with auth refresh disabled', async () => {
+    const payload = { anonymized: true, accountState: 'ANONYMIZED' };
+    (apiClient.delete as jest.Mock).mockResolvedValue({ data: payload });
+
+    await expect(authService.anonymizeAccount()).resolves.toEqual(payload);
+    expect(apiClient.delete).toHaveBeenCalledWith('/patients/me/account', {
+      skipAuthRefresh: true,
+    });
   });
 });

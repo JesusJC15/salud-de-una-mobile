@@ -1,4 +1,4 @@
-import { updatePatientProfileSchema } from '@/src/schemas/patient-profile';
+import { changePasswordSchema, updatePatientProfileSchema } from '@/src/schemas/patient-profile';
 
 describe('updatePatientProfileSchema', () => {
   it('accepts valid payload', () => {
@@ -42,5 +42,27 @@ describe('updatePatientProfileSchema', () => {
       gender: undefined,
       lastName: undefined,
     });
+  });
+});
+
+describe('changePasswordSchema', () => {
+  it('accepts a valid password change payload', () => {
+    const result = changePasswordSchema.safeParse({
+      currentPassword: 'OldPass1!',
+      newPassword: 'NewPass2!',
+      confirmNewPassword: 'NewPass2!',
+    });
+
+    expect(result.success).toBe(true);
+  });
+
+  it('rejects when confirmation does not match', () => {
+    const result = changePasswordSchema.safeParse({
+      currentPassword: 'OldPass1!',
+      newPassword: 'NewPass2!',
+      confirmNewPassword: 'Mismatch3!',
+    });
+
+    expect(result.success).toBe(false);
   });
 });

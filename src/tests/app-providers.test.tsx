@@ -272,6 +272,21 @@ describe('AppProviders', () => {
     ).resolves.toBe('auth0-next-token');
     expect(refreshAuth0Session).toHaveBeenCalledWith('auth0-refresh');
 
+    refreshAuth0Session.mockResolvedValueOnce({
+      accessToken: 'auth0-next-token-without-refresh',
+      refreshToken: undefined,
+    });
+    await expect(
+      unauthorizedRecoveryHandler(new ApiError('Unauthorized', { statusCode: 401 })),
+    ).resolves.toBe('auth0-next-token-without-refresh');
+    expect(sessionState.setSession).toHaveBeenCalledWith(
+      expect.objectContaining({
+        accessToken: 'auth0-next-token-without-refresh',
+        refreshToken: 'auth0-refresh',
+      }),
+      sessionState.profile,
+    );
+
     sessionState.session = {
       ...sessionState.session,
       refreshToken: null,
@@ -366,6 +381,37 @@ describe('AppProviders', () => {
 
     expect(queryClientClear).not.toHaveBeenCalled();
     expect(sessionState.clearSession).not.toHaveBeenCalled();
+  });
+
+  it('skips session update if session disappears while auth sync is in flight', async () => {
+    sessionState.session = {
+      accessToken: 'session-token',
+      refreshToken: 'refresh-token',
+      authMethod: 'auth0',
+      user: {
+        email: 'before@example.com',
+        role: 'PATIENT',
+        isActive: true,
+      },
+    };
+    sessionState.profile = { id: 'profile-3' };
+
+    getCurrentAuthUser.mockImplementationOnce(async () => {
+      sessionState.session = null;
+      return {
+        user: {
+          id: 'user-auth',
+          email: 'user@example.com',
+          role: 'PATIENT',
+          isActive: true,
+        },
+      };
+    });
+
+    await renderAppProviders();
+
+    expect(sessionState.setSession).not.toHaveBeenCalled();
+    expect(registerPushNotifications).not.toHaveBeenCalled();
   });
 
   it('navigates using notification deep links from initial and live responses', async () => {

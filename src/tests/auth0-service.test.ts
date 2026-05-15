@@ -174,4 +174,68 @@ describe('auth0-service', () => {
     expect(claims.sub).toBe('');
     expect(claims.email).toBe('a@b.com');
   });
+
+  it('uses empty clientId fallback when config is missing it', async () => {
+    jest.resetModules();
+    const refreshAsync = jest.fn(async () => ({ accessToken: 'next-token' }));
+
+    jest.doMock('expo-web-browser', () => ({
+      maybeCompleteAuthSession: jest.fn(),
+    }));
+    jest.doMock('expo-auth-session', () => ({
+      makeRedirectUri: jest.fn(() => 'saluddeunamobile://callback'),
+      refreshAsync,
+    }));
+    jest.doMock('@/src/config/env', () => ({
+      appConfig: {
+        apiBaseUrl: 'https://api.test/v1',
+        appEnv: 'development',
+        auth0Domain: 'auth0.test',
+        auth0ClientId: undefined,
+        auth0Audience: 'audience-123',
+      },
+    }));
+
+    const module = await import('@/src/services/auth/auth0-service');
+    await module.refreshAuth0Session('refresh-456');
+
+    expect(refreshAsync).toHaveBeenCalledWith(
+      { clientId: '', refreshToken: 'refresh-456' },
+      module.AUTH0_DISCOVERY,
+    );
+  });
+
+  it('uses empty api base url fallback when config omits apiBaseUrl', async () => {
+    jest.resetModules();
+
+    jest.doMock('expo-web-browser', () => ({
+      maybeCompleteAuthSession: jest.fn(),
+    }));
+    jest.doMock('expo-auth-session', () => ({
+      makeRedirectUri: jest.fn(() => 'saluddeunamobile://callback'),
+      refreshAsync: jest.fn(async () => ({ accessToken: 'next-token' })),
+    }));
+    jest.doMock('@/src/config/env', () => ({
+      appConfig: {
+        apiBaseUrl: undefined,
+        appEnv: 'development',
+        auth0Domain: 'auth0.test',
+        auth0ClientId: 'client-123',
+        auth0Audience: 'audience-123',
+      },
+    }));
+
+    global.fetch = jest.fn(async () => ({
+      ok: true,
+      json: async () => ({ id: 'p2' }),
+    })) as unknown as typeof fetch;
+
+    const module = await import('@/src/services/auth/auth0-service');
+    await module.provisionPatient('token-456', {
+      firstName: 'Ana',
+      lastName: 'Gomez',
+    });
+
+    expect(global.fetch).toHaveBeenCalledWith('/v1/auth/provision/patient', expect.any(Object));
+  });
 });

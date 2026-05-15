@@ -2,6 +2,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import {
   type ComponentProps,
   createContext,
+  useEffect,
   type PropsWithChildren,
   useCallback,
   useContext,
@@ -82,6 +83,14 @@ const TOAST_COLOR_MAP: Record<
 export function ToastProvider({ children }: Readonly<PropsWithChildren>) {
   const [toast, setToast] = useState<ToastState | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+      }
+    };
+  }, []);
 
   const hideToast = useCallback(() => {
     if (timerRef.current) {
