@@ -21,11 +21,11 @@ Las experiencias de doctor y admin viven en otros frontends.
 
 ## Stack actual
 
-- Expo SDK 54
-- Expo Router con file-based routing
-- React 19
-- React Native 0.81
-- TypeScript estricto
+- Expo SDK 55 (`expo@55.0.23`)
+- Expo Router con file-based routing (`expo-router@55.0.14`)
+- React 19.2.5
+- React Native 0.83.6
+- TypeScript 5.9 estricto
 - New Architecture habilitada
 - React Compiler habilitado
 
@@ -83,26 +83,22 @@ Estas librerias forman parte de la base tecnica actual del proyecto.
 
 ## Scripts disponibles
 
-- `npm run start`
-- `npm run android`
-- `npm run ios`
-- `npm run web`
-- `npm run lint`
-- `npm run test`
-- `npm run test:cov`
-- `npm run reset-project`
+- `npm run start` — inicia el servidor de desarrollo Expo
+- `npm run android` — inicia en emulador/dispositivo Android
+- `npm run ios` — inicia en simulador/dispositivo iOS
+- `npm run web` — inicia version web con Expo
+- `npm run typecheck` — verificacion de tipos TypeScript sin emitir archivos
+- `npm run lint` — ESLint con configuracion Expo
+- `npm run test` — Jest unit tests
+- `npm run test:cov` — Jest con reporte de cobertura en `coverage/lcov.info`
+- `npm run test:watch` — Jest en modo watch
+- `npm run reset-project` — resetea el proyecto Expo a su estado inicial
 
 ## Calidad en CI
 
-El workflow `/.github/workflows/build.yml` ejecuta lint, pruebas con cobertura y analisis de SonarCloud.
+El workflow `.github/workflows/mobile-ci.yml` ejecuta typecheck, lint y unit tests en cada push o PR sobre `salud-de-una-mobile/`.
 
-Requiere:
-
-- secret `SONARCLOUD_TOKEN`
-- variable `SONAR_ORGANIZATION` si tu organizacion en SonarCloud no coincide con el owner de GitHub
-- variable `SONAR_PROJECT_KEY` si el project key en SonarCloud no sigue el patron `owner_repo`
-
-La cobertura para Sonar se publica desde `coverage/lcov.info`, generado por `npm run test:cov`.
+Pasos del pipeline: `npm ci` → `typecheck` → `lint` → `npm test -- --ci --runInBand`. No requiere secrets ni servicios externos para ejecutarse.
 
 ## Relacion con el backend
 
