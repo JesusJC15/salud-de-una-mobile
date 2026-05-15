@@ -1,5 +1,6 @@
 const ALLOWED_DEEP_LINK_PREFIXES = [
   '/followup/',
+  '/consultations/',
   '/triage/chat/',
   '/triage/',
   '/(tabs)',

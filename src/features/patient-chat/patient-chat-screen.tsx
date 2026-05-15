@@ -11,7 +11,10 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
 import { ThemedText } from '@/src/ui/themed-text';
+
 import type { ChatMessage } from './use-patient-chat';
 import { usePatientChat } from './use-patient-chat';
 import { useConsultationPayment } from './use-consultation-payment';
@@ -29,39 +32,49 @@ const PALETTE = {
 };
 
 const STATUS_LABEL: Record<string, string> = {
-  connecting: 'Conectando...',
-  connected: 'En línea',
-  disconnected: 'Desconectado',
+  connecting: 'Conectando',
+  connected: 'En linea',
+  reconnecting: 'Reconectando',
+  offline: 'Sin conexion',
 };
 
 const STATUS_COLOR: Record<string, string> = {
   connecting: '#D97706',
   connected: '#059669',
-  disconnected: '#94A3B8',
+  reconnecting: '#D97706',
+  offline: '#64748B',
 };
 
 function MessageBubble({ msg, isOwn }: { msg: ChatMessage; isOwn: boolean }) {
   return (
     <View style={[styles.bubbleWrapper, isOwn ? styles.bubbleRight : styles.bubbleLeft]}>
       {!isOwn && (
-        <ThemedText style={styles.senderLabel}>
-          {msg.senderRole === 'PATIENT' ? 'Tú' : 'Médico'}
-        </ThemedText>
+        <ThemedText style={styles.senderLabel}>{msg.senderRole === 'PATIENT' ? 'Tu' : 'Medico'}</ThemedText>
       )}
       <View
         style={[
           styles.bubble,
           isOwn
             ? { backgroundColor: PALETTE.primary, borderBottomRightRadius: 4 }
-            : { backgroundColor: PALETTE.cardBg, borderBottomLeftRadius: 4, borderWidth: 1, borderColor: PALETTE.cardBorder },
+            : {
+                backgroundColor: PALETTE.cardBg,
+                borderBottomLeftRadius: 4,
+                borderWidth: 1,
+                borderColor: PALETTE.cardBorder,
+              },
         ]}
       >
         <ThemedText style={[styles.bubbleText, { color: isOwn ? '#FFFFFF' : PALETTE.title }]}>
           {msg.content}
         </ThemedText>
         {msg.createdAt && (
-          <ThemedText style={[styles.timeText, { color: isOwn ? 'rgba(255,255,255,0.65)' : PALETTE.subtitle }]}>
-            {new Date(msg.createdAt).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })}
+          <ThemedText
+            style={[styles.timeText, { color: isOwn ? 'rgba(255,255,255,0.65)' : PALETTE.subtitle }]}
+          >
+            {new Date(msg.createdAt).toLocaleTimeString('es-CO', {
+              hour: '2-digit',
+              minute: '2-digit',
+            })}
           </ThemedText>
         )}
       </View>
@@ -76,12 +89,20 @@ export function PatientChatScreen({
   consultationId: string;
   isClosed?: boolean;
 }) {
-  const { messages, status, sendMessage, currentUserId, isClosed, errorMessage } = usePatientChat(
-    consultationId,
-    initialIsClosed,
-  );
+  const {
+    messages,
+    status,
+    sendMessage,
+    currentUserId,
+    isClosed,
+    errorMessage,
+    isFallbackLoading,
+    retryConnection,
+  } = usePatientChat(consultationId, initialIsClosed);
+
   const { alreadyPaid, paidTransaction, isPaying, isError: payError, pay } =
     useConsultationPayment(isClosed ? consultationId : null);
+
   const [input, setInput] = useState('');
   const flatListRef = useRef<FlatList>(null);
 
@@ -93,128 +114,140 @@ export function PatientChatScreen({
   };
 
   return (
-    <LinearGradient colors={PALETTE.bg} style={styles.container}>
-      <View style={[styles.statusBar, { backgroundColor: PALETTE.cardBg }]}>
-        <View style={[styles.statusDot, { backgroundColor: STATUS_COLOR[status] ?? '#94A3B8' }]} />
-        <ThemedText style={[styles.statusText, { color: STATUS_COLOR[status] ?? '#94A3B8' }]}>
-          {STATUS_LABEL[status] ?? 'Desconectado'}
-        </ThemedText>
-      </View>
-
-      {errorMessage && !isClosed && (
-        <View style={styles.errorBanner}>
-          <MaterialIcons name="info-outline" size={16} color="#D97706" />
-          <ThemedText style={styles.errorBannerText}>{errorMessage}</ThemedText>
-        </View>
-      )}
-
-      <FlatList
-        ref={flatListRef}
-        data={messages}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.messageList}
-        onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
-        ListEmptyComponent={
-          <View style={styles.emptyState}>
-            <MaterialIcons name="chat-bubble-outline" size={36} color={PALETTE.subtitle} />
-            <ThemedText style={[styles.emptyText, { color: PALETTE.subtitle }]}>
-              {status === 'connected'
-                ? 'Sin mensajes aún. Escribe para iniciar.'
-                : 'Conectando al chat...'}
-            </ThemedText>
-          </View>
-        }
-        renderItem={({ item }) => (
-          <MessageBubble msg={item} isOwn={item.senderId === currentUserId} />
-        )}
-      />
-
-      {isClosed && (
-        <View style={styles.paymentBanner}>
-          {alreadyPaid ? (
-            <View style={styles.paidRow}>
-              <MaterialIcons name="check-circle" size={18} color="#059669" />
-              <ThemedText style={styles.paidText}>
-                Consulta pagada —{' '}
-                {paidTransaction
-                  ? `$${paidTransaction.amount.toLocaleString('es-CO')} COP`
-                  : ''}
-              </ThemedText>
-            </View>
-          ) : (
-            <Pressable
-              style={({ pressed }) => [styles.payBtn, { opacity: isPaying || pressed ? 0.8 : 1 }]}
-              disabled={isPaying}
-              onPress={() => void pay()}
-            >
-              {isPaying ? (
-                <>
-                  <ActivityIndicator color="#FFFFFF" size="small" />
-                  <ThemedText style={styles.payBtnText}>Procesando pago...</ThemedText>
-                </>
-              ) : (
-                <>
-                  <MaterialIcons name="payment" size={18} color="#FFFFFF" />
-                  <ThemedText style={styles.payBtnText}>Pagar consulta</ThemedText>
-                </>
-              )}
+    <SafeAreaView edges={['top', 'left', 'right']} style={styles.safeArea}>
+      <LinearGradient colors={PALETTE.bg} style={styles.container}>
+        <View style={[styles.statusBar, { backgroundColor: PALETTE.cardBg }]}>
+          <View style={[styles.statusDot, { backgroundColor: STATUS_COLOR[status] ?? '#94A3B8' }]} />
+          <ThemedText style={[styles.statusText, { color: STATUS_COLOR[status] ?? '#94A3B8' }]}>
+            {STATUS_LABEL[status] ?? 'Sin conexion'}
+          </ThemedText>
+          {status !== 'connected' ? (
+            <Pressable onPress={retryConnection} style={styles.retryConnectionBtn}>
+              <ThemedText style={styles.retryConnectionText}>Reintentar</ThemedText>
             </Pressable>
-          )}
-          {payError && (
-            <View style={styles.payErrorRow}>
-              <ThemedText style={styles.payErrorText}>
-                Error al procesar el pago.
-              </ThemedText>
-              <Pressable onPress={() => void pay()} style={styles.retryLink}>
-                <ThemedText style={styles.retryLinkText}>Reintentar</ThemedText>
-              </Pressable>
-            </View>
-          )}
+          ) : null}
         </View>
-      )}
 
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <View style={[styles.inputBar, { backgroundColor: PALETTE.cardBg, borderTopColor: PALETTE.inputBorder }]}>
-          <TextInput
-            value={input}
-            onChangeText={setInput}
-            placeholder={
-              isClosed
-                ? 'Consulta cerrada — solo lectura'
-                : status === 'connected'
-                  ? 'Escribe un mensaje...'
-                  : 'Esperando conexión...'
-            }
-            placeholderTextColor={PALETTE.subtitle}
-            editable={!isClosed && status === 'connected'}
-            multiline
-            style={[
-              styles.textInput,
-              { backgroundColor: PALETTE.inputBg, borderColor: PALETTE.inputBorder },
-              isClosed && { opacity: 0.5 },
-            ]}
-            onSubmitEditing={handleSend}
-          />
-          <Pressable
-            onPress={handleSend}
-            disabled={isClosed || !input.trim() || status !== 'connected'}
-            style={({ pressed }) => [
-              styles.sendBtn,
-              {
-                backgroundColor: (isClosed || !input.trim() || status !== 'connected') ? '#94A3B8' : PALETTE.primary,
-                opacity: pressed ? 0.8 : 1,
-              },
-            ]}
-          >
-            <MaterialIcons name="send" size={20} color="#FFFFFF" />
-          </Pressable>
-        </View>
-      </KeyboardAvoidingView>
-    </LinearGradient>
+        {errorMessage && !isClosed && (
+          <View style={styles.errorBanner}>
+            <MaterialIcons name="info-outline" size={16} color="#D97706" />
+            <ThemedText style={styles.errorBannerText}>{errorMessage}</ThemedText>
+            <Pressable onPress={retryConnection} style={styles.retryLink}>
+              <ThemedText style={styles.retryLinkText}>Reintentar</ThemedText>
+            </Pressable>
+          </View>
+        )}
+
+        <FlatList
+          ref={flatListRef}
+          data={messages}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.messageList}
+          onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
+          ListEmptyComponent={
+            <View style={styles.emptyState}>
+              {isFallbackLoading ? (
+                <ActivityIndicator color={PALETTE.primary} />
+              ) : (
+                <MaterialIcons name="chat-bubble-outline" size={36} color={PALETTE.subtitle} />
+              )}
+              <ThemedText style={[styles.emptyText, { color: PALETTE.subtitle }]}>
+                {isFallbackLoading
+                  ? 'Sincronizando mensajes...'
+                  : status === 'connected'
+                    ? 'Sin mensajes aun. Escribe para iniciar.'
+                    : 'Estamos intentando reconectar el chat.'}
+              </ThemedText>
+            </View>
+          }
+          renderItem={({ item }) => <MessageBubble msg={item} isOwn={item.senderId === currentUserId} />}
+        />
+
+        {isClosed && (
+          <View style={styles.paymentBanner}>
+            {alreadyPaid ? (
+              <View style={styles.paidRow}>
+                <MaterialIcons name="check-circle" size={18} color="#059669" />
+                <ThemedText style={styles.paidText}>
+                  Consulta pagada -{' '}
+                  {paidTransaction ? `$${paidTransaction.amount.toLocaleString('es-CO')} COP` : ''}
+                </ThemedText>
+              </View>
+            ) : (
+              <Pressable
+                style={({ pressed }) => [styles.payBtn, { opacity: isPaying || pressed ? 0.8 : 1 }]}
+                disabled={isPaying}
+                onPress={() => void pay()}
+              >
+                {isPaying ? (
+                  <>
+                    <ActivityIndicator color="#FFFFFF" size="small" />
+                    <ThemedText style={styles.payBtnText}>Procesando pago...</ThemedText>
+                  </>
+                ) : (
+                  <>
+                    <MaterialIcons name="payment" size={18} color="#FFFFFF" />
+                    <ThemedText style={styles.payBtnText}>Pagar consulta</ThemedText>
+                  </>
+                )}
+              </Pressable>
+            )}
+            {payError && (
+              <View style={styles.payErrorRow}>
+                <ThemedText style={styles.payErrorText}>Error al procesar el pago.</ThemedText>
+                <Pressable onPress={() => void pay()} style={styles.retryLink}>
+                  <ThemedText style={styles.retryLinkText}>Reintentar</ThemedText>
+                </Pressable>
+              </View>
+            )}
+          </View>
+        )}
+
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+          <View style={[styles.inputBar, { backgroundColor: PALETTE.cardBg, borderTopColor: PALETTE.inputBorder }]}>
+            <TextInput
+              value={input}
+              onChangeText={setInput}
+              placeholder={
+                isClosed
+                  ? 'Consulta cerrada - solo lectura'
+                  : status === 'connected'
+                    ? 'Escribe un mensaje...'
+                    : 'Esperando conexion...'
+              }
+              placeholderTextColor={PALETTE.subtitle}
+              editable={!isClosed && status === 'connected'}
+              multiline
+              style={[
+                styles.textInput,
+                { backgroundColor: PALETTE.inputBg, borderColor: PALETTE.inputBorder },
+                isClosed && { opacity: 0.5 },
+              ]}
+              onSubmitEditing={handleSend}
+            />
+            <Pressable
+              onPress={handleSend}
+              disabled={isClosed || !input.trim() || status !== 'connected'}
+              style={({ pressed }) => [
+                styles.sendBtn,
+                {
+                  backgroundColor:
+                    isClosed || !input.trim() || status !== 'connected' ? '#94A3B8' : PALETTE.primary,
+                  opacity: pressed ? 0.8 : 1,
+                },
+              ]}
+            >
+              <MaterialIcons name="send" size={20} color="#FFFFFF" />
+            </Pressable>
+          </View>
+        </KeyboardAvoidingView>
+      </LinearGradient>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: { flex: 1, backgroundColor: '#F0F9FA' },
   paymentBanner: {
     backgroundColor: '#F0FDF4',
     borderTopWidth: 1,
@@ -240,6 +273,16 @@ const styles = StyleSheet.create({
   payErrorText: { color: '#DC2626', fontSize: 12 },
   retryLink: { paddingHorizontal: 4 },
   retryLinkText: { color: '#0891B2', fontSize: 12, fontWeight: '700' },
+  retryConnectionBtn: {
+    marginLeft: 'auto',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  retryConnectionText: {
+    color: '#0891B2',
+    fontSize: 12,
+    fontWeight: '700',
+  },
   errorBanner: {
     alignItems: 'center',
     backgroundColor: '#FFFBEB',
@@ -253,9 +296,13 @@ const styles = StyleSheet.create({
   errorBannerText: { color: '#D97706', flex: 1, fontSize: 13, lineHeight: 18 },
   container: { flex: 1 },
   statusBar: {
-    alignItems: 'center', flexDirection: 'row', gap: 8,
-    paddingHorizontal: 16, paddingVertical: 10,
-    borderBottomWidth: 1, borderBottomColor: 'rgba(20,184,166,0.12)',
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(20,184,166,0.12)',
   },
   statusDot: { borderRadius: 4, height: 8, width: 8 },
   statusText: { fontSize: 12, fontWeight: '700' },
@@ -265,20 +312,39 @@ const styles = StyleSheet.create({
   bubbleWrapper: { maxWidth: '78%' },
   bubbleLeft: { alignSelf: 'flex-start' },
   bubbleRight: { alignSelf: 'flex-end' },
-  senderLabel: { fontSize: 11, fontWeight: '700', color: '#14B8A6', marginBottom: 3, marginLeft: 4 },
+  senderLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#14B8A6',
+    marginBottom: 3,
+    marginLeft: 4,
+  },
   bubble: { borderRadius: 16, paddingHorizontal: 14, paddingVertical: 10, gap: 4 },
   bubbleText: { fontSize: 15, lineHeight: 21 },
   timeText: { fontSize: 11, textAlign: 'right' },
   inputBar: {
-    alignItems: 'flex-end', borderTopWidth: 1, flexDirection: 'row',
-    gap: 10, paddingHorizontal: 12, paddingVertical: 10,
+    alignItems: 'flex-end',
+    borderTopWidth: 1,
+    flexDirection: 'row',
+    gap: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
   },
   textInput: {
-    borderRadius: 16, borderWidth: 1, flex: 1, fontSize: 15,
-    maxHeight: 100, minHeight: 44, paddingHorizontal: 14, paddingVertical: 10,
+    borderRadius: 16,
+    borderWidth: 1,
+    flex: 1,
+    fontSize: 15,
+    maxHeight: 100,
+    minHeight: 44,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
   },
   sendBtn: {
-    alignItems: 'center', borderRadius: 12, height: 44,
-    justifyContent: 'center', width: 44,
+    alignItems: 'center',
+    borderRadius: 12,
+    height: 44,
+    justifyContent: 'center',
+    width: 44,
   },
 });

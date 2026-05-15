@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors, Radius } from '@/src/constants/theme';
 import { usePendingFollowups } from '@/src/features/patient-followup/use-patient-followups';
 import { usePatientTimeline } from '@/src/features/patient-timeline/use-patient-timeline';
@@ -236,7 +237,8 @@ export function MyConsultationsScreen() {
   const totalPages = data ? Math.ceil(data.total / data.limit) : 1;
 
   return (
-    <ThemedView style={styles.container}>
+    <SafeAreaView edges={['top', 'left', 'right']} style={styles.container}>
+      <ThemedView style={styles.container}>
       <View style={styles.header}>
         <ThemedText style={styles.title}>Mis consultas</ThemedText>
       </View>
@@ -357,7 +359,8 @@ export function MyConsultationsScreen() {
       {ratingTarget && (
         <RatingModal item={ratingTarget} onClose={() => setRatingTarget(null)} />
       )}
-    </ThemedView>
+      </ThemedView>
+    </SafeAreaView>
   );
 }
 

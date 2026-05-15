@@ -4,6 +4,8 @@ describe('isAllowedDeepLink', () => {
   it.each([
     ['/followup/abc123', true],
     ['/followup/', true],
+    ['/consultations/abc123', true],
+    ['/consultations/', true],
     ['/triage/chat/consultation-id', true],
     ['/triage/specialty', true],
     ['/triage/', true],

@@ -31,6 +31,13 @@ describe('useTriageStore', () => {
     expect(useTriageStore.getState().consultationId).toBe('c1');
   });
 
+  it('allows clearing persisted consultation id', () => {
+    useTriageStore.getState().setConsultationId(null);
+
+    expect(persistConsultationId).toHaveBeenCalledWith(null);
+    expect(useTriageStore.getState().consultationId).toBeNull();
+  });
+
   it('clears triage state and storage', () => {
     useTriageStore.setState({
       activeSessionId: 's1',

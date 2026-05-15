@@ -10,10 +10,19 @@ import {
   StyleSheet,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
+import {
+  ScreenEmptyState,
+  ScreenErrorState,
+  ScreenLoadingState,
+} from '@/src/components/screen-states';
+import { useToast } from '@/src/providers/toast-provider';
 import type { TriageQuestion } from '@/src/schemas/triage';
 import { useTriageStore } from '@/src/store/triage-store';
 import { ThemedText } from '@/src/ui/themed-text';
 import { ThemedView } from '@/src/ui/themed-view';
+
 import type { AnswerValue } from './triage-service';
 import { useTriageSession } from './use-triage-session';
 
@@ -59,15 +68,16 @@ function SingleChoiceField({
             onPress={() => onChange(opt.id)}
             style={[
               styles.option,
-              { borderColor: selected ? PALETTE.selected : PALETTE.unselected, backgroundColor: selected ? 'rgba(8,145,178,0.08)' : PALETTE.card },
+              {
+                borderColor: selected ? PALETTE.selected : PALETTE.unselected,
+                backgroundColor: selected ? 'rgba(8,145,178,0.08)' : PALETTE.card,
+              },
             ]}
           >
             <View style={[styles.radio, { borderColor: selected ? PALETTE.selected : '#94A3B8' }]}>
               {selected && <View style={styles.radioFill} />}
             </View>
-            <ThemedText style={[styles.optionText, { color: PALETTE.title }]}>
-              {opt.label}
-            </ThemedText>
+            <ThemedText style={[styles.optionText, { color: PALETTE.title }]}>{opt.label}</ThemedText>
           </Pressable>
         );
       })}
@@ -87,9 +97,9 @@ function MultiChoiceField({
   const toggle = (id: string) => {
     if (value.includes(id)) {
       onChange(value.filter((v) => v !== id));
-    } else {
-      onChange([...value, id]);
+      return;
     }
+    onChange([...value, id]);
   };
 
   return (
@@ -102,15 +112,24 @@ function MultiChoiceField({
             onPress={() => toggle(opt.id)}
             style={[
               styles.option,
-              { borderColor: selected ? PALETTE.selected : PALETTE.unselected, backgroundColor: selected ? 'rgba(8,145,178,0.08)' : PALETTE.card },
+              {
+                borderColor: selected ? PALETTE.selected : PALETTE.unselected,
+                backgroundColor: selected ? 'rgba(8,145,178,0.08)' : PALETTE.card,
+              },
             ]}
           >
-            <View style={[styles.checkbox, { borderColor: selected ? PALETTE.selected : '#94A3B8', backgroundColor: selected ? PALETTE.selected : PALETTE.card }]}>
+            <View
+              style={[
+                styles.checkbox,
+                {
+                  borderColor: selected ? PALETTE.selected : '#94A3B8',
+                  backgroundColor: selected ? PALETTE.selected : PALETTE.card,
+                },
+              ]}
+            >
               {selected && <MaterialIcons name="check" size={13} color="#FFFFFF" />}
             </View>
-            <ThemedText style={[styles.optionText, { color: PALETTE.title }]}>
-              {opt.label}
-            </ThemedText>
+            <ThemedText style={[styles.optionText, { color: PALETTE.title }]}>{opt.label}</ThemedText>
           </Pressable>
         );
       })}
@@ -133,9 +152,7 @@ function NumericScaleField({
 
   return (
     <View style={styles.sliderContainer}>
-      <ThemedText style={[styles.sliderValue, { color: PALETTE.primary }]}>
-        {value}
-      </ThemedText>
+      <ThemedText style={[styles.sliderValue, { color: PALETTE.primary }]}>{value}</ThemedText>
       <Slider
         minimumValue={min}
         maximumValue={max}
@@ -157,6 +174,7 @@ function NumericScaleField({
 
 export function TriageQuestionScreen({ sessionId }: Props) {
   const router = useRouter();
+  const { showToast } = useToast();
   const setConsultationId = useTriageStore((s) => s.setConsultationId);
   const clearTriage = useTriageStore((s) => s.clearTriage);
   const { sessionQuery, saveAnswersMutation, analyzeMutation, cancelMutation } =
@@ -166,16 +184,16 @@ export function TriageQuestionScreen({ sessionId }: Props) {
   const [multiValue, setMultiValue] = useState<string[]>([]);
   const [numericValue, setNumericValue] = useState<number>(5);
   const [validationError, setValidationError] = useState<string | null>(null);
+  const [mutationError, setMutationError] = useState<string | null>(null);
   const analyzeInFlight = useRef(false);
 
   const session = sessionQuery.data;
-  const nextQuestion = session?.questions.find(
-    (q) => q.id === session.nextQuestionId,
-  );
+  const nextQuestion = session?.questions.find((q) => q.id === session.nextQuestionId);
   const isLoading =
     saveAnswersMutation.isPending ||
     analyzeMutation.isPending ||
-    sessionQuery.isLoading;
+    sessionQuery.isLoading ||
+    cancelMutation.isPending;
 
   const getAnswerValue = (q: TriageQuestion): AnswerValue | null => {
     if (q.type === 'SINGLE_CHOICE') return singleValue;
@@ -196,18 +214,27 @@ export function TriageQuestionScreen({ sessionId }: Props) {
 
     const answerValue = getAnswerValue(nextQuestion);
     if (answerValue === null) {
-      setValidationError('Selecciona una respuesta para continuar');
+      setValidationError('Selecciona una respuesta para continuar.');
       return;
     }
 
     setValidationError(null);
-    const result = await saveAnswersMutation.mutateAsync([
-      { questionId: nextQuestion.questionId, answerValue },
-    ]);
-    resetAnswerState();
+    setMutationError(null);
 
-    if (result.isComplete) {
-      if (analyzeInFlight.current) return;
+    try {
+      const result = await saveAnswersMutation.mutateAsync([
+        { questionId: nextQuestion.questionId, answerValue },
+      ]);
+      resetAnswerState();
+
+      if (!result.isComplete) {
+        return;
+      }
+
+      if (analyzeInFlight.current) {
+        return;
+      }
+
       analyzeInFlight.current = true;
       let analysis;
       try {
@@ -215,6 +242,7 @@ export function TriageQuestionScreen({ sessionId }: Props) {
       } finally {
         analyzeInFlight.current = false;
       }
+
       setConsultationId(analysis.consultationId);
       const redFlagsParam = analysis.redFlags?.length
         ? encodeURIComponent(JSON.stringify(analysis.redFlags))
@@ -226,133 +254,143 @@ export function TriageQuestionScreen({ sessionId }: Props) {
       router.replace(
         `/triage/result?sessionId=${sessionId}&priority=${analysis.priority}&consultationId=${analysis.consultationId}&message=${messageParam}&redFlags=${redFlagsParam}&evidence=${evidenceParam}` as any,
       );
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : 'No se pudo guardar tu respuesta. Intenta nuevamente.';
+      setMutationError(message);
+      showToast({ message, type: 'error' });
     }
   };
 
   const handleCancel = async () => {
-    await cancelMutation.mutateAsync();
-    clearTriage();
-    router.replace('/(tabs)');
+    try {
+      await cancelMutation.mutateAsync();
+      clearTriage();
+      router.replace('/(tabs)');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'No se pudo cancelar el triage.';
+      showToast({ message, type: 'error' });
+    }
   };
 
   if (sessionQuery.isLoading) {
     return (
-      <LinearGradient colors={PALETTE.bg} style={styles.centered}>
-        <ActivityIndicator size="large" color={PALETTE.primary} />
-      </LinearGradient>
+      <SafeAreaView edges={['top', 'left', 'right']} style={styles.container}>
+        <LinearGradient colors={PALETTE.bg} style={styles.centered}>
+          <ScreenLoadingState message="Cargando tu triage..." />
+        </LinearGradient>
+      </SafeAreaView>
     );
   }
 
   if (sessionQuery.isError) {
+    const message =
+      sessionQuery.error instanceof Error ? sessionQuery.error.message : 'Error al cargar la sesion.';
+
     return (
-      <LinearGradient colors={PALETTE.bg} style={styles.centered}>
-        <ThemedText style={{ color: PALETTE.error }}>
-          Error al cargar la sesión. Intenta de nuevo.
-        </ThemedText>
-      </LinearGradient>
+      <SafeAreaView edges={['top', 'left', 'right']} style={styles.container}>
+        <LinearGradient colors={PALETTE.bg} style={styles.centered}>
+          <ScreenErrorState
+            message={message}
+            onRetry={() => void sessionQuery.refetch()}
+            onExit={() => router.replace('/(tabs)')}
+          />
+        </LinearGradient>
+      </SafeAreaView>
     );
   }
 
   if (!session || !nextQuestion) {
     return (
-      <LinearGradient colors={PALETTE.bg} style={styles.centered}>
-        <ThemedText style={{ color: PALETTE.subtitle }}>
-          No hay preguntas disponibles
-        </ThemedText>
-      </LinearGradient>
+      <SafeAreaView edges={['top', 'left', 'right']} style={styles.container}>
+        <LinearGradient colors={PALETTE.bg} style={styles.centered}>
+          <ScreenEmptyState
+            title="No hay preguntas disponibles"
+            description="No encontramos preguntas activas para esta sesion."
+            actionLabel="Volver al inicio"
+            onAction={() => router.replace('/(tabs)')}
+          />
+        </LinearGradient>
+      </SafeAreaView>
     );
   }
 
   return (
-    <LinearGradient colors={PALETTE.bg} style={styles.container}>
-      <ScrollView contentContainerStyle={styles.content} bounces={false}>
-        <ThemedView style={styles.progressBlock}>
-          <ThemedText style={[styles.progressLabel, { color: PALETTE.subtitle }]}>
-            {session.answeredCount} de {session.totalQuestions} preguntas
-          </ThemedText>
-          <ProgressBar percent={session.progressPercent} />
-        </ThemedView>
-
-        <ThemedView style={[styles.card, { backgroundColor: PALETTE.card, borderColor: PALETTE.cardBorder }]}>
-          <ThemedText style={[styles.questionTitle, { color: PALETTE.title }]}>
-            {nextQuestion.questionText}
-          </ThemedText>
-          {nextQuestion.description ? (
-            <ThemedText style={[styles.questionDesc, { color: PALETTE.subtitle }]}>
-              {nextQuestion.description}
+    <SafeAreaView edges={['top', 'left', 'right']} style={styles.container}>
+      <LinearGradient colors={PALETTE.bg} style={styles.container}>
+        <ScrollView contentContainerStyle={styles.content} bounces={false}>
+          <ThemedView style={styles.progressBlock}>
+            <ThemedText style={[styles.progressLabel, { color: PALETTE.subtitle }]}> 
+              {session.answeredCount} de {session.totalQuestions} preguntas
             </ThemedText>
-          ) : null}
+            <ProgressBar percent={session.progressPercent} />
+          </ThemedView>
 
-          {nextQuestion.type === 'SINGLE_CHOICE' && (
-            <SingleChoiceField
-              question={nextQuestion}
-              value={singleValue}
-              onChange={setSingleValue}
-            />
-          )}
-          {nextQuestion.type === 'MULTI_CHOICE' && (
-            <MultiChoiceField
-              question={nextQuestion}
-              value={multiValue}
-              onChange={setMultiValue}
-            />
-          )}
-          {nextQuestion.type === 'NUMERIC_SCALE' && (
-            <NumericScaleField
-              question={nextQuestion}
-              value={numericValue}
-              onChange={setNumericValue}
-            />
-          )}
-
-          {validationError ? (
-            <ThemedText style={[styles.errorText, { color: PALETTE.error }]}>
-              {validationError}
-            </ThemedText>
-          ) : null}
-
-          {saveAnswersMutation.isError || analyzeMutation.isError ? (
-            <ThemedText style={[styles.errorText, { color: PALETTE.error }]}>
-              Ocurrió un error. Intenta de nuevo.
-            </ThemedText>
-          ) : null}
-        </ThemedView>
-
-        <View style={styles.actions}>
-          <Pressable
-            onPress={() => void handleCancel()}
-            disabled={isLoading}
-            style={[styles.cancelBtn, { borderColor: PALETTE.cardBorder }]}
+          <ThemedView
+            style={[styles.card, { backgroundColor: PALETTE.card, borderColor: PALETTE.cardBorder }]}
           >
-            <ThemedText style={[styles.cancelText, { color: PALETTE.subtitle }]}>
-              Cancelar
+            <ThemedText style={[styles.questionTitle, { color: PALETTE.title }]}>
+              {nextQuestion.questionText}
             </ThemedText>
-          </Pressable>
-
-          <Pressable
-            onPress={() => void handleNext()}
-            disabled={isLoading}
-            style={({ pressed }) => [
-              styles.nextBtn,
-              {
-                backgroundColor: isLoading ? '#94A3B8' : PALETTE.primary,
-                opacity: pressed ? 0.85 : 1,
-              },
-            ]}
-          >
-            {isLoading ? (
-              <ActivityIndicator color="#FFFFFF" />
-            ) : (
-              <ThemedText style={styles.nextText}>
-                {session.answeredCount + 1 >= session.totalQuestions
-                  ? 'Finalizar'
-                  : 'Continuar'}
+            {nextQuestion.description ? (
+              <ThemedText style={[styles.questionDesc, { color: PALETTE.subtitle }]}> 
+                {nextQuestion.description}
               </ThemedText>
+            ) : null}
+
+            {nextQuestion.type === 'SINGLE_CHOICE' && (
+              <SingleChoiceField question={nextQuestion} value={singleValue} onChange={setSingleValue} />
             )}
-          </Pressable>
-        </View>
-      </ScrollView>
-    </LinearGradient>
+            {nextQuestion.type === 'MULTI_CHOICE' && (
+              <MultiChoiceField question={nextQuestion} value={multiValue} onChange={setMultiValue} />
+            )}
+            {nextQuestion.type === 'NUMERIC_SCALE' && (
+              <NumericScaleField question={nextQuestion} value={numericValue} onChange={setNumericValue} />
+            )}
+
+            {validationError ? (
+              <ThemedText style={[styles.errorText, { color: PALETTE.error }]}>{validationError}</ThemedText>
+            ) : null}
+
+            {mutationError ? (
+              <ThemedText style={[styles.errorText, { color: PALETTE.error }]}>{mutationError}</ThemedText>
+            ) : null}
+          </ThemedView>
+
+          <View style={styles.actions}>
+            <Pressable
+              onPress={() => void handleCancel()}
+              disabled={isLoading}
+              style={[styles.cancelBtn, { borderColor: PALETTE.cardBorder }]}
+            >
+              <ThemedText style={[styles.cancelText, { color: PALETTE.subtitle }]}>Cancelar</ThemedText>
+            </Pressable>
+
+            <Pressable
+              onPress={() => void handleNext()}
+              disabled={isLoading}
+              style={({ pressed }) => [
+                styles.nextBtn,
+                {
+                  backgroundColor: isLoading ? '#94A3B8' : PALETTE.primary,
+                  opacity: pressed ? 0.85 : 1,
+                },
+              ]}
+            >
+              {isLoading ? (
+                <ActivityIndicator color="#FFFFFF" />
+              ) : (
+                <ThemedText style={styles.nextText}>
+                  {session.answeredCount + 1 >= session.totalQuestions ? 'Finalizar' : 'Continuar'}
+                </ThemedText>
+              )}
+            </Pressable>
+          </View>
+        </ScrollView>
+      </LinearGradient>
+    </SafeAreaView>
   );
 }
 
@@ -365,25 +403,44 @@ const styles = StyleSheet.create({
   progressOuter: { backgroundColor: '#E2E8F0', borderRadius: 6, height: 6, overflow: 'hidden' },
   progressInner: { borderRadius: 6, height: 6 },
   card: {
-    borderRadius: 20, borderWidth: 1, gap: 14, marginBottom: 20,
-    padding: 18, shadowColor: '#0F172A',
-    shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.06, shadowRadius: 10, elevation: 2,
+    borderRadius: 20,
+    borderWidth: 1,
+    gap: 14,
+    marginBottom: 20,
+    padding: 18,
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    elevation: 2,
   },
   questionTitle: { fontSize: 19, fontWeight: '800', lineHeight: 26 },
   questionDesc: { fontSize: 14, lineHeight: 20 },
   optionsContainer: { gap: 10 },
   option: {
-    alignItems: 'center', borderRadius: 12, borderWidth: 1.5,
-    flexDirection: 'row', gap: 12, padding: 14,
+    alignItems: 'center',
+    borderRadius: 12,
+    borderWidth: 1.5,
+    flexDirection: 'row',
+    gap: 12,
+    padding: 14,
   },
   radio: {
-    alignItems: 'center', borderRadius: 10, borderWidth: 2,
-    height: 20, justifyContent: 'center', width: 20,
+    alignItems: 'center',
+    borderRadius: 10,
+    borderWidth: 2,
+    height: 20,
+    justifyContent: 'center',
+    width: 20,
   },
   radioFill: { backgroundColor: '#0891B2', borderRadius: 5, height: 10, width: 10 },
   checkbox: {
-    alignItems: 'center', borderRadius: 5, borderWidth: 2,
-    height: 20, justifyContent: 'center', width: 20,
+    alignItems: 'center',
+    borderRadius: 5,
+    borderWidth: 2,
+    height: 20,
+    justifyContent: 'center',
+    width: 20,
   },
   optionText: { flex: 1, fontSize: 15, fontWeight: '600' },
   sliderContainer: { alignItems: 'center', gap: 4 },
@@ -394,13 +451,20 @@ const styles = StyleSheet.create({
   errorText: { fontSize: 13, lineHeight: 18 },
   actions: { flexDirection: 'row', gap: 12 },
   cancelBtn: {
-    alignItems: 'center', borderRadius: 14, borderWidth: 1,
-    flex: 1, justifyContent: 'center', minHeight: 52,
+    alignItems: 'center',
+    borderRadius: 14,
+    borderWidth: 1,
+    flex: 1,
+    justifyContent: 'center',
+    minHeight: 52,
   },
   cancelText: { fontSize: 15, fontWeight: '700' },
   nextBtn: {
-    alignItems: 'center', borderRadius: 14, flex: 2,
-    justifyContent: 'center', minHeight: 52,
+    alignItems: 'center',
+    borderRadius: 14,
+    flex: 2,
+    justifyContent: 'center',
+    minHeight: 52,
   },
   nextText: { color: '#FFFFFF', fontSize: 16, fontWeight: '800' },
 });

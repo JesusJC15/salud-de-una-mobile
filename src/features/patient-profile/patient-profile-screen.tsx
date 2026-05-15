@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { Alert, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { billingService } from '@/src/services/billing/billing-service';
 
 import { Radius } from '@/src/constants/theme';
@@ -171,8 +172,9 @@ export function PatientProfileScreen() {
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.content}>
-      <ThemedView style={styles.container}>
+    <SafeAreaView edges={['top', 'left', 'right']} style={styles.safeArea}>
+      <ScrollView contentContainerStyle={styles.content}>
+        <ThemedView style={styles.container}>
       <ThemedView style={styles.header}>
         <ThemedText type="eyebrow">Cuenta del paciente</ThemedText>
         <ThemedText type="title">Perfil</ThemedText>
@@ -413,9 +415,10 @@ export function PatientProfileScreen() {
         />
       </ThemedView>
 
-      <TransactionHistorySection />
-      </ThemedView>
-    </ScrollView>
+          <TransactionHistorySection />
+        </ThemedView>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
@@ -462,6 +465,9 @@ function TransactionHistorySection() {
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+  },
   content: {
     minHeight: '100%',
   },

@@ -1,8 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useEffect, useRef } from 'react';
-import { io, type Socket } from 'socket.io-client';
+import { useEffect, useState } from 'react';
 
-import { WS_BASE_URL } from '@/src/constants/ws';
+import {
+  subscribePatientNotificationsRealtime,
+  type NotificationsRealtimeStatus,
+} from '@/src/services/realtime/patient-notifications-realtime';
 import { patientNotificationService } from '@/src/services/notifications/patient-notification-service';
 import { showLocalFollowupNotification } from '@/src/services/notifications/push-notification-service';
 import { useSessionStore } from '@/src/store/session-store';
@@ -12,12 +14,14 @@ const PATIENT_NOTIFICATIONS_QUERY_KEY = ['patient-notifications'];
 export function usePatientNotifications() {
   const queryClient = useQueryClient();
   const session = useSessionStore((s) => s.session);
-  const socketRef = useRef<Socket | null>(null);
+  const [connectionStatus, setConnectionStatus] =
+    useState<NotificationsRealtimeStatus>('disconnected');
 
   const notificationsQuery = useQuery({
     queryFn: () => patientNotificationService.list(),
     queryKey: PATIENT_NOTIFICATIONS_QUERY_KEY,
     staleTime: 30_000,
+    enabled: Boolean(session?.accessToken),
   });
 
   useEffect(() => {
@@ -34,32 +38,20 @@ export function usePatientNotifications() {
     }
   }, [notificationsQuery.data]);
 
-  // Real-time notifications via WebSocket
   useEffect(() => {
-    if (!session?.accessToken) return;
+    if (!session?.accessToken) {
+      setConnectionStatus('disconnected');
+      return;
+    }
 
-    let mounted = true;
+    return subscribePatientNotificationsRealtime(session.accessToken, (event) => {
+      if (event.type === 'notification:new') {
+        void queryClient.invalidateQueries({ queryKey: PATIENT_NOTIFICATIONS_QUERY_KEY });
+        return;
+      }
 
-    const socket = io(`${WS_BASE_URL}/notifications`, {
-      auth: { token: session.accessToken },
-      transports: ['websocket', 'polling'],
-      reconnection: true,
-      reconnectionDelay: 1500,
-      reconnectionAttempts: 50,
+      setConnectionStatus(event.status);
     });
-
-    socketRef.current = socket;
-
-    socket.on('notification:new', () => {
-      if (!mounted) return;
-      void queryClient.invalidateQueries({ queryKey: PATIENT_NOTIFICATIONS_QUERY_KEY });
-    });
-
-    return () => {
-      mounted = false;
-      socket.disconnect();
-      socketRef.current = null;
-    };
   }, [session?.accessToken, queryClient]);
 
   const markAsReadMutation = useMutation({
@@ -77,6 +69,7 @@ export function usePatientNotifications() {
   });
 
   return {
+    connectionStatus,
     markAllAsReadMutation,
     markAsReadMutation,
     notificationsQuery,

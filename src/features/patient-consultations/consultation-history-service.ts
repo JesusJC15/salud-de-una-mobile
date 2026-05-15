@@ -13,6 +13,57 @@ export const consultationHistoryItemSchema = z.object({
   closedAt: z.string().optional().nullable(),
 });
 
+export const consultationDetailSchema = z.object({
+  id: z.string(),
+  patientId: z.string(),
+  triageSessionId: z.string(),
+  specialty: z.enum(['GENERAL_MEDICINE', 'ODONTOLOGY', 'URGENT_CARE']),
+  priority: z.enum(['LOW', 'MODERATE', 'HIGH']),
+  status: z.enum(['PENDING', 'IN_ATTENTION', 'CLOSED']),
+  assignedDoctorId: z.string().optional().nullable(),
+  clinicalSummary: z.string().optional().nullable(),
+  closedAt: z.string().optional().nullable(),
+  updatedAt: z.string().optional().nullable(),
+  triage: z
+    .object({
+      status: z.string(),
+      answers: z
+        .array(
+          z.object({
+            questionId: z.string(),
+            questionText: z.string(),
+            answerValue: z.unknown(),
+          }),
+        )
+        .optional(),
+      analysis: z
+        .object({
+          priority: z.string(),
+          redFlags: z.array(z.unknown()).optional(),
+          aiSummary: z.string().optional().nullable(),
+        })
+        .nullable()
+        .optional(),
+    })
+    .nullable()
+    .optional(),
+});
+
+export const consultationMessageSchema = z.object({
+  id: z.string(),
+  consultationId: z.string(),
+  senderId: z.string(),
+  senderRole: z.enum(['PATIENT', 'DOCTOR']),
+  content: z.string(),
+  type: z.literal('TEXT'),
+  createdAt: z.string().optional(),
+});
+
+export const consultationMessagesResponseSchema = z.object({
+  items: z.array(consultationMessageSchema),
+  total: z.number(),
+});
+
 export const consultationHistoryResponseSchema = z.object({
   items: z.array(consultationHistoryItemSchema),
   total: z.number(),
@@ -22,6 +73,8 @@ export const consultationHistoryResponseSchema = z.object({
 
 export type ConsultationHistoryItem = z.infer<typeof consultationHistoryItemSchema>;
 export type ConsultationHistoryResponse = z.infer<typeof consultationHistoryResponseSchema>;
+export type ConsultationDetail = z.infer<typeof consultationDetailSchema>;
+export type ConsultationMessage = z.infer<typeof consultationMessageSchema>;
 
 export const rateConsultationResponseSchema = z.object({
   id: z.string(),
@@ -43,5 +96,17 @@ export const consultationHistoryService = {
       ...(ratingComment ? { ratingComment } : {}),
     });
     return rateConsultationResponseSchema.parse(res.data);
+  },
+
+  async getById(consultationId: string): Promise<ConsultationDetail> {
+    const res = await apiClient.get(`/consultations/${consultationId}`);
+    return consultationDetailSchema.parse(res.data);
+  },
+
+  async getMessages(consultationId: string, limit = 100) {
+    const res = await apiClient.get(`/consultations/${consultationId}/messages`, {
+      params: { limit },
+    });
+    return consultationMessagesResponseSchema.parse(res.data);
   },
 };

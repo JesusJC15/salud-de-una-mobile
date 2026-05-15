@@ -8,6 +8,7 @@ import {
   StyleSheet,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSessionStore } from '@/src/store/session-store';
 import { useTriageStore } from '@/src/store/triage-store';
 import { triageService } from '@/src/features/patient-triage/triage-service';
@@ -32,8 +33,12 @@ function getRelativeTime(dateStr?: string | null): string {
 const NOTIFICATION_ICON_MAP: Record<string, React.ComponentProps<typeof MaterialIcons>['name']> = {
   FOLLOWUP_REMINDER: 'assignment-late',
   CONSULTATION_UPDATE: 'chat',
+  CONSULTATION_ASSIGNED: 'medical-services',
+  CONSULTATION_CLOSED: 'task-alt',
   NEW_MESSAGE: 'chat',
+  CHAT_MESSAGE: 'chat',
   TRIAGE_COMPLETE: 'check-circle',
+  FOLLOWUP_PRIORITY_ESCALATED: 'priority-high',
   SYSTEM: 'info',
 };
 
@@ -321,7 +326,8 @@ export function PatientHomeScreen({
   });
 
   // Fetch the most recent non-closed consultation to recover state after app restart
-  const { data: activeConsultation } = useActiveConsultation();
+  const activeConsultationQuery = useActiveConsultation();
+  const activeConsultation = activeConsultationQuery.data;
   const pendingFollowupsQuery = usePendingFollowups();
 
   // Determine current state — backend data takes precedence over in-memory store
@@ -335,9 +341,11 @@ export function PatientHomeScreen({
     if (activeConsultation?.status === 'IN_ATTENTION') return 'in-attention';
     if (activeConsultation?.status === 'PENDING') return 'waiting';
     if (hasActiveSession && activeSession?.status === 'COMPLETED') return 'waiting';
-    if (consultationId) return 'waiting'; // fallback while backend query loads
+    if (consultationId && activeConsultationQuery.isLoading) {
+      return 'waiting'; // fallback while backend query loads
+    }
     return 'no-session';
-  })()
+  })();
 
   const firstName = patientProfile?.firstName ?? sessionUser?.email?.split('@')[0] ?? 'allí';
   const hour = new Date().getHours();
@@ -349,8 +357,9 @@ export function PatientHomeScreen({
   // ── Unauthenticated state ─────────────────────────────────────────────────
   if (!isAuthenticated) {
     return (
-      <LinearGradient colors={[T.surface, T.surfaceContainerLow]} style={styles.container}>
-        <ScrollView contentContainerStyle={styles.content} bounces={false}>
+      <SafeAreaView edges={['top', 'left', 'right']} style={styles.container}>
+        <LinearGradient colors={[T.surface, T.surfaceContainerLow]} style={styles.container}>
+          <ScrollView contentContainerStyle={styles.content} bounces={false}>
           {/* Brand Hero */}
           <View style={styles.brandHero}>
             <LinearGradient
@@ -402,15 +411,17 @@ export function PatientHomeScreen({
               </View>
             ))}
           </View>
-        </ScrollView>
-      </LinearGradient>
+          </ScrollView>
+        </LinearGradient>
+      </SafeAreaView>
     );
   }
 
   // ── Authenticated state ───────────────────────────────────────────────────
   return (
-    <LinearGradient colors={[T.surface, T.surfaceContainerLow]} style={styles.container}>
-      <ScrollView contentContainerStyle={styles.content} bounces={false}>
+    <SafeAreaView edges={['top', 'left', 'right']} style={styles.container}>
+      <LinearGradient colors={[T.surface, T.surfaceContainerLow]} style={styles.container}>
+        <ScrollView contentContainerStyle={styles.content} bounces={false}>
 
         {/* ── Greeting header ── */}
         <View style={styles.greetingRow}>
@@ -515,7 +526,6 @@ export function PatientHomeScreen({
               { icon: 'history' as const, label: 'Mis consultas', onPress: () => onOpenHistoryPress?.() },
               { icon: 'notifications' as const, label: 'Notificaciones', onPress: () => onOpenNotificationsPress?.() },
               { icon: 'person' as const, label: 'Mi perfil', onPress: () => onOpenProfilePress?.() },
-              { icon: 'help-outline' as const, label: 'Ayuda', onPress: () => {} },
             ].map((item) => (
               <QuickAction key={item.label} icon={item.icon} label={item.label} onPress={item.onPress} />
             ))}
@@ -547,8 +557,9 @@ export function PatientHomeScreen({
           </ThemedView>
         )}
 
-      </ScrollView>
-    </LinearGradient>
+        </ScrollView>
+      </LinearGradient>
+    </SafeAreaView>
   );
 }
 

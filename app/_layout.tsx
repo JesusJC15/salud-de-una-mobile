@@ -10,6 +10,7 @@ import 'react-native-reanimated';
 import { Colors, NavigationTheme } from '@/src/constants/theme';
 import { ErrorBoundary } from '@/src/components/error-boundary';
 import { AppProviders } from '@/src/providers/app-providers';
+import { ToastProvider } from '@/src/providers/toast-provider';
 import { useSessionStore } from '@/src/store/session-store';
 import { ThemedText } from '@/src/ui/themed-text';
 import { ThemedView } from '@/src/ui/themed-view';
@@ -28,7 +29,7 @@ function RootNavigator() {
       <ThemeProvider value={NavigationTheme}>
         <ThemedView style={styles.loadingScreen}>
           <ActivityIndicator color={Colors.light.primary} size="large" />
-          <ThemedText type="eyebrow">Salud De Una</ThemedText>
+          <ThemedText type="eyebrow">SaludDeUna</ThemedText>
           <ThemedText type="title" style={styles.loadingTitle}>
             Preparando tu sesion
           </ThemedText>
@@ -45,9 +46,9 @@ function RootNavigator() {
       <Stack>
         <Stack.Screen name="(auth)" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="consultations/[consultationId]" options={{ title: 'Consulta' }} />
         <Stack.Screen name="followup/[followupId]" options={{ title: 'Seguimiento' }} />
         <Stack.Screen name="triage" options={{ headerShown: false }} />
-        <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
       </Stack>
       <StatusBar style="dark" />
     </ThemeProvider>
@@ -73,9 +74,11 @@ export default function RootLayout() {
 
   return (
     <ErrorBoundary>
-      <AppProviders>
-        <RootNavigator />
-      </AppProviders>
+      <ToastProvider>
+        <AppProviders>
+          <RootNavigator />
+        </AppProviders>
+      </ToastProvider>
     </ErrorBoundary>
   );
 }
