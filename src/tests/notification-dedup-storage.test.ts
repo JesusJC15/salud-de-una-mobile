@@ -36,6 +36,11 @@ describe('notification-dedup-storage', () => {
       mockSecureStore.getItemAsync.mockResolvedValue(entries);
       expect(await hasShownNotification('notif-1')).toBe(true);
     });
+
+    it('returns false when storage read fails', async () => {
+      mockSecureStore.getItemAsync.mockRejectedValue(new Error('read failed'));
+      expect(await hasShownNotification('notif-1')).toBe(false);
+    });
   });
 
   describe('markNotificationShown', () => {
@@ -72,6 +77,13 @@ describe('notification-dedup-storage', () => {
       const written = JSON.parse(writtenValue as string) as { id: string }[];
       expect(written.some((e) => e.id === 'notif-old')).toBe(false);
       expect(written.some((e) => e.id === 'notif-new')).toBe(true);
+    });
+
+    it('does not throw when storage write fails', async () => {
+      mockSecureStore.getItemAsync.mockResolvedValue(null);
+      mockSecureStore.setItemAsync.mockRejectedValue(new Error('write failed'));
+
+      await expect(markNotificationShown('notif-2')).resolves.toBeUndefined();
     });
   });
 });
