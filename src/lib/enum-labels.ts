@@ -1,10 +1,13 @@
 export function translateEnumValue(
   labels: Record<string, string>,
-  value: string | undefined | null
+  value: string | undefined | null,
+  options?: {
+    fallback?: string;
+  },
 ): string {
   if (!value) {
-    return '';
+    return options?.fallback ?? '';
   }
 
-  return labels[value] ?? value;
+  return labels[value] ?? options?.fallback ?? value;
 }

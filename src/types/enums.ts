@@ -3,7 +3,7 @@ export type UserGender = 'MALE' | 'FEMALE' | 'OTHER';
 
 export const USER_ROLE_LABELS: Record<UserRole, string> = {
   ADMIN: 'Administrador',
-  DOCTOR: 'Doctor',
+  DOCTOR: 'Médico',
   PATIENT: 'Paciente',
 };
 

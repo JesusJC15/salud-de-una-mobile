@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { translateConsultationRole } from '@/src/lib/consultation-labels';
 import { ThemedText } from '@/src/ui/themed-text';
 
 import { useConsultationPayment } from './use-consultation-payment';
@@ -32,9 +33,9 @@ const PALETTE = {
 
 const STATUS_LABEL: Record<string, string> = {
   connecting: 'Conectando',
-  connected: 'En linea',
+  connected: 'En línea',
   reconnecting: 'Reconectando',
-  offline: 'Sin conexion',
+  offline: 'Sin conexión',
 };
 
 const STATUS_COLOR: Record<string, string> = {
@@ -78,7 +79,7 @@ function getEmptyStateDescription(isFallbackLoading: boolean, status: string): s
   }
 
   if (status === 'connected') {
-    return 'Sin mensajes aun. Escribe para iniciar.';
+    return 'Sin mensajes aún. Escribe para iniciar.';
   }
 
   return 'Estamos intentando reconectar el chat.';
@@ -93,14 +94,14 @@ function getInputPlaceholder(isClosed: boolean, isConnected: boolean): string {
     return 'Escribe un mensaje...';
   }
 
-  return 'Esperando conexion...';
+  return 'Esperando conexión...';
 }
 
 function MessageBubble({ msg, isOwn }: MessageBubbleProps) {
   return (
     <View style={[styles.bubbleWrapper, isOwn ? styles.bubbleRight : styles.bubbleLeft]}>
       {!isOwn ? (
-        <ThemedText style={styles.senderLabel}>{msg.senderRole === 'PATIENT' ? 'Tu' : 'Medico'}</ThemedText>
+        <ThemedText style={styles.senderLabel}>{translateConsultationRole(msg.senderRole)}</ThemedText>
       ) : null}
       <View
         style={[
@@ -136,7 +137,7 @@ function ChatStatusBar({ status, onRetry }: StatusBarProps) {
     <View style={[styles.statusBar, { backgroundColor: PALETTE.cardBg }]}>
       <View style={[styles.statusDot, { backgroundColor: STATUS_COLOR[status] ?? '#94A3B8' }]} />
       <ThemedText style={[styles.statusText, { color: STATUS_COLOR[status] ?? '#94A3B8' }]}>
-        {STATUS_LABEL[status] ?? 'Sin conexion'}
+        {STATUS_LABEL[status] ?? 'Sin conexión'}
       </ThemedText>
       {status === 'connected' ? null : (
         <Pressable onPress={onRetry} style={styles.retryConnectionBtn}>

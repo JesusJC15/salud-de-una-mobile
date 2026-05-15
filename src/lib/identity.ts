@@ -24,11 +24,11 @@ export function getInitials(firstName?: string | null, lastName?: string | null)
 }
 
 export function translateUserRole(role?: UserRole | null): string {
-  return translateEnumValue(USER_ROLE_LABELS, role);
+  return translateEnumValue(USER_ROLE_LABELS, role, { fallback: 'Rol no disponible' });
 }
 
 export function translateUserGender(gender?: UserGender | null): string {
-  return translateEnumValue(USER_GENDER_LABELS, gender);
+  return translateEnumValue(USER_GENDER_LABELS, gender, { fallback: 'No especificado' });
 }
 
 export function getProfileDisplayName(profile?: UserProfile | null): string {

@@ -142,7 +142,7 @@ export function AppProviders({ children }: PropsWithChildren) {
       }
 
       showToast({
-        message: 'Esta notificacion no se puede abrir desde la app.',
+        message: 'Esta notificación no se puede abrir desde la app.',
         type: 'warning',
       });
     }

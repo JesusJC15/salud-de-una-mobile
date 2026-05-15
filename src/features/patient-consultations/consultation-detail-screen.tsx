@@ -15,27 +15,16 @@ import {
   ScreenErrorState,
   ScreenLoadingState,
 } from '@/src/components/screen-states';
+import {
+  translateConsultationPriority,
+  translateConsultationRole,
+  translateConsultationSpecialty,
+  translateConsultationStatus,
+  translateSystemMessage,
+} from '@/src/lib/consultation-labels';
 import { ThemedText } from '@/src/ui/themed-text';
 import { ThemedView } from '@/src/ui/themed-view';
 import { AppButton } from '@/src/ui/button';
-
-const SPECIALTY_LABELS: Record<string, string> = {
-  GENERAL_MEDICINE: 'Medicina General',
-  ODONTOLOGY: 'Odontologia',
-  URGENT_CARE: 'Urgencias',
-};
-
-const PRIORITY_LABELS: Record<string, string> = {
-  HIGH: 'Alta',
-  MODERATE: 'Moderada',
-  LOW: 'Baja',
-};
-
-const STATUS_LABELS: Record<string, string> = {
-  PENDING: 'Pendiente',
-  IN_ATTENTION: 'En atencion',
-  CLOSED: 'Cerrada',
-};
 
 function formatDate(dateStr?: string | null) {
   if (!dateStr) {
@@ -61,7 +50,7 @@ function MessageRow({
         {message.content}
       </ThemedText>
       <ThemedText style={[styles.messageMeta, { color: isMine ? '#D1FAF5' : Colors.light.textMuted }]}>
-        {message.senderRole === 'PATIENT' ? 'Tu' : 'Medico'} · {formatDate(message.createdAt)}
+        {translateConsultationRole(message.senderRole)} · {formatDate(message.createdAt)}
       </ThemedText>
     </View>
   );
@@ -124,7 +113,7 @@ export function ConsultationDetailScreen({
       <ScreenEmptyState
         icon="chat-bubble-outline"
         title="Sin mensajes disponibles"
-        description="Aun no hay mensajes para esta consulta."
+        description="Aún no hay mensajes para esta consulta."
       />
     );
   } else {
@@ -147,25 +136,25 @@ export function ConsultationDetailScreen({
         <ThemedView style={styles.header}>
           <ThemedText type="eyebrow">Consulta</ThemedText>
           <ThemedText type="title">Detalle</ThemedText>
-          <ThemedText type="muted">Revision clinica y trazabilidad de la atencion</ThemedText>
+          <ThemedText type="muted">Revisión clínica y trazabilidad de la atención</ThemedText>
         </ThemedView>
 
         <ThemedView lightColor="#FCFFFF" style={styles.card}>
           <View style={styles.cardRow}>
             <ThemedText style={styles.label}>Especialidad</ThemedText>
             <ThemedText style={styles.value}>
-              {SPECIALTY_LABELS[detail.specialty] ?? detail.specialty}
+              {translateConsultationSpecialty(detail.specialty)}
             </ThemedText>
           </View>
           <View style={styles.cardRow}>
             <ThemedText style={styles.label}>Prioridad</ThemedText>
             <ThemedText style={styles.value}>
-              {PRIORITY_LABELS[detail.priority] ?? detail.priority}
+              {translateConsultationPriority(detail.priority)}
             </ThemedText>
           </View>
           <View style={styles.cardRow}>
             <ThemedText style={styles.label}>Estado</ThemedText>
-            <ThemedText style={styles.value}>{STATUS_LABELS[detail.status] ?? detail.status}</ThemedText>
+            <ThemedText style={styles.value}>{translateConsultationStatus(detail.status)}</ThemedText>
           </View>
           <View style={styles.cardRow}>
             <ThemedText style={styles.label}>Actualizada</ThemedText>
@@ -179,8 +168,10 @@ export function ConsultationDetailScreen({
           ) : null}
           {detail.clinicalSummary ? (
             <View style={styles.summaryBlock}>
-              <ThemedText style={styles.label}>Resumen clinico</ThemedText>
-              <ThemedText style={styles.summaryText}>{detail.clinicalSummary}</ThemedText>
+              <ThemedText style={styles.label}>Resumen clínico</ThemedText>
+              <ThemedText style={styles.summaryText}>
+                {translateSystemMessage(detail.clinicalSummary)}
+              </ThemedText>
             </View>
           ) : null}
         </ThemedView>

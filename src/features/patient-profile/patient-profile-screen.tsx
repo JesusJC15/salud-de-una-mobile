@@ -14,6 +14,7 @@ import {
   translateUserGender,
   translateUserRole,
 } from '@/src/lib/identity';
+import { translateConsultationSpecialty } from '@/src/lib/consultation-labels';
 import { z } from 'zod';
 import {
   ChangePasswordFormInput,
@@ -444,7 +445,7 @@ function TransactionHistorySection() {
         <View key={t.id} style={styles.transactionRow}>
           <View style={{ flex: 1 }}>
             <ThemedText type="defaultSemiBold">
-              {t.specialty.replace('_', ' ')}
+              {translateConsultationSpecialty(t.specialty)}
             </ThemedText>
             <ThemedText type="muted" style={{ fontSize: 11 }}>
               {t.createdAt ? new Date(t.createdAt).toLocaleDateString('es-CO') : '—'}

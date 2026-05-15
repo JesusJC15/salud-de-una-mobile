@@ -12,9 +12,9 @@ export type ChatMessage = {
   id: string;
   consultationId: string;
   senderId: string;
-  senderRole: 'PATIENT' | 'DOCTOR';
+  senderRole: string;
   content: string;
-  type: 'TEXT';
+  type: string;
   createdAt?: string;
 };
 
@@ -79,7 +79,7 @@ export function usePatientChat(consultationId: string | null, initialIsClosed = 
       setMessages((prev) => mergeMessagesById(prev, nextMessages));
       setErrorMessage(null);
     } catch {
-      setErrorMessage('No pudimos sincronizar mensajes recientes. Revisa tu conexion.');
+      setErrorMessage('No pudimos sincronizar mensajes recientes. Revisa tu conexión.');
     } finally {
       setIsFallbackLoading(false);
     }

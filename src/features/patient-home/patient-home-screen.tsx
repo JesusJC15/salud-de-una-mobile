@@ -15,6 +15,7 @@ import { triageService } from '@/src/features/patient-triage/triage-service';
 import { useActiveConsultation } from '@/src/features/patient-consultations/use-active-consultation';
 import { usePendingFollowups } from '@/src/features/patient-followup/use-patient-followups';
 import { usePatientNotifications } from '@/src/features/patient-notifications/use-patient-notifications';
+import { translateSystemMessage } from '@/src/lib/consultation-labels';
 import type { NotificationListItem } from '@/src/types/notification';
 import { ThemedText } from '@/src/ui/themed-text';
 import { ThemedView } from '@/src/ui/themed-view';
@@ -38,6 +39,7 @@ const NOTIFICATION_ICON_MAP: Record<string, React.ComponentProps<typeof Material
   NEW_MESSAGE: 'chat',
   CHAT_MESSAGE: 'chat',
   TRIAGE_COMPLETE: 'check-circle',
+  TRIAGE_COMPLETED: 'check-circle',
   FOLLOWUP_PRIORITY_ESCALATED: 'priority-high',
   SYSTEM: 'info',
 };
@@ -548,7 +550,7 @@ export function PatientHomeScreen({
                 <NotificationRow
                   key={n.id}
                   icon={NOTIFICATION_ICON_MAP[n.type] ?? 'notifications'}
-                  message={n.message}
+                  message={translateSystemMessage(n.message, 'Mensaje no disponible')}
                   time={getRelativeTime(n.createdAt)}
                   unread={!n.read}
                 />
