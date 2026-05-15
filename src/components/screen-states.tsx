@@ -6,26 +6,26 @@ import { Colors, Radius } from '@/src/constants/theme';
 import { ThemedText } from '@/src/ui/themed-text';
 import { ThemedView } from '@/src/ui/themed-view';
 
-type LoadingStateProps = {
+type LoadingStateProps = Readonly<{
   message?: string;
-};
+}>;
 
-type ErrorStateProps = {
+type ErrorStateProps = Readonly<{
   title?: string;
   message: string;
   retryLabel?: string;
   onRetry?: () => void;
   exitLabel?: string;
   onExit?: () => void;
-};
+}>;
 
-type EmptyStateProps = {
+type EmptyStateProps = Readonly<{
   icon?: ComponentProps<typeof MaterialIcons>['name'];
   title: string;
   description?: string;
   actionLabel?: string;
   onAction?: () => void;
-};
+}>;
 
 export function ScreenLoadingState({ message = 'Cargando...' }: LoadingStateProps) {
   return (

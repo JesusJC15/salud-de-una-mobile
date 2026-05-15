@@ -1,6 +1,7 @@
 import { MaterialIcons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
+import { type ReactNode } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -50,7 +51,10 @@ function formatDate(dateStr?: string | null) {
   });
 }
 
-function MessageRow({ message, isMine }: { message: ConsultationMessage; isMine: boolean }) {
+function MessageRow({
+  message,
+  isMine,
+}: Readonly<{ message: ConsultationMessage; isMine: boolean }>) {
   return (
     <View style={[styles.messageRow, isMine ? styles.messageMine : styles.messageOther]}>
       <ThemedText style={[styles.messageText, { color: isMine ? '#FFFFFF' : Colors.light.text }]}>
@@ -63,7 +67,9 @@ function MessageRow({ message, isMine }: { message: ConsultationMessage; isMine:
   );
 }
 
-export function ConsultationDetailScreen({ consultationId }: { consultationId: string }) {
+export function ConsultationDetailScreen({
+  consultationId,
+}: Readonly<{ consultationId: string }>) {
   const router = useRouter();
 
   const detailQuery = useQuery({
@@ -109,6 +115,31 @@ export function ConsultationDetailScreen({ consultationId }: { consultationId: s
   const canOpenChat = detail.status !== 'PENDING';
   const isClosed = detail.status === 'CLOSED';
   const messages = messagesQuery.data?.items ?? [];
+  let messagesContent: ReactNode;
+
+  if (messagesQuery.isLoading) {
+    messagesContent = <ScreenLoadingState message="Cargando mensajes..." />;
+  } else if (messages.length === 0) {
+    messagesContent = (
+      <ScreenEmptyState
+        icon="chat-bubble-outline"
+        title="Sin mensajes disponibles"
+        description="Aun no hay mensajes para esta consulta."
+      />
+    );
+  } else {
+    messagesContent = (
+      <View style={styles.messagesList}>
+        {messages.slice(-10).map((message) => (
+          <MessageRow
+            key={message.id}
+            isMine={message.senderRole === 'PATIENT'}
+            message={message}
+          />
+        ))}
+      </View>
+    );
+  }
 
   return (
     <SafeAreaView edges={['top', 'left', 'right']} style={styles.safeArea}>
@@ -159,25 +190,7 @@ export function ConsultationDetailScreen({ consultationId }: { consultationId: s
             <MaterialIcons color={Colors.light.tint} name="chat-bubble-outline" size={18} />
             <ThemedText style={styles.sectionTitle}>Mensajes recientes</ThemedText>
           </View>
-          {messagesQuery.isLoading ? (
-            <ScreenLoadingState message="Cargando mensajes..." />
-          ) : messages.length > 0 ? (
-            <View style={styles.messagesList}>
-              {messages.slice(-10).map((message) => (
-                <MessageRow
-                  key={message.id}
-                  isMine={message.senderRole === 'PATIENT'}
-                  message={message}
-                />
-              ))}
-            </View>
-          ) : (
-            <ScreenEmptyState
-              icon="chat-bubble-outline"
-              title="Sin mensajes disponibles"
-              description="Aun no hay mensajes para esta consulta."
-            />
-          )}
+          {messagesContent}
         </ThemedView>
 
         <View style={styles.actions}>
@@ -185,11 +198,15 @@ export function ConsultationDetailScreen({ consultationId }: { consultationId: s
             <AppButton
               label={isClosed ? 'Ver chat cerrado' : 'Abrir chat'}
               onPress={() =>
-                router.push(`/triage/chat/${consultationId}?closed=${isClosed ? '1' : '0'}` as never)
+                router.push(`/triage/chat/${consultationId}?closed=${isClosed ? '1' : '0'}`)
               }
             />
           ) : null}
-          <AppButton label="Volver a consultas" onPress={() => router.push('/(tabs)/history' as never)} variant="secondary" />
+          <AppButton
+            label="Volver a consultas"
+            onPress={() => router.push('/(tabs)/history')}
+            variant="secondary"
+          />
         </View>
       </ScrollView>
     </SafeAreaView>

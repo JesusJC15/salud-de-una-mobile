@@ -55,7 +55,7 @@ export function FollowupScreen({ followupId }: { followupId: string }) {
         newSymptoms: newSymptoms.trim() || undefined,
       });
       showToast({ message: 'Seguimiento enviado correctamente.', type: 'success' });
-      router.replace('/(tabs)/history' as never);
+      router.replace('/(tabs)/history');
     } catch (error) {
       const message = ApiError.fromUnknown(error).message || 'No se pudo enviar el seguimiento.';
       showToast({ message, type: 'error' });
@@ -81,7 +81,7 @@ export function FollowupScreen({ followupId }: { followupId: string }) {
         <ScreenErrorState
           message={message}
           onRetry={() => void followupQuery.refetch()}
-          onExit={() => router.replace('/(tabs)/history' as never)}
+          onExit={() => router.replace('/(tabs)/history')}
         />
       </SafeAreaView>
     );
@@ -95,7 +95,7 @@ export function FollowupScreen({ followupId }: { followupId: string }) {
           title="Seguimiento no disponible"
           description="No encontramos este seguimiento o ya no esta activo."
           actionLabel="Volver al historial"
-          onAction={() => router.replace('/(tabs)/history' as never)}
+          onAction={() => router.replace('/(tabs)/history')}
         />
       </SafeAreaView>
     );

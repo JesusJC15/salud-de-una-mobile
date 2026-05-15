@@ -15,14 +15,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/src/ui/themed-text';
 
+import { useConsultationPayment } from './use-consultation-payment';
 import type { ChatMessage } from './use-patient-chat';
 import { usePatientChat } from './use-patient-chat';
-import { useConsultationPayment } from './use-consultation-payment';
 
 const PALETTE = {
   bg: ['#F0F9FA', '#E0F2F1'] as const,
   primary: '#0891B2',
-  teal: '#14B8A6',
   title: '#0F172A',
   subtitle: '#475569',
   cardBg: '#FFFFFF',
@@ -45,12 +44,64 @@ const STATUS_COLOR: Record<string, string> = {
   offline: '#64748B',
 };
 
-function MessageBubble({ msg, isOwn }: { msg: ChatMessage; isOwn: boolean }) {
+type PatientChatScreenProps = Readonly<{
+  consultationId: string;
+  isClosed?: boolean;
+}>;
+
+type MessageBubbleProps = Readonly<{
+  msg: ChatMessage;
+  isOwn: boolean;
+}>;
+
+type StatusBarProps = Readonly<{
+  status: string;
+  onRetry: () => void;
+}>;
+
+type EmptyStateProps = Readonly<{
+  isFallbackLoading: boolean;
+  status: string;
+}>;
+
+type PaymentBannerProps = Readonly<{
+  alreadyPaid: boolean;
+  paidAmountLabel: string;
+  isPaying: boolean;
+  hasPayError: boolean;
+  onPay: () => void;
+}>;
+
+function getEmptyStateDescription(isFallbackLoading: boolean, status: string): string {
+  if (isFallbackLoading) {
+    return 'Sincronizando mensajes...';
+  }
+
+  if (status === 'connected') {
+    return 'Sin mensajes aun. Escribe para iniciar.';
+  }
+
+  return 'Estamos intentando reconectar el chat.';
+}
+
+function getInputPlaceholder(isClosed: boolean, isConnected: boolean): string {
+  if (isClosed) {
+    return 'Consulta cerrada - solo lectura';
+  }
+
+  if (isConnected) {
+    return 'Escribe un mensaje...';
+  }
+
+  return 'Esperando conexion...';
+}
+
+function MessageBubble({ msg, isOwn }: MessageBubbleProps) {
   return (
     <View style={[styles.bubbleWrapper, isOwn ? styles.bubbleRight : styles.bubbleLeft]}>
-      {!isOwn && (
+      {!isOwn ? (
         <ThemedText style={styles.senderLabel}>{msg.senderRole === 'PATIENT' ? 'Tu' : 'Medico'}</ThemedText>
-      )}
+      ) : null}
       <View
         style={[
           styles.bubble,
@@ -67,17 +118,91 @@ function MessageBubble({ msg, isOwn }: { msg: ChatMessage; isOwn: boolean }) {
         <ThemedText style={[styles.bubbleText, { color: isOwn ? '#FFFFFF' : PALETTE.title }]}>
           {msg.content}
         </ThemedText>
-        {msg.createdAt && (
-          <ThemedText
-            style={[styles.timeText, { color: isOwn ? 'rgba(255,255,255,0.65)' : PALETTE.subtitle }]}
-          >
+        {msg.createdAt ? (
+          <ThemedText style={[styles.timeText, { color: isOwn ? 'rgba(255,255,255,0.65)' : PALETTE.subtitle }]}>
             {new Date(msg.createdAt).toLocaleTimeString('es-CO', {
               hour: '2-digit',
               minute: '2-digit',
             })}
           </ThemedText>
-        )}
+        ) : null}
       </View>
+    </View>
+  );
+}
+
+function ChatStatusBar({ status, onRetry }: StatusBarProps) {
+  return (
+    <View style={[styles.statusBar, { backgroundColor: PALETTE.cardBg }]}>
+      <View style={[styles.statusDot, { backgroundColor: STATUS_COLOR[status] ?? '#94A3B8' }]} />
+      <ThemedText style={[styles.statusText, { color: STATUS_COLOR[status] ?? '#94A3B8' }]}>
+        {STATUS_LABEL[status] ?? 'Sin conexion'}
+      </ThemedText>
+      {status === 'connected' ? null : (
+        <Pressable onPress={onRetry} style={styles.retryConnectionBtn}>
+          <ThemedText style={styles.retryConnectionText}>Reintentar</ThemedText>
+        </Pressable>
+      )}
+    </View>
+  );
+}
+
+function ChatEmptyState({ isFallbackLoading, status }: EmptyStateProps) {
+  return (
+    <View style={styles.emptyState}>
+      {isFallbackLoading ? (
+        <ActivityIndicator color={PALETTE.primary} />
+      ) : (
+        <MaterialIcons name="chat-bubble-outline" size={36} color={PALETTE.subtitle} />
+      )}
+      <ThemedText style={[styles.emptyText, { color: PALETTE.subtitle }]}> 
+        {getEmptyStateDescription(isFallbackLoading, status)}
+      </ThemedText>
+    </View>
+  );
+}
+
+function ConsultationPaymentBanner({
+  alreadyPaid,
+  paidAmountLabel,
+  isPaying,
+  hasPayError,
+  onPay,
+}: PaymentBannerProps) {
+  return (
+    <View style={styles.paymentBanner}>
+      {alreadyPaid ? (
+        <View style={styles.paidRow}>
+          <MaterialIcons name="check-circle" size={18} color="#059669" />
+          <ThemedText style={styles.paidText}>Consulta pagada - {paidAmountLabel}</ThemedText>
+        </View>
+      ) : (
+        <Pressable
+          style={({ pressed }) => [styles.payBtn, { opacity: isPaying || pressed ? 0.8 : 1 }]}
+          disabled={isPaying}
+          onPress={onPay}
+        >
+          {isPaying ? (
+            <>
+              <ActivityIndicator color="#FFFFFF" size="small" />
+              <ThemedText style={styles.payBtnText}>Procesando pago...</ThemedText>
+            </>
+          ) : (
+            <>
+              <MaterialIcons name="payment" size={18} color="#FFFFFF" />
+              <ThemedText style={styles.payBtnText}>Pagar consulta</ThemedText>
+            </>
+          )}
+        </Pressable>
+      )}
+      {hasPayError ? (
+        <View style={styles.payErrorRow}>
+          <ThemedText style={styles.payErrorText}>Error al procesar el pago.</ThemedText>
+          <Pressable onPress={onPay} style={styles.retryLink}>
+            <ThemedText style={styles.retryLinkText}>Reintentar</ThemedText>
+          </Pressable>
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -85,10 +210,7 @@ function MessageBubble({ msg, isOwn }: { msg: ChatMessage; isOwn: boolean }) {
 export function PatientChatScreen({
   consultationId,
   isClosed: initialIsClosed = false,
-}: {
-  consultationId: string;
-  isClosed?: boolean;
-}) {
+}: PatientChatScreenProps) {
   const {
     messages,
     status,
@@ -106,9 +228,18 @@ export function PatientChatScreen({
   const [input, setInput] = useState('');
   const flatListRef = useRef<FlatList>(null);
 
+  const isConnected = status === 'connected';
+  const disableSend = isClosed || input.trim().length === 0 || !isConnected;
+  const paidAmountLabel = paidTransaction
+    ? `$${paidTransaction.amount.toLocaleString('es-CO')} COP`
+    : '';
+
   const handleSend = () => {
     const trimmed = input.trim();
-    if (!trimmed || status !== 'connected') return;
+    if (trimmed.length === 0 || !isConnected) {
+      return;
+    }
+
     sendMessage(trimmed);
     setInput('');
   };
@@ -116,19 +247,9 @@ export function PatientChatScreen({
   return (
     <SafeAreaView edges={['top', 'left', 'right']} style={styles.safeArea}>
       <LinearGradient colors={PALETTE.bg} style={styles.container}>
-        <View style={[styles.statusBar, { backgroundColor: PALETTE.cardBg }]}>
-          <View style={[styles.statusDot, { backgroundColor: STATUS_COLOR[status] ?? '#94A3B8' }]} />
-          <ThemedText style={[styles.statusText, { color: STATUS_COLOR[status] ?? '#94A3B8' }]}>
-            {STATUS_LABEL[status] ?? 'Sin conexion'}
-          </ThemedText>
-          {status !== 'connected' ? (
-            <Pressable onPress={retryConnection} style={styles.retryConnectionBtn}>
-              <ThemedText style={styles.retryConnectionText}>Reintentar</ThemedText>
-            </Pressable>
-          ) : null}
-        </View>
+        <ChatStatusBar status={status} onRetry={retryConnection} />
 
-        {errorMessage && !isClosed && (
+        {errorMessage && !isClosed ? (
           <View style={styles.errorBanner}>
             <MaterialIcons name="info-outline" size={16} color="#D97706" />
             <ThemedText style={styles.errorBannerText}>{errorMessage}</ThemedText>
@@ -136,7 +257,7 @@ export function PatientChatScreen({
               <ThemedText style={styles.retryLinkText}>Reintentar</ThemedText>
             </Pressable>
           </View>
-        )}
+        ) : null}
 
         <FlatList
           ref={flatListRef}
@@ -144,79 +265,28 @@ export function PatientChatScreen({
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.messageList}
           onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
-          ListEmptyComponent={
-            <View style={styles.emptyState}>
-              {isFallbackLoading ? (
-                <ActivityIndicator color={PALETTE.primary} />
-              ) : (
-                <MaterialIcons name="chat-bubble-outline" size={36} color={PALETTE.subtitle} />
-              )}
-              <ThemedText style={[styles.emptyText, { color: PALETTE.subtitle }]}>
-                {isFallbackLoading
-                  ? 'Sincronizando mensajes...'
-                  : status === 'connected'
-                    ? 'Sin mensajes aun. Escribe para iniciar.'
-                    : 'Estamos intentando reconectar el chat.'}
-              </ThemedText>
-            </View>
-          }
+          ListEmptyComponent={<ChatEmptyState isFallbackLoading={isFallbackLoading} status={status} />}
           renderItem={({ item }) => <MessageBubble msg={item} isOwn={item.senderId === currentUserId} />}
         />
 
-        {isClosed && (
-          <View style={styles.paymentBanner}>
-            {alreadyPaid ? (
-              <View style={styles.paidRow}>
-                <MaterialIcons name="check-circle" size={18} color="#059669" />
-                <ThemedText style={styles.paidText}>
-                  Consulta pagada -{' '}
-                  {paidTransaction ? `$${paidTransaction.amount.toLocaleString('es-CO')} COP` : ''}
-                </ThemedText>
-              </View>
-            ) : (
-              <Pressable
-                style={({ pressed }) => [styles.payBtn, { opacity: isPaying || pressed ? 0.8 : 1 }]}
-                disabled={isPaying}
-                onPress={() => void pay()}
-              >
-                {isPaying ? (
-                  <>
-                    <ActivityIndicator color="#FFFFFF" size="small" />
-                    <ThemedText style={styles.payBtnText}>Procesando pago...</ThemedText>
-                  </>
-                ) : (
-                  <>
-                    <MaterialIcons name="payment" size={18} color="#FFFFFF" />
-                    <ThemedText style={styles.payBtnText}>Pagar consulta</ThemedText>
-                  </>
-                )}
-              </Pressable>
-            )}
-            {payError && (
-              <View style={styles.payErrorRow}>
-                <ThemedText style={styles.payErrorText}>Error al procesar el pago.</ThemedText>
-                <Pressable onPress={() => void pay()} style={styles.retryLink}>
-                  <ThemedText style={styles.retryLinkText}>Reintentar</ThemedText>
-                </Pressable>
-              </View>
-            )}
-          </View>
-        )}
+        {isClosed ? (
+          <ConsultationPaymentBanner
+            alreadyPaid={alreadyPaid}
+            paidAmountLabel={paidAmountLabel}
+            isPaying={isPaying}
+            hasPayError={payError}
+            onPay={() => void pay()}
+          />
+        ) : null}
 
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
           <View style={[styles.inputBar, { backgroundColor: PALETTE.cardBg, borderTopColor: PALETTE.inputBorder }]}>
             <TextInput
               value={input}
               onChangeText={setInput}
-              placeholder={
-                isClosed
-                  ? 'Consulta cerrada - solo lectura'
-                  : status === 'connected'
-                    ? 'Escribe un mensaje...'
-                    : 'Esperando conexion...'
-              }
+              placeholder={getInputPlaceholder(isClosed, isConnected)}
               placeholderTextColor={PALETTE.subtitle}
-              editable={!isClosed && status === 'connected'}
+              editable={!isClosed && isConnected}
               multiline
               style={[
                 styles.textInput,
@@ -227,12 +297,11 @@ export function PatientChatScreen({
             />
             <Pressable
               onPress={handleSend}
-              disabled={isClosed || !input.trim() || status !== 'connected'}
+              disabled={disableSend}
               style={({ pressed }) => [
                 styles.sendBtn,
                 {
-                  backgroundColor:
-                    isClosed || !input.trim() || status !== 'connected' ? '#94A3B8' : PALETTE.primary,
+                  backgroundColor: disableSend ? '#94A3B8' : PALETTE.primary,
                   opacity: pressed ? 0.8 : 1,
                 },
               ]}

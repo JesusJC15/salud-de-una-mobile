@@ -12,7 +12,7 @@ import {
 import { Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Colors, Radius } from '@/src/constants/theme';
+import { Radius } from '@/src/constants/theme';
 import { ThemedText } from '@/src/ui/themed-text';
 
 export type ToastType = 'success' | 'error' | 'warning' | 'info';
@@ -79,7 +79,7 @@ const TOAST_COLOR_MAP: Record<
   },
 };
 
-export function ToastProvider({ children }: PropsWithChildren) {
+export function ToastProvider({ children }: Readonly<PropsWithChildren>) {
   const [toast, setToast] = useState<ToastState | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
