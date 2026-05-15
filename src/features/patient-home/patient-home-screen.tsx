@@ -114,7 +114,7 @@ const STATE_CONFIG: Record<
     iconBg: '#f0fdf4',
     iconColor: T.success,
     title: '¡Médico disponible!',
-    subtitle: 'Ya podés chatear con tu médico',
+    subtitle: 'Ya puedes chatear con tu médico',
     accentColor: T.success,
   },
   completed: {

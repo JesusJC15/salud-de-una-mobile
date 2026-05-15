@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { io, type Socket } from 'socket.io-client';
 
+const FALLBACK_DEBOUNCE_MS = 4_000;
+
 import {
   consultationHistoryService,
   type ConsultationMessage,
@@ -56,6 +58,7 @@ function mergeMessagesById(current: ChatMessage[], incoming: ChatMessage[]) {
 export function usePatientChat(consultationId: string | null, initialIsClosed = false) {
   const session = useSessionStore((s) => s.session);
   const socketRef = useRef<Socket | null>(null);
+  const lastFallbackAt = useRef<number>(0);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [status, setStatus] = useState<ConnectionStatus>('offline');
   const [isClosed, setIsClosed] = useState(initialIsClosed);
@@ -66,9 +69,17 @@ export function usePatientChat(consultationId: string | null, initialIsClosed = 
     setIsClosed(initialIsClosed);
   }, [initialIsClosed]);
 
-  const loadMessagesFallback = useCallback(async () => {
+  const loadMessagesFallback = useCallback(async (debounced = false) => {
     if (!consultationId) {
       return;
+    }
+
+    if (debounced) {
+      const now = Date.now();
+      if (now - lastFallbackAt.current < FALLBACK_DEBOUNCE_MS) {
+        return;
+      }
+      lastFallbackAt.current = now;
     }
 
     setIsFallbackLoading(true);
@@ -93,16 +104,21 @@ export function usePatientChat(consultationId: string | null, initialIsClosed = 
     }
 
     let mounted = true;
+    lastFallbackAt.current = Date.now();
     setStatus('connecting');
     setErrorMessage(null);
     void loadMessagesFallback();
 
     const socket = io(`${WS_BASE_URL}/chat`, {
       auth: { token: session.accessToken },
-      transports: ['websocket', 'polling'],
+      // polling first: establishes HTTP connection immediately through Railway's proxy,
+      // then Socket.IO upgrades to WebSocket automatically in the background.
+      // WebSocket-first hangs silently on some mobile networks/proxies.
+      transports: ['polling', 'websocket'],
+      timeout: 10_000,
       reconnection: true,
       reconnectionDelay: 1500,
-      reconnectionAttempts: 50,
+      reconnectionAttempts: 10,
     });
 
     socketRef.current = socket;
@@ -144,7 +160,7 @@ export function usePatientChat(consultationId: string | null, initialIsClosed = 
     socket.on('connect_error', () => {
       if (!mounted) return;
       setStatus('reconnecting');
-      void loadMessagesFallback();
+      void loadMessagesFallback(true);
     });
 
     socket.on('disconnect', (reason) => {
@@ -155,7 +171,7 @@ export function usePatientChat(consultationId: string | null, initialIsClosed = 
       }
 
       setStatus('reconnecting');
-      void loadMessagesFallback();
+      void loadMessagesFallback(true);
     });
 
     return () => {
