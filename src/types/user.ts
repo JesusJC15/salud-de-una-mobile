@@ -13,6 +13,7 @@ export interface UserProfile {
   gender?: UserGender;
   heightCm?: number | null;
   weightKg?: number | null;
+  bmi?: number | null;
   phone?: string | null;
   isActive?: boolean;
   createdAt?: IsoDateString | null;

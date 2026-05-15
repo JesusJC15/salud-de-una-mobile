@@ -307,6 +307,17 @@ export function PatientProfileScreen() {
               </ThemedText>
             </View>
           </View>
+          <View style={styles.infoItem}>
+            <View style={styles.infoIcon}>
+              <MaterialIcons color={PALETTE.iconTint} name="calculate" size={18} />
+            </View>
+            <View style={styles.infoText}>
+              <ThemedText style={styles.infoLabel}>IMC</ThemedText>
+              <ThemedText style={styles.infoValue}>
+                {profile?.bmi ? `${profile.bmi} kg/m²` : 'Sin especificar'}
+              </ThemedText>
+            </View>
+          </View>
         </View>
         {profileQuery.isPending ? (
           <ThemedText type="muted">Actualizando datos del perfil...</ThemedText>

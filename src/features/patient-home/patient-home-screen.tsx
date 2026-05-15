@@ -86,7 +86,7 @@ const STATE_CONFIG: Record<
   }
 > = {
   'no-session': {
-    icon: 'add-circle-outline',
+    icon: 'health-and-safety',
     iconBg: T.surfaceContainer,
     iconColor: T.primary,
     title: '¿Cómo te sientes hoy?',
