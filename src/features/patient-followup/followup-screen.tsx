@@ -93,7 +93,7 @@ export function FollowupScreen({ followupId }: { followupId: string }) {
         <ScreenEmptyState
           icon="assignment-late"
           title="Seguimiento no disponible"
-          description="No encontramos este seguimiento o ya no esta activo."
+          description="No encontramos este seguimiento o ya no está activo."
           actionLabel="Volver al historial"
           onAction={() => router.replace('/(tabs)/history')}
         />
@@ -110,7 +110,7 @@ export function FollowupScreen({ followupId }: { followupId: string }) {
         </ThemedText>
 
         <ThemedView lightColor="#FCFFFF" style={styles.card}>
-          <ThemedText type="subtitle">Como te sientes hoy?</ThemedText>
+          <ThemedText type="subtitle">¿Cómo te sientes hoy?</ThemedText>
           <ThemedText type="muted">Severidad base: {followup.baselineSymptomSeverity}/10</ThemedText>
           <Slider
             minimumValue={1}
@@ -143,20 +143,20 @@ export function FollowupScreen({ followupId }: { followupId: string }) {
 
         <ThemedView lightColor="#FCFFFF" style={styles.card}>
           <View style={styles.switchRow}>
-            <ThemedText type="subtitle">Tomaste medicacion?</ThemedText>
+            <ThemedText type="subtitle">¿Tomaste medicación?</ThemedText>
             <Switch value={medicationTaken} onValueChange={setMedicationTaken} />
           </View>
           <TextInput
             value={medicationNotes}
             onChangeText={setMedicationNotes}
-            placeholder="Notas de medicacion"
+            placeholder="Notas de medicación"
             placeholderTextColor={Colors.light.textMuted}
             style={styles.input}
           />
           <TextInput
             value={newSymptoms}
             onChangeText={setNewSymptoms}
-            placeholder="Nuevos sintomas"
+            placeholder="Nuevos síntomas"
             placeholderTextColor={Colors.light.textMuted}
             multiline
             style={[styles.input, styles.textArea]}

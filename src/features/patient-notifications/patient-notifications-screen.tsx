@@ -9,6 +9,10 @@ import {
   ScreenErrorState,
   ScreenLoadingState,
 } from '@/src/components/screen-states';
+import {
+  translateNotificationType,
+  translateSystemMessage,
+} from '@/src/lib/consultation-labels';
 import { isAllowedDeepLink } from '@/src/lib/deep-link';
 import { useToast } from '@/src/providers/toast-provider';
 import { usePatientNotifications } from '@/src/features/patient-notifications/use-patient-notifications';
@@ -16,19 +20,6 @@ import type { NotificationListItem } from '@/src/types/notification';
 import { AppButton } from '@/src/ui/button';
 import { ThemedText } from '@/src/ui/themed-text';
 import { ThemedView } from '@/src/ui/themed-view';
-
-const NOTIFICATION_TYPE_LABELS: Record<string, string> = {
-  FOLLOWUP_REMINDER: 'Seguimiento pendiente',
-  CONSULTATION_UPDATE: 'Actualizacion de consulta',
-  CONSULTATION_ASSIGNED: 'Consulta asignada',
-  CONSULTATION_CLOSED: 'Consulta cerrada',
-  NEW_MESSAGE: 'Nuevo mensaje',
-  CHAT_MESSAGE: 'Nuevo mensaje',
-  TRIAGE_COMPLETE: 'Triage completado',
-  SYSTEM: 'Aviso del sistema',
-  DOCTOR_STATUS_CHANGE: 'Estado de doctor',
-  FOLLOWUP_PRIORITY_ESCALATED: 'Prioridad escalada',
-};
 
 const NOTIFICATION_TYPE_ICONS: Record<string, React.ComponentProps<typeof MaterialIcons>['name']> = {
   FOLLOWUP_REMINDER: 'assignment-late',
@@ -38,16 +29,17 @@ const NOTIFICATION_TYPE_ICONS: Record<string, React.ComponentProps<typeof Materi
   NEW_MESSAGE: 'chat',
   CHAT_MESSAGE: 'chat',
   TRIAGE_COMPLETE: 'check-circle',
+  TRIAGE_COMPLETED: 'check-circle',
   SYSTEM: 'info',
   DOCTOR_STATUS_CHANGE: 'person',
   FOLLOWUP_PRIORITY_ESCALATED: 'priority-high',
 };
 
 const CONNECTION_STATUS_LABELS = {
-  connected: 'En linea',
+  connected: 'En línea',
   connecting: 'Conectando',
   reconnecting: 'Reconectando',
-  disconnected: 'Sin conexion',
+  disconnected: 'Sin conexión',
 } as const;
 
 const CONNECTION_STATUS_COLORS = {
@@ -56,10 +48,6 @@ const CONNECTION_STATUS_COLORS = {
   reconnecting: Colors.light.warning,
   disconnected: Colors.light.textMuted,
 } as const;
-
-function getNotificationLabel(type: string): string {
-  return NOTIFICATION_TYPE_LABELS[type] ?? type.replace(/_/g, ' ');
-}
 
 function getNotificationIcon(type: string): React.ComponentProps<typeof MaterialIcons>['name'] {
   return NOTIFICATION_TYPE_ICONS[type] ?? 'notifications';
@@ -88,7 +76,7 @@ function NotificationCard({
   onOpen: (item: NotificationListItem) => void;
 }) {
   const icon = getNotificationIcon(item.type);
-  const label = getNotificationLabel(item.type);
+  const label = translateNotificationType(item.type);
 
   return (
     <Pressable accessibilityRole="button" onPress={() => onOpen(item)}>
@@ -110,7 +98,9 @@ function NotificationCard({
           {!item.read && <View style={styles.unreadDot} />}
         </View>
 
-        <ThemedText style={styles.messageText}>{item.message}</ThemedText>
+        <ThemedText style={styles.messageText}>
+          {translateSystemMessage(item.message, 'Mensaje no disponible')}
+        </ThemedText>
 
         {!item.read && (
           <Pressable
@@ -119,7 +109,7 @@ function NotificationCard({
             onPress={() => onMarkAsRead(item.id)}
             style={styles.inlineAction}
           >
-            <ThemedText type="link">Marcar como leida</ThemedText>
+            <ThemedText type="link">Marcar como leída</ThemedText>
           </Pressable>
         )}
       </ThemedView>
@@ -143,7 +133,7 @@ export function PatientNotificationsScreen() {
     try {
       await markAllAsReadMutation.mutateAsync();
       showToast({
-        message: 'Se marcaron todas las notificaciones como leidas.',
+        message: 'Se marcaron todas las notificaciones como leídas.',
         type: 'success',
       });
     } catch (error) {
@@ -163,7 +153,7 @@ export function PatientNotificationsScreen() {
       const message =
         error instanceof Error
           ? error.message
-          : 'No se pudo marcar la notificacion como leida.';
+          : 'No se pudo marcar la notificación como leída.';
       showToast({
         message,
         type: 'error',
@@ -176,7 +166,7 @@ export function PatientNotificationsScreen() {
 
     if (!deepLink) {
       showToast({
-        message: 'Esta notificacion no tiene accion disponible.',
+        message: 'Esta notificación no tiene acción disponible.',
         type: 'info',
       });
       return;
@@ -184,7 +174,7 @@ export function PatientNotificationsScreen() {
 
     if (!isAllowedDeepLink(deepLink)) {
       showToast({
-        message: 'Este enlace no esta disponible en la app movil.',
+        message: 'Este enlace no está disponible en la app móvil.',
         type: 'warning',
       });
       return;
@@ -219,7 +209,7 @@ export function PatientNotificationsScreen() {
           </ThemedText>
           <AppButton
             disabled={unreadCount === 0}
-            label="Marcar todas como leidas"
+            label="Marcar todas como leídas"
             loading={markAllAsReadMutation.isPending}
             onPress={() => void handleMarkAllAsRead()}
             variant="secondary"
@@ -254,7 +244,7 @@ export function PatientNotificationsScreen() {
             ) : (
               <ScreenEmptyState
                 icon="notifications-none"
-                title="Todo al dia"
+                title="Todo al día"
                 description="No tienes notificaciones pendientes."
               />
             )

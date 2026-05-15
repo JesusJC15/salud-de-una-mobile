@@ -24,6 +24,11 @@ describe('identity helpers', () => {
     expect(translateUserGender('FEMALE')).toBe('Femenino');
   });
 
+  it('returns safe fallbacks when role or gender are unknown', () => {
+    expect(translateUserRole('UNKNOWN' as any)).toBe('Rol no disponible');
+    expect(translateUserGender('UNKNOWN' as any)).toBe('No especificado');
+  });
+
   it('uses the full name when available for the profile display name', () => {
     expect(
       getProfileDisplayName({

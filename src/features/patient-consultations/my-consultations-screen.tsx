@@ -14,39 +14,23 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors, Radius } from '@/src/constants/theme';
 import { usePendingFollowups } from '@/src/features/patient-followup/use-patient-followups';
 import { usePatientTimeline } from '@/src/features/patient-timeline/use-patient-timeline';
+import {
+  CONSULTATION_STATUS_FILTER_OPTIONS,
+  getConsultationPriorityChip,
+  getConsultationStatusChip,
+  translateConsultationSpecialty,
+  translateSystemMessage,
+  translateTimelineEventSubtitle,
+  translateTimelineEventType,
+} from '@/src/lib/consultation-labels';
 import { ThemedText } from '@/src/ui/themed-text';
 import { ThemedView } from '@/src/ui/themed-view';
 import { useConsultationHistory, useRateConsultation } from './use-consultation-history';
 import type { ConsultationHistoryItem } from './consultation-history-service';
 
-const SPECIALTY_LABELS: Record<string, string> = {
-  GENERAL_MEDICINE: 'Medicina General',
-  ODONTOLOGY: 'Odontología',
-  URGENT_CARE: 'Urgencias',
-};
-
-const PRIORITY_CONFIG = {
-  HIGH: { label: 'Alta', bg: '#FEE2E2', text: '#B91C1C' },
-  MODERATE: { label: 'Moderada', bg: '#FEF9C3', text: '#92400E' },
-  LOW: { label: 'Baja', bg: '#D1FAE5', text: '#065F46' },
-} as const;
-
-const STATUS_CONFIG = {
-  PENDING: { label: 'Pendiente', bg: '#F1F5F9', text: '#475569' },
-  IN_ATTENTION: { label: 'En atención', bg: '#DBEAFE', text: '#1E40AF' },
-  CLOSED: { label: 'Atendida', bg: '#CCFBF1', text: '#0F766E' },
-} as const;
-
-const STATUS_FILTERS = [
-  { value: '', label: 'Todas' },
-  { value: 'PENDING', label: 'Pendiente' },
-  { value: 'IN_ATTENTION', label: 'En atención' },
-  { value: 'CLOSED', label: 'Atendidas' },
-];
-
 function formatDate(dateStr: string | null | undefined): string {
   if (!dateStr) return '—';
-  return new Date(dateStr).toLocaleDateString('es-CR', {
+  return new Date(dateStr).toLocaleDateString('es-CO', {
     day: '2-digit', month: 'short', year: 'numeric',
   });
 }
@@ -107,7 +91,7 @@ function RatingModal({
         <Pressable style={styles.modalCard} onPress={() => undefined}>
           <ThemedText style={styles.modalTitle}>Califica tu consulta</ThemedText>
           <ThemedText style={styles.modalSubtitle}>
-            {SPECIALTY_LABELS[item.specialty] ?? item.specialty} · {formatDate(item.closedAt)}
+            {translateConsultationSpecialty(item.specialty)} · {formatDate(item.closedAt)}
           </ThemedText>
 
           <StarRating value={stars} onChange={setStars} size={36} />
@@ -157,8 +141,8 @@ function ConsultationCard({
   onRate: (item: ConsultationHistoryItem) => void;
 }) {
   const router = useRouter();
-  const priority = PRIORITY_CONFIG[item.priority];
-  const status = STATUS_CONFIG[item.status];
+  const priority = getConsultationPriorityChip(item.priority);
+  const status = getConsultationStatusChip(item.status);
   const canRate = item.status === 'CLOSED' && item.rating == null;
 
   return (
@@ -173,7 +157,7 @@ function ConsultationCard({
     >
       <View style={styles.cardHeader}>
         <ThemedText style={styles.specialty}>
-          {SPECIALTY_LABELS[item.specialty] ?? item.specialty}
+          {translateConsultationSpecialty(item.specialty)}
         </ThemedText>
         <View style={styles.badges}>
           <View style={[styles.badge, { backgroundColor: priority.bg }]}>
@@ -196,7 +180,7 @@ function ConsultationCard({
 
       {item.clinicalSummary ? (
         <ThemedText style={styles.summary} numberOfLines={2}>
-          {item.clinicalSummary}
+          {translateSystemMessage(item.clinicalSummary)}
         </ThemedText>
       ) : null}
 
@@ -244,7 +228,7 @@ export function MyConsultationsScreen() {
       </View>
 
       <View style={styles.filters}>
-        {STATUS_FILTERS.map(f => (
+        {CONSULTATION_STATUS_FILTER_OPTIONS.map(f => (
           <Pressable
             key={f.value}
             onPress={() => { setStatusFilter(f.value); setPage(1); }}
@@ -314,9 +298,11 @@ export function MyConsultationsScreen() {
                     <View key={item.id} style={styles.timelineRow}>
                       <View style={styles.timelineDot} />
                       <View style={styles.timelineContent}>
-                        <ThemedText style={styles.timelineTitle}>{item.title}</ThemedText>
+                        <ThemedText style={styles.timelineTitle}>
+                          {translateTimelineEventType(item.type)}
+                        </ThemedText>
                         <ThemedText style={styles.timelineMeta}>
-                          {item.subtitle} · {formatDate(item.occurredAt)}
+                          {translateTimelineEventSubtitle(item.subtitle)} · {formatDate(item.occurredAt)}
                         </ThemedText>
                       </View>
                     </View>

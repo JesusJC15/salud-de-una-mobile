@@ -3,6 +3,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useTriageStore } from '@/src/store/triage-store';
+import { translateSystemMessage } from '@/src/lib/consultation-labels';
 import { ThemedText } from '@/src/ui/themed-text';
 import { ThemedView } from '@/src/ui/themed-view';
 
@@ -61,7 +62,7 @@ export function TriageResultScreen({ priority, message, consultationId, redFlags
             Resultado del análisis
           </ThemedText>
           <ThemedText style={[styles.messageText, { color: '#475569' }]}>
-            {message}
+            {translateSystemMessage(message)}
           </ThemedText>
         </ThemedView>
 
@@ -74,7 +75,7 @@ export function TriageResultScreen({ priority, message, consultationId, redFlags
               <View key={i} style={styles.redFlagRow}>
                 <MaterialIcons name="warning" size={14} color="#DC2626" />
                 <ThemedText style={[styles.redFlagText, { color: '#7F1D1D' }]}>
-                  {rf.evidence}
+                  {translateSystemMessage(rf.evidence)}
                 </ThemedText>
               </View>
             ))}
@@ -87,7 +88,7 @@ export function TriageResultScreen({ priority, message, consultationId, redFlags
               Evidencia informativa
             </ThemedText>
             <ThemedText style={[styles.evidenceText, { color: '#155E75' }]}>
-              {evidence.answer}
+              {translateSystemMessage(evidence.answer)}
             </ThemedText>
             {evidence.citations.slice(0, 2).map((citation, index) => (
               <View key={`${citation.title}-${index}`} style={styles.evidenceCitation}>

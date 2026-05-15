@@ -3,9 +3,9 @@ import { apiClient } from '@/src/services/api/client';
 
 export const consultationHistoryItemSchema = z.object({
   id: z.string(),
-  specialty: z.enum(['GENERAL_MEDICINE', 'ODONTOLOGY', 'URGENT_CARE']),
-  priority: z.enum(['LOW', 'MODERATE', 'HIGH']),
-  status: z.enum(['PENDING', 'IN_ATTENTION', 'CLOSED']),
+  specialty: z.string(),
+  priority: z.string(),
+  status: z.string(),
   clinicalSummary: z.string().optional().nullable(),
   rating: z.number().int().min(1).max(5).optional().nullable(),
   ratingComment: z.string().optional().nullable(),
@@ -17,9 +17,9 @@ export const consultationDetailSchema = z.object({
   id: z.string(),
   patientId: z.string(),
   triageSessionId: z.string(),
-  specialty: z.enum(['GENERAL_MEDICINE', 'ODONTOLOGY', 'URGENT_CARE']),
-  priority: z.enum(['LOW', 'MODERATE', 'HIGH']),
-  status: z.enum(['PENDING', 'IN_ATTENTION', 'CLOSED']),
+  specialty: z.string(),
+  priority: z.string(),
+  status: z.string(),
   assignedDoctorId: z.string().optional().nullable(),
   clinicalSummary: z.string().optional().nullable(),
   closedAt: z.string().optional().nullable(),
@@ -53,9 +53,9 @@ export const consultationMessageSchema = z.object({
   id: z.string(),
   consultationId: z.string(),
   senderId: z.string(),
-  senderRole: z.enum(['PATIENT', 'DOCTOR']),
+  senderRole: z.string(),
   content: z.string(),
-  type: z.literal('TEXT'),
+  type: z.string(),
   createdAt: z.string().optional(),
 });
 
