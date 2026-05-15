@@ -18,7 +18,6 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
-  TextInput,
   type PressableStateCallbackType,
   View,
 } from 'react-native';
@@ -138,34 +137,6 @@ type BirthDateInputProps = {
   value: string | null | undefined;
 };
 
-function BirthDateWebInput(props: Readonly<BirthDateInputProps>) {
-  return (
-    <>
-      <TextInput
-        accessibilityLabel="Ingresar fecha de nacimiento"
-        onBlur={props.onBlur}
-        onChangeText={(text) => {
-          const trimmed = text.trim();
-          props.onChange(trimmed === '' ? undefined : trimmed);
-        }}
-        placeholder="YYYY-MM-DD"
-        placeholderTextColor={props.placeholderColor}
-        value={props.value ?? ''}
-        style={[
-          styles.datePickerButton,
-          {
-            backgroundColor: props.inputBackground,
-            borderColor: props.errorMessage ? props.errorColor : props.inputBorderColor,
-            color: props.inputTextColor,
-          },
-        ]}
-      />
-
-      <ThemedText style={styles.hintText}>Opcional. Ingresa la fecha en formato AAAA-MM-DD.</ThemedText>
-    </>
-  );
-}
-
 function BirthDateNativeInput(props: Readonly<BirthDateInputProps>) {
   return (
     <>
@@ -253,10 +224,10 @@ function BirthDateField(props: Readonly<BirthDateFieldProps>) {
   };
 
   return (
-    <ThemedView style={styles.fieldBlock}>
+      <ThemedView style={styles.fieldBlock}>
       <ThemedText style={[styles.fieldLabel, { color: props.sectionSubtle }]}>Fecha de nacimiento</ThemedText>
 
-      {Platform.OS === 'web' ? <BirthDateWebInput {...dateInputProps} /> : <BirthDateNativeInput {...dateInputProps} />}
+      <BirthDateNativeInput {...dateInputProps} />
 
       {value ? (
         <Pressable

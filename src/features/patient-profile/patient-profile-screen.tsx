@@ -1,11 +1,12 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { MaterialIcons } from '@expo/vector-icons';
+import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import { Alert, Pressable, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Alert, Platform, Pressable, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { billingService } from '@/src/services/billing/billing-service';
 
@@ -50,6 +51,28 @@ const PALETTE = {
 
 const ERROR_COLOR = '#DC2626';
 
+function formatDateForInput(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+
+  return `${year}-${month}-${day}`;
+}
+
+function parseDateFromInput(value: string | null | undefined): Date | null {
+  if (!value) {
+    return null;
+  }
+
+  const parsedDate = new Date(`${value}T00:00:00`);
+
+  if (Number.isNaN(parsedDate.getTime())) {
+    return null;
+  }
+
+  return parsedDate;
+}
+
 export function PatientProfileScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -57,6 +80,7 @@ export function PatientProfileScreen() {
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmNewPassword, setShowConfirmNewPassword] = useState(false);
+  const [showBirthDatePicker, setShowBirthDatePicker] = useState(false);
   const sessionUser = useSessionStore((state) => state.session?.user ?? null);
   const authMethod = useSessionStore((state) => state.session?.authMethod ?? null);
   const clearSession = useSessionStore((state) => state.clearSession);
@@ -381,19 +405,84 @@ export function PatientProfileScreen() {
           <Controller
             control={form.control}
             name="birthDate"
-            render={({ field: { onBlur, onChange, value }, fieldState: { error } }) => (
-              <AppIconTextField
-                autoCapitalize="none"
-                errorMessage={error?.message}
-                iconName="calendar-month"
-                label="Fecha de nacimiento"
-                onBlur={onBlur}
-                onChangeText={onChange}
-                placeholder="YYYY-MM-DD"
-                value={value ?? ''}
-                {...iconFieldColors}
-              />
-            )}
+            render={({ field: { onBlur, onChange, value }, fieldState: { error } }) => {
+              const pickerValue = parseDateFromInput(value) ?? new Date(2000, 0, 1);
+
+              return (
+                <View style={styles.dateField}>
+                  <ThemedText style={styles.dateFieldLabel}>Fecha de nacimiento</ThemedText>
+                  <Pressable
+                    accessibilityLabel="Seleccionar fecha de nacimiento"
+                    accessibilityRole="button"
+                    onBlur={onBlur}
+                    onPress={() => setShowBirthDatePicker(true)}
+                    style={[
+                      styles.datePickerButton,
+                      { borderColor: error?.message ? ERROR_COLOR : PALETTE.inputBorderColor },
+                    ]}
+                  >
+                    <MaterialIcons color={PALETTE.iconTint} name="calendar-month" size={20} />
+                    <ThemedText
+                      style={[
+                        styles.datePickerText,
+                        { color: value ? PALETTE.inputTextColor : PALETTE.placeholderColor },
+                      ]}
+                    >
+                      {value ?? 'Selecciona tu fecha'}
+                    </ThemedText>
+                    <MaterialIcons color={PALETTE.placeholderColor} name="arrow-drop-down" size={24} />
+                  </Pressable>
+
+                  <ThemedText style={styles.hintText}>Opcional. Elige la fecha desde el selector.</ThemedText>
+
+                  {showBirthDatePicker ? (
+                    <DateTimePicker
+                      display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                      maximumDate={new Date()}
+                      mode="date"
+                      onChange={(event: DateTimePickerEvent, selectedDate?: Date) => {
+                        if (Platform.OS === 'android') {
+                          setShowBirthDatePicker(false);
+                        }
+
+                        if (event.type !== 'set' || !selectedDate) {
+                          return;
+                        }
+
+                        onChange(formatDateForInput(selectedDate));
+                      }}
+                      value={pickerValue}
+                    />
+                  ) : null}
+
+                  {showBirthDatePicker && Platform.OS === 'ios' ? (
+                    <Pressable
+                      accessibilityRole="button"
+                      onPress={() => setShowBirthDatePicker(false)}
+                      style={styles.datePickerDoneButton}
+                    >
+                      <ThemedText style={styles.datePickerDoneText}>Listo</ThemedText>
+                    </Pressable>
+                  ) : null}
+
+                  {value ? (
+                    <Pressable
+                      accessibilityRole="button"
+                      onPress={() => {
+                        onChange(undefined);
+                        setShowBirthDatePicker(false);
+                      }}
+                    >
+                      <ThemedText style={styles.clearDateText}>Limpiar fecha</ThemedText>
+                    </Pressable>
+                  ) : null}
+
+                  {error?.message ? (
+                    <ThemedText style={styles.errorMessage}>{error.message}</ThemedText>
+                  ) : null}
+                </View>
+              );
+            }}
           />
 
           <Controller
@@ -875,6 +964,53 @@ const styles = StyleSheet.create({
   },
   genderField: {
     gap: 8,
+  },
+  dateField: {
+    gap: 6,
+  },
+  dateFieldLabel: {
+    color: PALETTE.sectionSubtle,
+    fontSize: 14,
+    fontWeight: '700',
+    lineHeight: 20,
+    marginLeft: 2,
+  },
+  datePickerButton: {
+    alignItems: 'center',
+    backgroundColor: PALETTE.inputBackground,
+    borderRadius: Radius.lg,
+    borderWidth: 1,
+    flexDirection: 'row',
+    gap: 10,
+    minHeight: 54,
+    paddingHorizontal: 12,
+  },
+  datePickerText: {
+    flex: 1,
+    fontSize: 15,
+    lineHeight: 22,
+  },
+  datePickerDoneButton: {
+    alignSelf: 'flex-end',
+    paddingHorizontal: 2,
+    paddingVertical: 4,
+  },
+  datePickerDoneText: {
+    color: PALETTE.primaryColor,
+    fontSize: 14,
+    fontWeight: '700',
+    lineHeight: 20,
+  },
+  clearDateText: {
+    color: PALETTE.primaryColor,
+    fontSize: 13,
+    fontWeight: '700',
+    lineHeight: 18,
+  },
+  hintText: {
+    color: PALETTE.subtitleColor,
+    fontSize: 12,
+    lineHeight: 17,
   },
   genderOptions: {
     flexDirection: 'row',
