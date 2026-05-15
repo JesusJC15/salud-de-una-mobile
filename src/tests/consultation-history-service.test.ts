@@ -300,4 +300,94 @@ describe('consultationHistoryService', () => {
       );
     });
   });
+
+  describe('getById', () => {
+    it('fetches and parses consultation detail', async () => {
+      const mockResponse = {
+        data: {
+          id: 'consultation-1',
+          patientId: 'patient-1',
+          triageSessionId: 'triage-1',
+          specialty: 'GENERAL_MEDICINE',
+          priority: 'MODERATE',
+          status: 'IN_ATTENTION',
+          assignedDoctorId: 'doctor-1',
+          clinicalSummary: 'Paciente con sintomas leves.',
+          closedAt: null,
+          updatedAt: '2026-05-14T10:00:00.000Z',
+          triage: {
+            status: 'COMPLETED',
+            answers: [
+              {
+                questionId: 'q-1',
+                questionText: 'Dolor actual',
+                answerValue: 4,
+              },
+            ],
+            analysis: {
+              priority: 'MODERATE',
+              redFlags: [],
+              aiSummary: 'Sin banderas rojas.',
+            },
+          },
+        },
+      };
+
+      mockApiClient.get.mockResolvedValue(mockResponse);
+
+      const result = await consultationHistoryService.getById('consultation-1');
+
+      expect(mockApiClient.get).toHaveBeenCalledWith('/consultations/consultation-1');
+      expect(result.id).toBe('consultation-1');
+      expect(result.triage?.status).toBe('COMPLETED');
+    });
+  });
+
+  describe('getMessages', () => {
+    it('fetches consultation messages with default limit', async () => {
+      const mockResponse = {
+        data: {
+          items: [
+            {
+              id: 'msg-1',
+              consultationId: 'consultation-1',
+              senderId: 'patient-1',
+              senderRole: 'PATIENT',
+              content: 'Hola doctor',
+              type: 'TEXT',
+              createdAt: '2026-05-14T10:10:00.000Z',
+            },
+          ],
+          total: 1,
+        },
+      };
+
+      mockApiClient.get.mockResolvedValue(mockResponse);
+
+      const result = await consultationHistoryService.getMessages('consultation-1');
+
+      expect(mockApiClient.get).toHaveBeenCalledWith('/consultations/consultation-1/messages', {
+        params: { limit: 100 },
+      });
+      expect(result.total).toBe(1);
+      expect(result.items[0].content).toBe('Hola doctor');
+    });
+
+    it('fetches consultation messages with custom limit', async () => {
+      const mockResponse = {
+        data: {
+          items: [],
+          total: 0,
+        },
+      };
+
+      mockApiClient.get.mockResolvedValue(mockResponse);
+
+      await consultationHistoryService.getMessages('consultation-2', 25);
+
+      expect(mockApiClient.get).toHaveBeenCalledWith('/consultations/consultation-2/messages', {
+        params: { limit: 25 },
+      });
+    });
+  });
 });

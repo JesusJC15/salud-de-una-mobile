@@ -230,7 +230,7 @@ export function PatientNotificationsScreen() {
           <ScreenErrorState
             message={notificationsQuery.error.message}
             onRetry={() => void notificationsQuery.refetch()}
-            onExit={() => router.push('/(tabs)' as never)}
+            onExit={() => router.push('/(tabs)')}
           />
         ) : null}
 
