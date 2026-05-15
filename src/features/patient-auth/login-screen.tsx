@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import {
   ActivityIndicator,
+  Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -20,6 +21,8 @@ import { loginSchema, type LoginInput } from '@/src/schemas/auth';
 import { usePatientAuth } from '@/src/features/patient-auth/use-patient-auth';
 import { ThemedText } from '@/src/ui/themed-text';
 import { ThemedView } from '@/src/ui/themed-view';
+
+const appLogo = require('../../../assets/images/icon.png');
 
 export function PatientLoginScreen() {
   const router = useRouter();
@@ -75,7 +78,7 @@ export function PatientLoginScreen() {
 
           <ThemedView style={styles.header}>
             <View style={[styles.logoWrapper, { backgroundColor: decorativeSecondary }]}>
-              <MaterialIcons color={accentColor} name="health-and-safety" size={56} />
+              <Image resizeMode="contain" source={appLogo} style={styles.logoImage} />
               <View pointerEvents="none" style={[styles.logoOverlay, { backgroundColor: decorativeTertiary }]} />
             </View>
             <ThemedText style={[styles.brand, { color: titleColor }]}>SaludDeUna</ThemedText>
@@ -317,6 +320,10 @@ const styles = StyleSheet.create({
   logoOverlay: {
     ...StyleSheet.absoluteFill,
     opacity: 0.5,
+  },
+  logoImage: {
+    height: 78,
+    width: 78,
   },
   brand: {
     fontSize: 34,

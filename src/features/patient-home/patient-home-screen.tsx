@@ -85,7 +85,7 @@ const STATE_CONFIG: Record<
     icon: 'add-circle-outline',
     iconBg: T.surfaceContainer,
     iconColor: T.primary,
-    title: '¿Cómo te sentís hoy?',
+    title: '¿Cómo te sientes hoy?',
     subtitle: 'Inicia una consulta y un médico te atenderá pronto',
     accentColor: T.primary,
   },
