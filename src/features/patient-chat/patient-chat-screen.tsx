@@ -11,7 +11,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { translateConsultationRole } from '@/src/lib/consultation-labels';
 import { ThemedText } from '@/src/ui/themed-text';
@@ -226,6 +226,7 @@ export function PatientChatScreen({
   const { alreadyPaid, paidTransaction, isPaying, isError: payError, pay } =
     useConsultationPayment(isClosed ? consultationId : null);
 
+  const insets = useSafeAreaInsets();
   const [input, setInput] = useState('');
   const flatListRef = useRef<FlatList>(null);
 
@@ -248,40 +249,52 @@ export function PatientChatScreen({
   return (
     <SafeAreaView edges={['top', 'left', 'right']} style={styles.safeArea}>
       <LinearGradient colors={PALETTE.bg} style={styles.container}>
-        <ChatStatusBar status={status} onRetry={retryConnection} />
+        <KeyboardAvoidingView
+          style={styles.container}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        >
+          <ChatStatusBar status={status} onRetry={retryConnection} />
 
-        {errorMessage && !isClosed ? (
-          <View style={styles.errorBanner}>
-            <MaterialIcons name="info-outline" size={16} color="#D97706" />
-            <ThemedText style={styles.errorBannerText}>{errorMessage}</ThemedText>
-            <Pressable onPress={retryConnection} style={styles.retryLink}>
-              <ThemedText style={styles.retryLinkText}>Reintentar</ThemedText>
-            </Pressable>
-          </View>
-        ) : null}
+          {errorMessage && !isClosed ? (
+            <View style={styles.errorBanner}>
+              <MaterialIcons name="info-outline" size={16} color="#D97706" />
+              <ThemedText style={styles.errorBannerText}>{errorMessage}</ThemedText>
+              <Pressable onPress={retryConnection} style={styles.retryLink}>
+                <ThemedText style={styles.retryLinkText}>Reintentar</ThemedText>
+              </Pressable>
+            </View>
+          ) : null}
 
-        <FlatList
-          ref={flatListRef}
-          data={messages}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.messageList}
-          onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
-          ListEmptyComponent={<ChatEmptyState isFallbackLoading={isFallbackLoading} status={status} />}
-          renderItem={({ item }) => <MessageBubble msg={item} isOwn={item.senderId === currentUserId} />}
-        />
-
-        {isClosed ? (
-          <ConsultationPaymentBanner
-            alreadyPaid={alreadyPaid}
-            paidAmountLabel={paidAmountLabel}
-            isPaying={isPaying}
-            hasPayError={payError}
-            onPay={() => void pay()}
+          <FlatList
+            ref={flatListRef}
+            data={messages}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={styles.messageList}
+            onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
+            ListEmptyComponent={<ChatEmptyState isFallbackLoading={isFallbackLoading} status={status} />}
+            renderItem={({ item }) => <MessageBubble msg={item} isOwn={item.senderId === currentUserId} />}
           />
-        ) : null}
 
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-          <View style={[styles.inputBar, { backgroundColor: PALETTE.cardBg, borderTopColor: PALETTE.inputBorder }]}>
+          {isClosed ? (
+            <ConsultationPaymentBanner
+              alreadyPaid={alreadyPaid}
+              paidAmountLabel={paidAmountLabel}
+              isPaying={isPaying}
+              hasPayError={payError}
+              onPay={() => void pay()}
+            />
+          ) : null}
+
+          <View
+            style={[
+              styles.inputBar,
+              {
+                backgroundColor: PALETTE.cardBg,
+                borderTopColor: PALETTE.inputBorder,
+                paddingBottom: insets.bottom > 0 ? insets.bottom + 6 : 10,
+              },
+            ]}
+          >
             <TextInput
               value={input}
               onChangeText={setInput}
@@ -398,7 +411,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 10,
     paddingHorizontal: 12,
-    paddingVertical: 10,
+    paddingTop: 10,
   },
   textInput: {
     borderRadius: 16,
