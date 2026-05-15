@@ -13,6 +13,7 @@ import { authService } from '@/src/services/auth/auth-service';
 import { refreshAuth0Session } from '@/src/services/auth/auth0-service';
 import { isAllowedDeepLink } from '@/src/lib/deep-link';
 import { registerPushNotifications } from '@/src/services/notifications/push-notification-service';
+import { useToast } from '@/src/providers/toast-provider';
 import { useSessionStore } from '@/src/store/session-store';
 import { useTriageStore } from '@/src/store/triage-store';
 
@@ -37,6 +38,7 @@ export function AppProviders({ children }: PropsWithChildren) {
   const hydrateTriageStore = useTriageStore((state) => state.hydrate);
   const [queryClient] = useState(createQueryClient);
   const router = useRouter();
+  const { showToast } = useToast();
 
   useEffect(() => {
     setApiAccessTokenResolver(() => useSessionStore.getState().session?.accessToken ?? null);
@@ -130,9 +132,19 @@ export function AppProviders({ children }: PropsWithChildren) {
       response: Notifications.NotificationResponse | null,
     ) {
       const deepLink = response?.notification.request.content.data?.deepLink;
-      if (typeof deepLink === 'string' && deepLink.length > 0 && isAllowedDeepLink(deepLink)) {
-        router.push(deepLink as never);
+      if (typeof deepLink !== 'string' || deepLink.length === 0) {
+        return;
       }
+
+      if (isAllowedDeepLink(deepLink)) {
+        router.push(deepLink as never);
+        return;
+      }
+
+      showToast({
+        message: 'Esta notificacion no se puede abrir desde la app.',
+        type: 'warning',
+      });
     }
 
     void Notifications.getLastNotificationResponseAsync().then((response) => {
@@ -146,7 +158,7 @@ export function AppProviders({ children }: PropsWithChildren) {
     return () => {
       subscription.remove();
     };
-  }, [router]);
+  }, [router, showToast]);
 
   return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
 }

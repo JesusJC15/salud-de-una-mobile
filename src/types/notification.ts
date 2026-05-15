@@ -3,10 +3,14 @@ import type { EntityId, IsoDateString } from '@/src/types/common';
 export type NotificationType =
   | 'FOLLOWUP_REMINDER'
   | 'CONSULTATION_UPDATE'
+  | 'CONSULTATION_ASSIGNED'
+  | 'CONSULTATION_CLOSED'
   | 'NEW_MESSAGE'
+  | 'CHAT_MESSAGE'
   | 'TRIAGE_COMPLETE'
   | 'SYSTEM'
-  | 'DOCTOR_STATUS_CHANGE';
+  | 'DOCTOR_STATUS_CHANGE'
+  | 'FOLLOWUP_PRIORITY_ESCALATED';
 
 export interface ListNotificationsInput {
   unreadOnly?: boolean;

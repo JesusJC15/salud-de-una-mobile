@@ -31,6 +31,7 @@ export function useActiveConsultation() {
         setConsultationId(active.id);
         return active;
       }
+      setConsultationId(null);
       return null;
     },
     enabled: isAuthenticated,

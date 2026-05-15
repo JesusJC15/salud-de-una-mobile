@@ -7,7 +7,7 @@ type AppConfig = ExpoConfig & {
 
 export default ({ config }: ConfigContext): AppConfig => ({
   ...config,
-  name: "salud-de-una-mobile",
+  name: "SaludDeUna",
   slug: "salud-de-una-mobile",
   version: "1.0.0",
   orientation: "portrait",

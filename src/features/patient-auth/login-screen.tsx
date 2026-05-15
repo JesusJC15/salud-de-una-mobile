@@ -169,10 +169,6 @@ export function PatientLoginScreen() {
               )}
             />
 
-            <Pressable accessibilityRole="button" style={styles.forgotPasswordButton}>
-              <ThemedText style={[styles.forgotPasswordText, { color: linkColor }]}>Olvide mi contrasena</ThemedText>
-            </Pressable>
-
             {formError ? (
               <ThemedText style={[styles.authError, { color: errorColor }]}>{formError}</ThemedText>
             ) : null}
@@ -397,15 +393,6 @@ const styles = StyleSheet.create({
   inlineError: {
     fontSize: 13,
     lineHeight: 18,
-  },
-  forgotPasswordButton: {
-    alignItems: 'flex-end',
-    marginTop: 2,
-  },
-  forgotPasswordText: {
-    fontSize: 14,
-    fontWeight: '700',
-    lineHeight: 20,
   },
   authError: {
     fontSize: 14,

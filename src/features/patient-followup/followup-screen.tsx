@@ -1,3 +1,5 @@
+import Slider from '@react-native-community/slider';
+import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
   ActivityIndicator,
@@ -8,12 +10,19 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import Slider from '@react-native-community/slider';
-import { useRouter } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
+import {
+  ScreenEmptyState,
+  ScreenErrorState,
+  ScreenLoadingState,
+} from '@/src/components/screen-states';
 import { Colors, Radius } from '@/src/constants/theme';
 import { ApiError } from '@/src/services/api/api-error';
+import { useToast } from '@/src/providers/toast-provider';
 import { ThemedText } from '@/src/ui/themed-text';
 import { ThemedView } from '@/src/ui/themed-view';
+
 import { useFollowup, useSubmitFollowup } from './use-patient-followups';
 
 const CHANGE_OPTIONS = [
@@ -24,6 +33,7 @@ const CHANGE_OPTIONS = [
 
 export function FollowupScreen({ followupId }: { followupId: string }) {
   const router = useRouter();
+  const { showToast } = useToast();
   const followupQuery = useFollowup(followupId);
   const submitMutation = useSubmitFollowup();
   const [currentSymptomSeverity, setCurrentSymptomSeverity] = useState(5);
@@ -34,123 +44,151 @@ export function FollowupScreen({ followupId }: { followupId: string }) {
 
   const followup = followupQuery.data;
 
+  async function handleSubmit() {
+    try {
+      await submitMutation.mutateAsync({
+        followupId,
+        currentSymptomSeverity,
+        change,
+        medicationTaken,
+        medicationNotes: medicationNotes.trim() || undefined,
+        newSymptoms: newSymptoms.trim() || undefined,
+      });
+      showToast({ message: 'Seguimiento enviado correctamente.', type: 'success' });
+      router.replace('/(tabs)/history' as never);
+    } catch (error) {
+      const message = ApiError.fromUnknown(error).message || 'No se pudo enviar el seguimiento.';
+      showToast({ message, type: 'error' });
+    }
+  }
+
   if (followupQuery.isLoading) {
     return (
-      <View style={styles.centered}>
-        <ActivityIndicator color={Colors.light.tint} size="large" />
-      </View>
+      <SafeAreaView edges={['top', 'left', 'right']} style={styles.container}>
+        <ScreenLoadingState message="Cargando seguimiento..." />
+      </SafeAreaView>
+    );
+  }
+
+  if (followupQuery.isError) {
+    const message =
+      followupQuery.error instanceof Error
+        ? followupQuery.error.message
+        : 'No se pudo cargar este seguimiento.';
+
+    return (
+      <SafeAreaView edges={['top', 'left', 'right']} style={styles.container}>
+        <ScreenErrorState
+          message={message}
+          onRetry={() => void followupQuery.refetch()}
+          onExit={() => router.replace('/(tabs)/history' as never)}
+        />
+      </SafeAreaView>
     );
   }
 
   if (!followup) {
     return (
-      <View style={styles.centered}>
-        <ThemedText type="subtitle">Seguimiento no disponible</ThemedText>
-      </View>
+      <SafeAreaView edges={['top', 'left', 'right']} style={styles.container}>
+        <ScreenEmptyState
+          icon="assignment-late"
+          title="Seguimiento no disponible"
+          description="No encontramos este seguimiento o ya no esta activo."
+          actionLabel="Volver al historial"
+          onAction={() => router.replace('/(tabs)/history' as never)}
+        />
+      </SafeAreaView>
     );
   }
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <ThemedText type="title">Seguimiento post-consulta</ThemedText>
-      <ThemedText type="muted">
-        Programado para {new Date(followup.scheduledAt).toLocaleString('es-CR')}
-      </ThemedText>
-
-      <ThemedView lightColor="#FCFFFF" style={styles.card}>
-        <ThemedText type="subtitle">¿Cómo te sientes hoy?</ThemedText>
-        <ThemedText type="muted">Severidad base: {followup.baselineSymptomSeverity}/10</ThemedText>
-        <Slider
-          minimumValue={1}
-          maximumValue={10}
-          step={1}
-          value={currentSymptomSeverity}
-          minimumTrackTintColor={Colors.light.tint}
-          maximumTrackTintColor={Colors.light.border}
-          onValueChange={setCurrentSymptomSeverity}
-        />
-        <ThemedText type="defaultSemiBold">{currentSymptomSeverity}/10</ThemedText>
-      </ThemedView>
-
-      <ThemedView lightColor="#FCFFFF" style={styles.card}>
-        <ThemedText type="subtitle">Cambio percibido</ThemedText>
-        <View style={styles.row}>
-          {CHANGE_OPTIONS.map(option => (
-            <Pressable
-              key={option.value}
-              onPress={() => setChange(option.value)}
-              style={[
-                styles.chip,
-                change === option.value && styles.chipActive,
-              ]}
-            >
-              <ThemedText style={change === option.value ? styles.chipTextActive : styles.chipText}>
-                {option.label}
-              </ThemedText>
-            </Pressable>
-          ))}
-        </View>
-      </ThemedView>
-
-      <ThemedView lightColor="#FCFFFF" style={styles.card}>
-        <View style={styles.switchRow}>
-          <ThemedText type="subtitle">¿Tomaste medicación?</ThemedText>
-          <Switch value={medicationTaken} onValueChange={setMedicationTaken} />
-        </View>
-        <TextInput
-          value={medicationNotes}
-          onChangeText={setMedicationNotes}
-          placeholder="Notas de medicación"
-          placeholderTextColor={Colors.light.textMuted}
-          style={styles.input}
-        />
-        <TextInput
-          value={newSymptoms}
-          onChangeText={setNewSymptoms}
-          placeholder="Nuevos síntomas"
-          placeholderTextColor={Colors.light.textMuted}
-          multiline
-          style={[styles.input, styles.textArea]}
-        />
-      </ThemedView>
-
-      <Pressable
-        onPress={() => {
-          submitMutation.mutate(
-            {
-              followupId,
-              currentSymptomSeverity,
-              change,
-              medicationTaken,
-              medicationNotes: medicationNotes.trim() || undefined,
-              newSymptoms: newSymptoms.trim() || undefined,
-            },
-            {
-              onSuccess: () => router.replace('/(tabs)/history' as never),
-            },
-          );
-        }}
-        style={styles.submitButton}
-      >
-        {submitMutation.isPending
-          ? <ActivityIndicator color="#fff" size="small" />
-          : <ThemedText style={styles.submitText}>Enviar seguimiento</ThemedText>}
-      </Pressable>
-
-      {submitMutation.isError && (
-        <ThemedText style={styles.errorText}>
-          {ApiError.fromUnknown(submitMutation.error).message ||
-            'No se pudo enviar el seguimiento. Intenta de nuevo.'}
+    <SafeAreaView edges={['top', 'left', 'right']} style={styles.container}>
+      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+        <ThemedText type="title">Seguimiento post-consulta</ThemedText>
+        <ThemedText type="muted">
+          Programado para {new Date(followup.scheduledAt).toLocaleString('es-CO')}
         </ThemedText>
-      )}
-    </ScrollView>
+
+        <ThemedView lightColor="#FCFFFF" style={styles.card}>
+          <ThemedText type="subtitle">Como te sientes hoy?</ThemedText>
+          <ThemedText type="muted">Severidad base: {followup.baselineSymptomSeverity}/10</ThemedText>
+          <Slider
+            minimumValue={1}
+            maximumValue={10}
+            step={1}
+            value={currentSymptomSeverity}
+            minimumTrackTintColor={Colors.light.tint}
+            maximumTrackTintColor={Colors.light.border}
+            onValueChange={setCurrentSymptomSeverity}
+          />
+          <ThemedText type="defaultSemiBold">{currentSymptomSeverity}/10</ThemedText>
+        </ThemedView>
+
+        <ThemedView lightColor="#FCFFFF" style={styles.card}>
+          <ThemedText type="subtitle">Cambio percibido</ThemedText>
+          <View style={styles.row}>
+            {CHANGE_OPTIONS.map((option) => (
+              <Pressable
+                key={option.value}
+                onPress={() => setChange(option.value)}
+                style={[styles.chip, change === option.value && styles.chipActive]}
+              >
+                <ThemedText style={change === option.value ? styles.chipTextActive : styles.chipText}>
+                  {option.label}
+                </ThemedText>
+              </Pressable>
+            ))}
+          </View>
+        </ThemedView>
+
+        <ThemedView lightColor="#FCFFFF" style={styles.card}>
+          <View style={styles.switchRow}>
+            <ThemedText type="subtitle">Tomaste medicacion?</ThemedText>
+            <Switch value={medicationTaken} onValueChange={setMedicationTaken} />
+          </View>
+          <TextInput
+            value={medicationNotes}
+            onChangeText={setMedicationNotes}
+            placeholder="Notas de medicacion"
+            placeholderTextColor={Colors.light.textMuted}
+            style={styles.input}
+          />
+          <TextInput
+            value={newSymptoms}
+            onChangeText={setNewSymptoms}
+            placeholder="Nuevos sintomas"
+            placeholderTextColor={Colors.light.textMuted}
+            multiline
+            style={[styles.input, styles.textArea]}
+          />
+        </ThemedView>
+
+        <Pressable
+          onPress={() => void handleSubmit()}
+          disabled={submitMutation.isPending}
+          style={[styles.submitButton, submitMutation.isPending && styles.submitButtonDisabled]}
+        >
+          {submitMutation.isPending ? (
+            <ActivityIndicator color="#fff" size="small" />
+          ) : (
+            <ThemedText style={styles.submitText}>Enviar seguimiento</ThemedText>
+          )}
+        </Pressable>
+
+        {submitMutation.isError && (
+          <ThemedText style={styles.errorText}>
+            {ApiError.fromUnknown(submitMutation.error).message ||
+              'No se pudo enviar el seguimiento. Intenta de nuevo.'}
+          </ThemedText>
+        )}
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.light.background },
   content: { gap: 16, padding: 20, paddingBottom: 32 },
-  centered: { alignItems: 'center', flex: 1, justifyContent: 'center' },
   card: { borderRadius: Radius.xl, gap: 12, padding: 16 },
   row: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: {
@@ -184,6 +222,14 @@ const styles = StyleSheet.create({
     borderRadius: Radius.xl,
     padding: 14,
   },
+  submitButtonDisabled: {
+    opacity: 0.7,
+  },
   submitText: { color: '#fff', fontSize: 15, fontWeight: '800' },
-  errorText: { color: Colors.light.destructive, fontSize: 13, marginTop: 4, textAlign: 'center' },
+  errorText: {
+    color: Colors.light.destructive,
+    fontSize: 13,
+    marginTop: 4,
+    textAlign: 'center',
+  },
 });

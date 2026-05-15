@@ -10,7 +10,7 @@ type TriageState = {
   specialty: TriageSpecialty | null;
   consultationId: string | null;
   setActiveSession: (sessionId: string, specialty: TriageSpecialty) => void;
-  setConsultationId: (id: string) => void;
+  setConsultationId: (id: string | null) => void;
   clearTriage: () => void;
   hydrate: () => Promise<void>;
 };

@@ -12,6 +12,7 @@ const registerPushNotifications = jest.fn();
 const getLastNotificationResponseAsync = jest.fn();
 const addNotificationResponseReceivedListener = jest.fn();
 const notificationRemove = jest.fn();
+const showToast = jest.fn();
 const sessionStoreHook = jest.fn();
 const triageStoreHook = jest.fn();
 const useEffectMock = jest.fn();
@@ -89,6 +90,12 @@ jest.mock('@/src/services/auth/auth0-service', () => ({
 
 jest.mock('@/src/services/notifications/push-notification-service', () => ({
   registerPushNotifications,
+}));
+
+jest.mock('@/src/providers/toast-provider', () => ({
+  useToast: () => ({
+    showToast,
+  }),
 }));
 
 jest.mock('@/src/store/session-store', () => ({
@@ -408,5 +415,28 @@ describe('AppProviders', () => {
 
     expect(routerPush).toHaveBeenCalledWith('/triage/chat/2');
     expect(routerPush).toHaveBeenCalledTimes(2);
+  });
+
+  it('shows a warning toast when notification deep link is not allowed', async () => {
+    getLastNotificationResponseAsync.mockResolvedValue({
+      notification: {
+        request: {
+          content: {
+            data: {
+              deepLink: '/doctor/consultations/1',
+            },
+          },
+        },
+      },
+    });
+
+    await renderAppProviders();
+
+    expect(routerPush).not.toHaveBeenCalled();
+    expect(showToast).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'warning',
+      }),
+    );
   });
 });
