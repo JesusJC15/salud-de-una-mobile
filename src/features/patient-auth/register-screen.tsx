@@ -372,7 +372,7 @@ export function PatientRegisterScreen() {
       <View pointerEvents="none" style={[styles.orbBottomRight, { backgroundColor: ORB_PRIMARY }]} />
       <View pointerEvents="none" style={[styles.orbBottomCenter, { backgroundColor: ORB_TERTIARY }]} />
 
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.flex}>
+      <KeyboardAvoidingView behavior="padding" style={styles.flex}>
         <ScrollView bounces={false} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
           <ThemedView style={styles.topBar}>
             <Pressable

@@ -18,7 +18,7 @@
       },
       "env": {
         "EXPO_PUBLIC_APP_ENV": "preview",
-        "EXPO_PUBLIC_API_URL": "https://salud-de-una-backend-production.up.railway.app/v1",
+        "EXPO_PUBLIC_API_URL": "http://salud-de-una-dev-alb-279246547.us-east-1.elb.amazonaws.com/v1",
         "EXPO_PUBLIC_AUTH0_DOMAIN": "salud-de-una.us.auth0.com",
         "EXPO_PUBLIC_AUTH0_CLIENT_ID": "i5R0nnGVqe9NptWc0yPzbc2FHonj9P8B",
         "EXPO_PUBLIC_AUTH0_AUDIENCE": "https://api.salud-de-una.com"
@@ -26,8 +26,15 @@
     },
     "production": {
       "autoIncrement": true,
+      "android": {
+        "buildType": "apk"
+      },
       "env": {
-        "EXPO_PUBLIC_APP_ENV": "production"
+        "EXPO_PUBLIC_APP_ENV": "production",
+        "EXPO_PUBLIC_API_URL": "http://salud-de-una-dev-alb-279246547.us-east-1.elb.amazonaws.com/v1",
+        "EXPO_PUBLIC_AUTH0_DOMAIN": "salud-de-una.us.auth0.com",
+        "EXPO_PUBLIC_AUTH0_CLIENT_ID": "i5R0nnGVqe9NptWc0yPzbc2FHonj9P8B",
+        "EXPO_PUBLIC_AUTH0_AUDIENCE": "https://api.salud-de-una.com"
       }
     }
   },

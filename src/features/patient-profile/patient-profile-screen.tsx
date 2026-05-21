@@ -6,7 +6,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import { Alert, Platform, Pressable, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { billingService } from '@/src/services/billing/billing-service';
 
@@ -240,7 +240,8 @@ export function PatientProfileScreen() {
   return (
     <SafeAreaView edges={['top', 'left', 'right']} style={styles.safeArea}>
       <LinearGradient colors={PALETTE.gradientColors} end={{ x: 1, y: 1 }} start={{ x: 0.1, y: 0 }} style={styles.gradient}>
-        <ScrollView contentContainerStyle={styles.content}>
+        <KeyboardAvoidingView behavior="padding" style={styles.gradient}>
+        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
           <ThemedView style={styles.container}>
       <ThemedView style={styles.header}>
         <ThemedText style={[styles.headerTitle, { color: PALETTE.titleColor }]}>Perfil</ThemedText>
@@ -727,6 +728,7 @@ export function PatientProfileScreen() {
           <TransactionHistorySection />
           </ThemedView>
         </ScrollView>
+        </KeyboardAvoidingView>
       </LinearGradient>
     </SafeAreaView>
   );

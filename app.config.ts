@@ -2,7 +2,10 @@ import { ExpoConfig, ConfigContext } from "expo/config";
 
 type AppConfig = ExpoConfig & {
   newArchEnabled?: boolean;
-  android: ExpoConfig["android"] & { edgeToEdgeEnabled?: boolean };
+  android: ExpoConfig["android"] & {
+    edgeToEdgeEnabled?: boolean;
+    usesCleartextTraffic?: boolean;
+  };
 };
 
 export default ({ config }: ConfigContext): AppConfig => ({
@@ -11,7 +14,7 @@ export default ({ config }: ConfigContext): AppConfig => ({
   slug: "salud-de-una-mobile",
   version: "1.0.0",
   orientation: "portrait",
-  icon: "./assets/images/icon.png",
+  icon: "./assets/images/iconoSaludDeUna.png",
   scheme: "saluddeunamobile",
   userInterfaceStyle: "light",
   newArchEnabled: true,
@@ -22,13 +25,21 @@ export default ({ config }: ConfigContext): AppConfig => ({
   android: {
     adaptiveIcon: {
       backgroundColor: "#E6F4FE",
-      foregroundImage: "./assets/images/android-icon-foreground.png",
-      backgroundImage: "./assets/images/android-icon-background.png",
-      monochromeImage: "./assets/images/android-icon-monochrome.png",
+      foregroundImage: "./assets/images/iconoSaludDeUna.png",
+      backgroundImage: "./assets/images/iconoSaludDeUna.png",
+      monochromeImage: "./assets/images/iconoSaludDeUna.png",
     },
     edgeToEdgeEnabled: true,
     predictiveBackGestureEnabled: false,
     package: "com.jesusjc15.saluddeunamobile",
+    // Permite tráfico HTTP al ALB (el APK usa http:// para evitar el cert autofirmado)
+    usesCleartextTraffic: true,
+    permissions: [
+      "android.permission.INTERNET",
+      "android.permission.ACCESS_NETWORK_STATE",
+      "android.permission.VIBRATE",
+      "android.permission.RECEIVE_BOOT_COMPLETED",
+    ],
   },
   web: {
     output: "static",

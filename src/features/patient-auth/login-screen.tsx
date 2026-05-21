@@ -73,7 +73,7 @@ export function PatientLoginScreen() {
       <View pointerEvents="none" style={[styles.decorativeOrbLeft, { backgroundColor: decorativeSecondary }]} />
       <View pointerEvents="none" style={[styles.decorativeOrbRight, { backgroundColor: decorativePrimary }]} />
 
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.flex}>
+      <KeyboardAvoidingView behavior="padding" style={styles.flex}>
         <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled" bounces={false}>
 
           <ThemedView style={styles.header}>

@@ -251,7 +251,8 @@ export function PatientChatScreen({
       <LinearGradient colors={PALETTE.bg} style={styles.container}>
         <KeyboardAvoidingView
           style={styles.container}
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          behavior="padding"
+          keyboardVerticalOffset={Platform.OS === 'android' ? insets.bottom : 0}
         >
           <ChatStatusBar status={status} onRetry={retryConnection} />
 
